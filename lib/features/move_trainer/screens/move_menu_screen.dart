@@ -29,7 +29,7 @@ class _MoveMenuScreenState extends State<MoveMenuScreen> {
         title: const Text('Moves'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/file-rank-trainer'),
+          onPressed: () => context.pop(),
         ),
       ),
       body: SafeArea(
@@ -235,7 +235,7 @@ class _MoveMenuScreenState extends State<MoveMenuScreen> {
   }
 
   void _startGame() {
-    context.go(
+    context.push(
       '/move-trainer/game'
       '?mode=${_mode.name}'
       '&hardMode=$_isHardMode',

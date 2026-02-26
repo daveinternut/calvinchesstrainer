@@ -101,7 +101,7 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
             ? const Duration(milliseconds: 200)
             : const Duration(milliseconds: 600))
         : (isCorrect
-            ? const Duration(milliseconds: 400)
+            ? const Duration(milliseconds: 700)
             : const Duration(milliseconds: 1200));
 
     _scheduleAdvance(delay);

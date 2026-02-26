@@ -24,7 +24,6 @@ final _router = GoRouter(
       builder: (context, state) {
         final subjectParam = state.uri.queryParameters['subject'];
         final modeParam = state.uri.queryParameters['mode'];
-        final reverseParam = state.uri.queryParameters['reverse'];
         final hardModeParam = state.uri.queryParameters['hardMode'];
 
         return FileRankMenuScreen(
@@ -40,7 +39,6 @@ final _router = GoRouter(
                   orElse: () => TrainerMode.explore,
                 )
               : TrainerMode.explore,
-          initialReverse: reverseParam == 'true',
           initialHardMode: hardModeParam == 'true',
         );
       },
@@ -50,7 +48,6 @@ final _router = GoRouter(
       builder: (context, state) {
         final subjectParam = state.uri.queryParameters['subject'] ?? 'files';
         final modeParam = state.uri.queryParameters['mode'] ?? 'explore';
-        final reverseParam = state.uri.queryParameters['reverse'] ?? 'false';
         final hardModeParam = state.uri.queryParameters['hardMode'] ?? 'false';
 
         final subject = TrainerSubject.values.firstWhere(
@@ -65,7 +62,6 @@ final _router = GoRouter(
         return FileRankGameScreen(
           subject: subject,
           mode: mode,
-          isReverse: reverseParam == 'true',
           isHardMode: hardModeParam == 'true',
         );
       },

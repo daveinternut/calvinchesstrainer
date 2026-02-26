@@ -13,10 +13,6 @@ class PromptDisplay extends StatelessWidget {
       return _buildExploreHint(context);
     }
 
-    if (gameState.isReverse) {
-      return _buildReversePrompt(context);
-    }
-
     return _buildForwardPrompt(context);
   }
 
@@ -66,17 +62,4 @@ class PromptDisplay extends StatelessWidget {
     );
   }
 
-  Widget _buildReversePrompt(BuildContext context) {
-    final typeLabel = gameState.subject == TrainerSubject.squares
-        ? 'square'
-        : (gameState.currentPromptIsFile ? 'file' : 'rank');
-
-    return Text(
-      'Which $typeLabel is highlighted?',
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: AppColors.textSecondary,
-          ),
-      textAlign: TextAlign.center,
-    );
-  }
 }

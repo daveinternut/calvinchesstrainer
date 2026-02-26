@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/square_name_overlay.dart';
 import '../../file_rank_trainer/widgets/streak_counter.dart';
 import '../../file_rank_trainer/widgets/timer_bar.dart';
 import '../../file_rank_trainer/widgets/results_card.dart';
@@ -49,7 +51,7 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
         title: Text(_title),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(_menuRoute),
+          onPressed: () => context.pop(),
         ),
         actions: [
           Padding(
@@ -119,7 +121,7 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
                           isHardMode: widget.isHardMode,
                         );
                   },
-                  onBack: () => context.go(_menuRoute),
+                  onBack: () => context.pop(),
                 ),
               ),
           ],
@@ -149,7 +151,7 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
         ? makeLegalMoves(puzzle.position)
         : const IMapConst<Square, ISet<Square>>({});
 
-    return Chessboard(
+    final board = Chessboard(
       size: boardSize,
       orientation: orientation,
       fen: fen,
@@ -181,13 +183,55 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
       shapes: gameState.feedbackShapes,
       squareHighlights: gameState.squareHighlights,
     );
+
+    final labels = _buildMoveLabels(gameState);
+    if (labels.isEmpty) return board;
+    return Stack(
+      children: [
+        board,
+        SquareNameOverlay(
+          boardSize: boardSize,
+          orientation: orientation,
+          labels: labels,
+        ),
+      ],
+    );
   }
 
-  String get _menuRoute =>
-      '/file-rank-trainer'
-      '?subject=moves'
-      '&mode=${widget.mode.name}'
-      '&hardMode=${widget.isHardMode}';
+  List<SquareLabel> _buildMoveLabels(MoveGameState gameState) {
+    final feedback = gameState.lastFeedback;
+    if (feedback == null) return const [];
+
+    final labels = <SquareLabel>[];
+    final isCorrect = feedback.result == MoveFeedbackResult.correct;
+
+    if (isCorrect) {
+      labels.add(SquareLabel(
+        file: feedback.correctMove.to.file,
+        rank: feedback.correctMove.to.rank,
+        name: feedback.correctMove.to.name,
+        color: AppColors.correctGreen.withValues(alpha: 0.85),
+      ));
+    } else {
+      if (feedback.attemptedMove != null &&
+          feedback.attemptedMove!.to != feedback.correctMove.to) {
+        labels.add(SquareLabel(
+          file: feedback.attemptedMove!.to.file,
+          rank: feedback.attemptedMove!.to.rank,
+          name: feedback.attemptedMove!.to.name,
+          color: AppColors.incorrectRed.withValues(alpha: 0.85),
+        ));
+      }
+      labels.add(SquareLabel(
+        file: feedback.correctMove.to.file,
+        rank: feedback.correctMove.to.rank,
+        name: feedback.correctMove.to.name,
+        color: AppColors.correctGreen.withValues(alpha: 0.85),
+      ));
+    }
+
+    return labels;
+  }
 
   String get _title {
     final mode = switch (widget.mode) {

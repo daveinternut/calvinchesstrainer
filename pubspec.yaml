@@ -47,12 +47,17 @@ flutter:
     - assets/puzzles/
     - assets/images/
 
+  fonts:
+    - family: BradBunR
+      fonts:
+        - asset: assets/fonts/BradBunR.ttf
+
 flutter_native_splash:
   color: "#1B5E20"
-  image: assets/images/internut_logo.png
+  image: assets/images/internut_logo_white.png
   android_12:
     color: "#1B5E20"
-    image: assets/images/internut_logo.png
+    image: assets/images/internut_logo_white.png
 
 flutter_launcher_icons:
   android: true

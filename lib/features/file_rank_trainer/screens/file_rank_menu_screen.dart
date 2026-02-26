@@ -7,14 +7,12 @@ import '../models/file_rank_game_state.dart';
 class FileRankMenuScreen extends StatefulWidget {
   final TrainerSubject initialSubject;
   final TrainerMode initialMode;
-  final bool initialReverse;
   final bool initialHardMode;
 
   const FileRankMenuScreen({
     super.key,
     this.initialSubject = TrainerSubject.files,
     this.initialMode = TrainerMode.explore,
-    this.initialReverse = false,
     this.initialHardMode = false,
   });
 
@@ -25,7 +23,6 @@ class FileRankMenuScreen extends StatefulWidget {
 class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
   late TrainerSubject _subject = widget.initialSubject;
   late TrainerMode _mode = widget.initialMode;
-  late bool _isReverse = widget.initialReverse;
   late bool _isHardMode = widget.initialHardMode;
 
   @override
@@ -35,7 +32,7 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
         title: const Text('Chess Notation'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
+          onPressed: () => context.pop(),
         ),
       ),
       body: SafeArea(
@@ -101,67 +98,6 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
               ),
               const SizedBox(height: 28),
               if (_mode != TrainerMode.explore) ...[
-                if (_subject != TrainerSubject.moves) ...[
-                  GestureDetector(
-                    onTap: () => setState(() => _isReverse = !_isReverse),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _isReverse ? const Color(0xFF1565C0) : Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: _isReverse ? const Color(0xFF1565C0) : Colors.grey.shade300,
-                          width: _isReverse ? 2 : 1,
-                        ),
-                        boxShadow: _isReverse
-                            ? [BoxShadow(color: const Color(0xFF1565C0).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))]
-                            : [],
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.swap_horiz_rounded,
-                            color: _isReverse ? Colors.white : Colors.grey.shade400,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'REVERSE MODE',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 1.2,
-                                    color: _isReverse ? Colors.white : AppColors.textPrimary,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  _isReverse
-                                      ? 'See the board, pick the name'
-                                      : 'Hear the name, tap the board',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: _isReverse
-                                        ? Colors.white.withValues(alpha: 0.85)
-                                        : AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (_isReverse)
-                            const Icon(Icons.check_circle, color: Colors.white, size: 22),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
                 GestureDetector(
                   onTap: () => setState(() => _isHardMode = !_isHardMode),
                   child: AnimatedContainer(
@@ -262,11 +198,9 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
         selected: selected,
         onSelected: (_) => setState(() {
           _subject = subject;
-          if (subject == TrainerSubject.moves) {
-            if (_mode == TrainerMode.explore) {
-              _mode = TrainerMode.practice;
-            }
-            _isReverse = false;
+          if (subject == TrainerSubject.moves &&
+              _mode == TrainerMode.explore) {
+            _mode = TrainerMode.practice;
           }
         }),
         showCheckmark: false,
@@ -292,7 +226,6 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
       onTap: () => setState(() {
         _mode = mode;
         if (mode == TrainerMode.explore) {
-          _isReverse = false;
           _isHardMode = false;
         }
       }),
@@ -349,17 +282,16 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
 
   void _startGame() {
     if (_subject == TrainerSubject.moves) {
-      context.go(
+      context.push(
         '/move-trainer/game'
         '?mode=${_mode.name}'
         '&hardMode=$_isHardMode',
       );
     } else {
-      context.go(
+      context.push(
         '/file-rank-trainer/game'
         '?subject=${_subject.name}'
         '&mode=${_mode.name}'
-        '&reverse=$_isReverse'
         '&hardMode=$_isHardMode',
       );
     }

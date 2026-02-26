@@ -20,7 +20,7 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
   AudioService get _audio => ref.read(audioServiceProvider);
 
   String get _bestKey =>
-      '${state.subject.name}_${state.mode.name}_${state.isReverse}_${state.isHardMode}';
+      '${state.subject.name}_${state.mode.name}_${state.isHardMode}';
 
   int get personalBest => _personalBests[_bestKey] ?? 0;
 
@@ -33,12 +33,11 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
     );
   }
 
-  void startGame(TrainerSubject subject, TrainerMode mode, bool isReverse, {bool isHardMode = false}) {
+  void startGame(TrainerSubject subject, TrainerMode mode, {bool isHardMode = false}) {
     _cancelTimers();
     state = FileRankGameState(
       subject: subject,
       mode: mode,
-      isReverse: isReverse,
       isHardMode: isHardMode,
       timeRemainingSeconds: mode == TrainerMode.speed ? 30 : null,
     );
@@ -59,48 +58,11 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
       return;
     }
 
-    if (state.isReverse) return;
-
     if (state.subject == TrainerSubject.squares) {
       _evaluateSquareAnswer(file, rank);
     } else {
       final tappedIndex = state.currentPromptIsFile ? file : rank;
       _evaluateAnswer(tappedIndex);
-    }
-  }
-
-  void handleAnswerButtonTap(int index) {
-    if (state.isGameOver || state.isWaitingForNext) return;
-    if (!state.isReverse) return;
-
-    _evaluateAnswer(index);
-  }
-
-  void handleSquareReverseFileTap(int fileIndex) {
-    if (state.isGameOver || state.isWaitingForNext) return;
-    if (!state.isReverse || state.subject != TrainerSubject.squares) return;
-
-    final existingRank = state.reverseSelectedRankIndex;
-    if (existingRank != null) {
-      _evaluateSquareAnswer(fileIndex, existingRank);
-    } else {
-      state = state.copyWith(
-        reverseSelectedFileIndex: () => fileIndex,
-      );
-    }
-  }
-
-  void handleSquareReverseRankTap(int rankIndex) {
-    if (state.isGameOver || state.isWaitingForNext) return;
-    if (!state.isReverse || state.subject != TrainerSubject.squares) return;
-
-    final existingFile = state.reverseSelectedFileIndex;
-    if (existingFile != null) {
-      _evaluateSquareAnswer(existingFile, rankIndex);
-    } else {
-      state = state.copyWith(
-        reverseSelectedRankIndex: () => rankIndex,
-      );
     }
   }
 
@@ -225,7 +187,7 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
             ? const Duration(milliseconds: 200)
             : const Duration(milliseconds: 600))
         : (isCorrect
-            ? const Duration(milliseconds: 400)
+            ? const Duration(milliseconds: 700)
             : const Duration(milliseconds: 1200));
 
     _scheduleAdvance(delay);
@@ -259,12 +221,10 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
       isWaitingForNext: false,
     );
 
-    if (!state.isReverse) {
-      if (isFile) {
-        _audio.speakFile(prompt);
-      } else {
-        _audio.speakRank(prompt);
-      }
+    if (isFile) {
+      _audio.speakFile(prompt);
+    } else {
+      _audio.speakRank(prompt);
     }
   }
 
@@ -287,16 +247,12 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
       currentPromptIsFile: true,
       lastFeedback: () => null,
       isWaitingForNext: false,
-      reverseSelectedFileIndex: () => null,
-      reverseSelectedRankIndex: () => null,
     );
 
-    if (!state.isReverse) {
-      _audio.speakSquare(
-        ChessConstants.files[fileIdx],
-        ChessConstants.ranks[rankIdx],
-      );
-    }
+    _audio.speakSquare(
+      ChessConstants.files[fileIdx],
+      ChessConstants.ranks[rankIdx],
+    );
   }
 
   void _startCountdown() {

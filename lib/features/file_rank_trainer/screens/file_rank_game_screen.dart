@@ -4,25 +4,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chessground/chessground.dart';
 import 'package:dartchess/dartchess.dart';
+import '../../../core/constants.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/square_name_overlay.dart';
 import '../models/file_rank_game_state.dart';
 import '../providers/file_rank_game_provider.dart';
 import '../widgets/prompt_display.dart';
 import '../widgets/streak_counter.dart';
 import '../widgets/timer_bar.dart';
 import '../widgets/results_card.dart';
-import '../widgets/answer_buttons.dart';
 
 class FileRankGameScreen extends ConsumerStatefulWidget {
   final TrainerSubject subject;
   final TrainerMode mode;
-  final bool isReverse;
   final bool isHardMode;
 
   const FileRankGameScreen({
     super.key,
     required this.subject,
     required this.mode,
-    this.isReverse = false,
     this.isHardMode = false,
   });
 
@@ -38,7 +38,6 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
       ref.read(fileRankGameProvider.notifier).startGame(
             widget.subject,
             widget.mode,
-            widget.isReverse,
             isHardMode: widget.isHardMode,
           );
     });
@@ -53,7 +52,7 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
         title: Text(_title),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(_menuRoute),
+          onPressed: () => context.pop(),
         ),
         actions: [
           if (gameState.mode != TrainerMode.explore)
@@ -95,9 +94,11 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
                             constraints.maxWidth,
                             constraints.maxHeight,
                           );
-                          return Chessboard.fixed(
+                          final orientation =
+                              widget.isHardMode ? Side.black : Side.white;
+                          final board = Chessboard.fixed(
                             size: boardSize,
-                            orientation: widget.isHardMode ? Side.black : Side.white,
+                            orientation: orientation,
                             fen: kInitialBoardFEN,
                             settings: ChessboardSettings(
                               enableCoordinates: false,
@@ -107,16 +108,26 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
                                   const Duration(milliseconds: 200),
                             ),
                             squareHighlights: gameState.allHighlights,
-                            onTouchedSquare: gameState.isReverse
-                                ? null
-                                : (square) {
-                                    ref
-                                        .read(fileRankGameProvider.notifier)
-                                        .handleBoardTap(
-                                          square.file,
-                                          square.rank,
-                                        );
-                                  },
+                            onTouchedSquare: (square) {
+                              ref
+                                  .read(fileRankGameProvider.notifier)
+                                  .handleBoardTap(
+                                    square.file,
+                                    square.rank,
+                                  );
+                            },
+                          );
+                          final labels = _buildSquareLabels(gameState);
+                          if (labels.isEmpty) return board;
+                          return Stack(
+                            children: [
+                              board,
+                              SquareNameOverlay(
+                                boardSize: boardSize,
+                                orientation: orientation,
+                                labels: labels,
+                              ),
+                            ],
                           );
                         },
                       ),
@@ -128,43 +139,6 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
                     TimerBar(
                       remainingSeconds: gameState.timeRemainingSeconds!,
                     ),
-                  ],
-                  if (gameState.isReverse &&
-                      gameState.mode != TrainerMode.explore) ...[
-                    const SizedBox(height: 16),
-                    if (gameState.subject == TrainerSubject.squares) ...[
-                      AnswerButtons(
-                        isFile: true,
-                        feedback: gameState.lastFeedback,
-                        selectedIndex: gameState.reverseSelectedFileIndex,
-                        onTap: (index) {
-                          ref
-                              .read(fileRankGameProvider.notifier)
-                              .handleSquareReverseFileTap(index);
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      AnswerButtons(
-                        isFile: false,
-                        feedback: gameState.lastFeedback,
-                        selectedIndex: gameState.reverseSelectedRankIndex,
-                        useRankIndices: true,
-                        onTap: (index) {
-                          ref
-                              .read(fileRankGameProvider.notifier)
-                              .handleSquareReverseRankTap(index);
-                        },
-                      ),
-                    ] else
-                      AnswerButtons(
-                        isFile: gameState.currentPromptIsFile,
-                        feedback: gameState.lastFeedback,
-                        onTap: (index) {
-                          ref
-                              .read(fileRankGameProvider.notifier)
-                              .handleAnswerButtonTap(index);
-                        },
-                      ),
                   ],
                   const SizedBox(height: 16),
                 ],
@@ -183,11 +157,10 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
                     ref.read(fileRankGameProvider.notifier).startGame(
                           widget.subject,
                           widget.mode,
-                          widget.isReverse,
                           isHardMode: widget.isHardMode,
                         );
                   },
-                  onBack: () => context.go(_menuRoute),
+                  onBack: () => context.pop(),
                 ),
               ),
           ],
@@ -196,12 +169,44 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
     );
   }
 
-  String get _menuRoute =>
-      '/file-rank-trainer'
-      '?subject=${widget.subject.name}'
-      '&mode=${widget.mode.name}'
-      '&reverse=${widget.isReverse}'
-      '&hardMode=${widget.isHardMode}';
+  List<SquareLabel> _buildSquareLabels(FileRankGameState gameState) {
+    if (gameState.subject != TrainerSubject.squares ||
+        gameState.lastFeedback == null) {
+      return const [];
+    }
+
+    final feedback = gameState.lastFeedback!;
+    if (feedback.tappedRankIndex == null) return const [];
+
+    final labels = <SquareLabel>[];
+    final isCorrect = feedback.result == AnswerResult.correct;
+
+    labels.add(SquareLabel(
+      file: feedback.tappedIndex,
+      rank: feedback.tappedRankIndex!,
+      name: ChessConstants.squareName(
+        feedback.tappedIndex,
+        feedback.tappedRankIndex!,
+      ),
+      color: isCorrect
+          ? AppColors.correctGreen.withValues(alpha: 0.85)
+          : AppColors.incorrectRed.withValues(alpha: 0.85),
+    ));
+
+    if (!isCorrect && feedback.correctRankIndex != null) {
+      labels.add(SquareLabel(
+        file: feedback.correctIndex,
+        rank: feedback.correctRankIndex!,
+        name: ChessConstants.squareName(
+          feedback.correctIndex,
+          feedback.correctRankIndex!,
+        ),
+        color: AppColors.correctGreen.withValues(alpha: 0.85),
+      ));
+    }
+
+    return labels;
+  }
 
   String get _title {
     final subject = switch (widget.subject) {

@@ -108,7 +108,7 @@ class AboutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
             Text(
-              'Made with ♟ for young chess players everywhere',
+              'Made with ❤️ for young chess players everywhere',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
                     fontStyle: FontStyle.italic,
