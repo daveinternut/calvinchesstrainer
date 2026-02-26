@@ -97,10 +97,10 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
                           );
                           return Chessboard.fixed(
                             size: boardSize,
-                            orientation: Side.white,
+                            orientation: widget.isHardMode ? Side.black : Side.white,
                             fen: kInitialBoardFEN,
                             settings: ChessboardSettings(
-                              enableCoordinates: !widget.isHardMode,
+                              enableCoordinates: false,
                               colorScheme: ChessboardColorScheme.green,
                               pieceAssets: PieceSet.cburnett.assets,
                               animationDuration:

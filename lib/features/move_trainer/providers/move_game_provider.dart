@@ -108,7 +108,11 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
   }
 
   void _loadNextPuzzle() {
-    final puzzle = _puzzles.getRandomPuzzle(exclude: state.currentPuzzle);
+    final side = state.isHardMode ? Side.black : Side.white;
+    final puzzle = _puzzles.getRandomPuzzle(
+      exclude: state.currentPuzzle,
+      sideToMove: side,
+    );
 
     state = state.copyWith(
       currentPuzzle: () => puzzle,

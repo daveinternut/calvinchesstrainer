@@ -63,7 +63,7 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                 children: [
                   _buildSubjectChip(TrainerSubject.squares, 'Squares', Icons.grid_on),
                   const SizedBox(width: 8),
-                  _buildMovesChip(),
+                  _buildSubjectChip(TrainerSubject.moves, 'Moves', Icons.swap_horiz_rounded),
                 ],
               ),
               const SizedBox(height: 28),
@@ -74,14 +74,16 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                     ),
               ),
               const SizedBox(height: 12),
-              _buildModeCard(
-                TrainerMode.explore,
-                'Explore',
-                'Tap to learn — no pressure, no scoring',
-                Icons.touch_app_rounded,
-                AppColors.primary,
-              ),
-              const SizedBox(height: 10),
+              if (_subject != TrainerSubject.moves) ...[
+                _buildModeCard(
+                  TrainerMode.explore,
+                  'Explore',
+                  'Tap to learn — no pressure, no scoring',
+                  Icons.touch_app_rounded,
+                  AppColors.primary,
+                ),
+                const SizedBox(height: 10),
+              ],
               _buildModeCard(
                 TrainerMode.practice,
                 'Practice',
@@ -99,65 +101,67 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
               ),
               const SizedBox(height: 28),
               if (_mode != TrainerMode.explore) ...[
-                GestureDetector(
-                  onTap: () => setState(() => _isReverse = !_isReverse),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: _isReverse ? const Color(0xFF1565C0) : Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: _isReverse ? const Color(0xFF1565C0) : Colors.grey.shade300,
-                        width: _isReverse ? 2 : 1,
+                if (_subject != TrainerSubject.moves) ...[
+                  GestureDetector(
+                    onTap: () => setState(() => _isReverse = !_isReverse),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _isReverse ? const Color(0xFF1565C0) : Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: _isReverse ? const Color(0xFF1565C0) : Colors.grey.shade300,
+                          width: _isReverse ? 2 : 1,
+                        ),
+                        boxShadow: _isReverse
+                            ? [BoxShadow(color: const Color(0xFF1565C0).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))]
+                            : [],
                       ),
-                      boxShadow: _isReverse
-                          ? [BoxShadow(color: const Color(0xFF1565C0).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))]
-                          : [],
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.swap_horiz_rounded,
-                          color: _isReverse ? Colors.white : Colors.grey.shade400,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'REVERSE MODE',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.2,
-                                  color: _isReverse ? Colors.white : AppColors.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _isReverse
-                                    ? 'See the board, pick the name'
-                                    : 'Hear the name, tap the board',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _isReverse
-                                      ? Colors.white.withValues(alpha: 0.85)
-                                      : AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.swap_horiz_rounded,
+                            color: _isReverse ? Colors.white : Colors.grey.shade400,
+                            size: 24,
                           ),
-                        ),
-                        if (_isReverse)
-                          const Icon(Icons.check_circle, color: Colors.white, size: 22),
-                      ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'REVERSE MODE',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.2,
+                                    color: _isReverse ? Colors.white : AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _isReverse
+                                      ? 'See the board, pick the name'
+                                      : 'Hear the name, tap the board',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: _isReverse
+                                        ? Colors.white.withValues(alpha: 0.85)
+                                        : AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (_isReverse)
+                            const Icon(Icons.check_circle, color: Colors.white, size: 22),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 10),
+                  const SizedBox(height: 10),
+                ],
                 GestureDetector(
                   onTap: () => setState(() => _isHardMode = !_isHardMode),
                   child: AnimatedContainer(
@@ -197,7 +201,9 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'No labels on the board — pure memory!',
+                                _subject == TrainerSubject.moves
+                                    ? 'User controls black!'
+                                    : 'Board flipped — black\'s perspective!',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: _isHardMode
@@ -256,34 +262,17 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
         selected: selected,
         onSelected: (_) => setState(() {
           _subject = subject;
+          if (subject == TrainerSubject.moves) {
+            if (_mode == TrainerMode.explore) {
+              _mode = TrainerMode.practice;
+            }
+            _isReverse = false;
+          }
         }),
         showCheckmark: false,
         selectedColor: AppColors.primary,
         labelStyle: TextStyle(
           color: selected ? Colors.white : AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-      ),
-    );
-  }
-
-  Widget _buildMovesChip() {
-    return Expanded(
-      child: ChoiceChip(
-        label: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.swap_horiz_rounded, size: 18, color: AppColors.textSecondary),
-            const SizedBox(width: 6),
-            const Text('Moves'),
-          ],
-        ),
-        selected: false,
-        onSelected: (_) => context.go('/move-trainer'),
-        showCheckmark: false,
-        labelStyle: TextStyle(
-          color: AppColors.textPrimary,
           fontWeight: FontWeight.w600,
         ),
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -359,12 +348,20 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
   }
 
   void _startGame() {
-    context.go(
-      '/file-rank-trainer/game'
-      '?subject=${_subject.name}'
-      '&mode=${_mode.name}'
-      '&reverse=$_isReverse'
-      '&hardMode=$_isHardMode',
-    );
+    if (_subject == TrainerSubject.moves) {
+      context.go(
+        '/move-trainer/game'
+        '?mode=${_mode.name}'
+        '&hardMode=$_isHardMode',
+      );
+    } else {
+      context.go(
+        '/file-rank-trainer/game'
+        '?subject=${_subject.name}'
+        '&mode=${_mode.name}'
+        '&reverse=$_isReverse'
+        '&hardMode=$_isHardMode',
+      );
+    }
   }
 }

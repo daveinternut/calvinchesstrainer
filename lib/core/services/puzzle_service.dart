@@ -101,8 +101,12 @@ class PuzzleService {
 
   int get puzzleCount => _puzzles?.length ?? 0;
 
-  ParsedPuzzle getRandomPuzzle({ParsedPuzzle? exclude}) {
-    final puzzles = _puzzles!;
+  ParsedPuzzle getRandomPuzzle({ParsedPuzzle? exclude, Side? sideToMove}) {
+    var puzzles = _puzzles!;
+    if (sideToMove != null) {
+      puzzles = puzzles.where((p) => p.sideToMove == sideToMove).toList();
+    }
+    if (puzzles.isEmpty) puzzles = _puzzles!;
     if (puzzles.length <= 1) return puzzles.first;
 
     ParsedPuzzle candidate;

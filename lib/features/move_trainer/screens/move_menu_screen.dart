@@ -124,7 +124,7 @@ class _MoveMenuScreenState extends State<MoveMenuScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'No labels on the board — pure memory!',
+                              'User controls black!',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: _isHardMode

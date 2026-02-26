@@ -140,8 +140,7 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
       );
     }
 
-    final orientation =
-        gameState.sideToMove == Side.white ? Side.white : Side.black;
+    final orientation = widget.isHardMode ? Side.black : Side.white;
 
     final isInteractive =
         !gameState.isWaitingForNext && !gameState.isGameOver;
@@ -156,7 +155,7 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
       fen: fen,
       lastMove: gameState.lastFeedback == null ? gameState.lastSetupMove : null,
       settings: ChessboardSettings(
-        enableCoordinates: !widget.isHardMode,
+        enableCoordinates: false,
         colorScheme: ChessboardColorScheme.green,
         pieceAssets: PieceSet.cburnett.assets,
         animationDuration: const Duration(milliseconds: 250),
@@ -185,8 +184,9 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
   }
 
   String get _menuRoute =>
-      '/move-trainer'
-      '?mode=${widget.mode.name}'
+      '/file-rank-trainer'
+      '?subject=moves'
+      '&mode=${widget.mode.name}'
       '&hardMode=${widget.isHardMode}';
 
   String get _title {
