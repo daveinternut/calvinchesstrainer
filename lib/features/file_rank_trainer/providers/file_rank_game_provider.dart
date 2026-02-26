@@ -76,6 +76,34 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
     _evaluateAnswer(index);
   }
 
+  void handleSquareReverseFileTap(int fileIndex) {
+    if (state.isGameOver || state.isWaitingForNext) return;
+    if (!state.isReverse || state.subject != TrainerSubject.squares) return;
+
+    final existingRank = state.reverseSelectedRankIndex;
+    if (existingRank != null) {
+      _evaluateSquareAnswer(fileIndex, existingRank);
+    } else {
+      state = state.copyWith(
+        reverseSelectedFileIndex: () => fileIndex,
+      );
+    }
+  }
+
+  void handleSquareReverseRankTap(int rankIndex) {
+    if (state.isGameOver || state.isWaitingForNext) return;
+    if (!state.isReverse || state.subject != TrainerSubject.squares) return;
+
+    final existingFile = state.reverseSelectedFileIndex;
+    if (existingFile != null) {
+      _evaluateSquareAnswer(existingFile, rankIndex);
+    } else {
+      state = state.copyWith(
+        reverseSelectedRankIndex: () => rankIndex,
+      );
+    }
+  }
+
   void _handleExploreTap(int file, int rank) {
     if (state.subject == TrainerSubject.files) {
       state = state.copyWith(
@@ -259,6 +287,8 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
       currentPromptIsFile: true,
       lastFeedback: () => null,
       isWaitingForNext: false,
+      reverseSelectedFileIndex: () => null,
+      reverseSelectedRankIndex: () => null,
     );
 
     if (!state.isReverse) {

@@ -108,33 +108,36 @@ class _StreakCounterState extends State<StreakCounter>
                 );
               },
             ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _showMilestone
-                  ? ScaleTransition(
-                      scale: _milestoneAnimation,
-                      child: _buildStreakText(true),
-                    )
-                  : ScaleTransition(
-                      scale: _pulseAnimation,
-                      child: _buildStreakText(false),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _showMilestone
+                    ? ScaleTransition(
+                        scale: _milestoneAnimation,
+                        child: _buildStreakText(true),
+                      )
+                    : ScaleTransition(
+                        scale: _pulseAnimation,
+                        child: _buildStreakText(false),
+                      ),
+                if (widget.bestStreak > 0)
+                  Text(
+                    _showMilestone
+                        ? _milestoneLabel
+                        : 'Best: ${widget.bestStreak}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight:
+                          _showMilestone ? FontWeight.bold : FontWeight.normal,
+                      color: _showMilestone
+                          ? AppColors.correctGreen
+                          : AppColors.textSecondary.withValues(alpha: 0.7),
                     ),
-              if (widget.bestStreak > 0)
-                Text(
-                  _showMilestone
-                      ? _milestoneLabel
-                      : 'Best: ${widget.bestStreak}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight:
-                        _showMilestone ? FontWeight.bold : FontWeight.normal,
-                    color: _showMilestone
-                        ? AppColors.correctGreen
-                        : AppColors.textSecondary.withValues(alpha: 0.7),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

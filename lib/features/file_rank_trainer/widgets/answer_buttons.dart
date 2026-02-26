@@ -7,12 +7,16 @@ class AnswerButtons extends StatelessWidget {
   final bool isFile;
   final AnswerFeedback? feedback;
   final ValueChanged<int> onTap;
+  final int? selectedIndex;
+  final bool useRankIndices;
 
   const AnswerButtons({
     super.key,
     required this.isFile,
     required this.feedback,
     required this.onTap,
+    this.selectedIndex,
+    this.useRankIndices = false,
   });
 
   @override
@@ -40,16 +44,24 @@ class AnswerButtons extends StatelessWidget {
   }
 
   Color _buttonColor(int index) {
-    if (feedback == null) return AppColors.primary;
+    if (feedback != null) {
+      final tapped = useRankIndices ? feedback!.tappedRankIndex : feedback!.tappedIndex;
+      final correct = useRankIndices ? feedback!.correctRankIndex : feedback!.correctIndex;
 
-    if (feedback!.result == AnswerResult.correct &&
-        index == feedback!.correctIndex) {
-      return AppColors.correctGreen;
+      if (feedback!.result == AnswerResult.correct && index == correct) {
+        return AppColors.correctGreen;
+      }
+      if (feedback!.result == AnswerResult.incorrect) {
+        if (index == tapped) return AppColors.incorrectRed;
+        if (index == correct) return AppColors.correctGreen;
+      }
+      return AppColors.primary;
     }
-    if (feedback!.result == AnswerResult.incorrect) {
-      if (index == feedback!.tappedIndex) return AppColors.incorrectRed;
-      if (index == feedback!.correctIndex) return AppColors.correctGreen;
+
+    if (selectedIndex != null && index == selectedIndex) {
+      return const Color(0xFF1565C0);
     }
+
     return AppColors.primary;
   }
 }

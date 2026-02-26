@@ -23,7 +23,7 @@ The app follows a **feature-based folder structure** with Riverpod for state man
 - Need to validate a move? Use `position.isLegal(move)`, not manual rule checks.
 - Need to show legal destinations? Pass `makeLegalMoves(position)` as `validMoves` in `GameData` — the dots render automatically.
 - Need to load a puzzle position? Use `Chess.fromSetup(Setup.parseFen(fen))`.
-- Need SAN notation like "Nf3"? Use `position.parseSan("Nf3")` and `position.toSan(move)`.
+- Need SAN notation like "Nf3"? Use `position.parseSan("Nf3")` and `position.makeSan(move)` (returns `(Position, String)`).
 
 **GPL-3.0 note**: Both chessground and dartchess are GPL-3.0 licensed. Our app must also be GPL-3.0 if distributed.
 
@@ -31,9 +31,9 @@ The app follows a **feature-based folder structure** with Riverpod for state man
 
 We use lichess's `chessground` package for all board rendering. No custom board widget — the plugin handles everything.
 
-**Static board** (current trainers): `Chessboard.fixed` renders a non-interactive board from a FEN string. We pass `onTouchedSquare` for tap handling and `squareHighlights` for file/rank/square coloring.
+**Static board** (file/rank/square trainers): `Chessboard.fixed` renders a non-interactive board from a FEN string. We pass `onTouchedSquare` for tap handling and `squareHighlights` for file/rank/square coloring.
 
-**Interactive board** (future game modes): `Chessboard` with a `GameData` object provides drag-and-drop piece movement, legal move destination dots, promotion UI, check highlighting, last-move highlighting, and piece animation — all built in.
+**Interactive board** (move trainer): `Chessboard` with a `GameData` object provides drag-and-drop piece movement, legal move destination dots, promotion UI, check highlighting, last-move highlighting, and piece animation — all built in. Used by the move trainer for puzzle-based move execution.
 
 ### How We Wire It
 
@@ -54,6 +54,38 @@ Chessboard.fixed(
   },
 )
 ```
+
+### How We Wire the Interactive Board (Move Trainer)
+
+```dart
+Chessboard(
+  size: boardSize,
+  orientation: orientation,             // Side.white or Side.black based on puzzle
+  fen: displayFen,                      // puzzle position FEN (or updated after correct move)
+  lastMove: setupMove,                  // highlight opponent's last move
+  settings: ChessboardSettings(
+    enableCoordinates: !isHardMode,
+    colorScheme: ChessboardColorScheme.green,
+    pieceAssets: PieceSet.cburnett.assets,
+    animationDuration: Duration(milliseconds: 250),
+    showValidMoves: true,               // destination dots
+    autoQueenPromotion: true,           // skip promotion dialog
+  ),
+  game: GameData(
+    playerSide: PlayerSide.white,       // or .black based on puzzle
+    sideToMove: sideToMove,
+    validMoves: makeLegalMoves(position),
+    isCheck: position.isCheck,
+    promotionMove: null,
+    onMove: (move, {viaDragAndDrop}) { /* evaluate move */ },
+    onPromotionSelection: (_) {},
+  ),
+  shapes: feedbackShapes,               // green arrow on incorrect answer
+  squareHighlights: squareHighlights,   // green from/to on correct answer
+)
+```
+
+**Move evaluation**: On correct move, the FEN updates to the new position (piece stays at destination). On incorrect move, the FEN is NOT updated, so the piece snaps back to its origin automatically. A green arrow shape shows the correct move for feedback.
 
 ### Highlight System
 
@@ -90,11 +122,13 @@ chessground renders coordinates inside the edge squares (lichess-style), not as 
 **API methods**:
 - `speakFile(String file)` — plays file letter clip + haptic
 - `speakRank(String rank)` — plays rank number clip + haptic
-- `speakSquare(String file, String rank)` — plays file then rank with 200ms gap
+- `speakSquare(String file, String rank)` — plays file then rank with await sequencing
+- `speakPiece(String pieceName)` — plays piece name clip (pawn/rook/bishop/knight/queen/king) + haptic
+- `speakMove(String pieceName, String file, String rank)` — chains piece → file → rank clips with await sequencing. Example: "Queen b6" = piece_queen.mp3 → file_b.mp3 → rank_6.mp3
 - `playCorrect()` / `playIncorrect()` — SFX + haptic
 - `playStreakMilestone(int streak)` — milestone clip at 5/10/15/20
 - `playNewRecord()` — "New record!" clip
-- `speak(String text)` — flutter_tts fallback for dynamic text
+- `speak(String text)` — flutter_tts fallback for dynamic text (used for castling prompts: "castle kingside")
 
 **Adding new audio**: Place MP3/M4A files in `assets/sounds/`, add a method to AudioService. No pubspec changes needed (the directory is already declared).
 
@@ -155,11 +189,71 @@ Or use Xcode: open `ios/Runner.xcworkspace`, select device, Product > Run.
 
 **iOS deployment target**: 15.0 (set in both Podfile and project.pbxproj, required by cloud_firestore).
 
+## Move Trainer
+
+### Overview
+
+The final step in the board notation learning progression: Files → Ranks → Squares → **Moves**. Users see real chess positions from the Lichess puzzle database and must execute a specific move described in notation (e.g., "Queen b6"). This teaches translating notation into board actions — not puzzle solving.
+
+### Puzzle Data Pipeline
+
+**Source**: Lichess puzzle database (CC0 license, 5.7M puzzles). Available at `https://database.lichess.org/lichess_db_puzzle.csv.zst`.
+
+**CSV format**: `PuzzleId,FEN,Moves,Rating,RatingDeviation,Popularity,NbPlays,Themes,GameUrl,OpeningTags`
+
+The `Moves` field is space-separated UCI: `moves[0]` is the opponent's setup move (played to reach the puzzle position), `moves[1]` is the first solution move (the answer the user must execute).
+
+**Curation script** (`scripts/curate_puzzles.py`):
+- Downloads and filters the Lichess CSV
+- Filters: rating 600-1500, NbPlays > 500, no promotions, balanced across piece types
+- Outputs ~500 puzzles as compact JSON to `assets/puzzles/moves_puzzles.json`
+- Re-run to refresh the puzzle set: `python3 scripts/curate_puzzles.py lichess_db_puzzle.csv`
+
+**Runtime parsing** (PuzzleService):
+1. Loads JSON from assets
+2. Parses each FEN via `Chess.fromSetup(Setup.parseFen(fen))`
+3. Plays setup move (`moves[0]`) to reach puzzle position
+4. Computes SAN via `position.makeSan(answerMove)` (e.g., "Qb6")
+5. Extracts piece type from `position.board.pieceAt(move.from)`
+6. Returns `ParsedPuzzle` with position, expected move, SAN, piece name, side to move
+
+### Game Modes
+
+**Practice**: Unlimited puzzles, no timer. Correct = 400ms delay, incorrect = 1200ms delay (shows green arrow to correct destination). Streak tracking with milestones.
+
+**Speed Round**: 30-second countdown. Correct = 200ms delay, incorrect = 600ms delay. Results card with score, accuracy, best streak, new record badge. Personal best tracking (keyed by mode+hardMode).
+
+No explore mode. No reverse mode (doesn't apply to moves).
+
+### Interactive Board
+
+This is the first feature using chessground's interactive `Chessboard` with `GameData`. Key differences from the static `Chessboard.fixed` used by file/rank/square trainers:
+- Pieces can be dragged and dropped (or tap-to-select, tap-to-place)
+- Legal move destination dots shown automatically via `validMoves`
+- Last-move highlighting via `lastMove` parameter
+- Board orientation set based on puzzle's side to move
+- Arrow shapes for feedback via `shapes` parameter
+
+**Move evaluation flow**:
+- User makes any legal move via drag-and-drop or tap
+- If `move.from == expected.from && move.to == expected.to` → correct
+- Correct: update FEN to new position (piece stays), green square highlights, advance
+- Incorrect: DON'T update FEN (piece snaps back automatically), green arrow shows correct move, advance
+
+### State Machine
+
+`MoveGameState` follows the same immutable `copyWith` pattern as `FileRankGameState`. Key fields:
+- `currentPuzzle` — ParsedPuzzle with position, expected move, SAN, piece info
+- `displayFen` — current board FEN (updates on correct move)
+- `sideToMove` — determines board orientation and which pieces are interactive
+- `lastSetupMove` — opponent's last move, highlighted on board
+- `feedbackShapes` getter — returns green arrow ISet<Shape> for incorrect feedback
+- `squareHighlights` getter — returns green from/to highlights for correct feedback
+- Standard scoring fields: streak, bestStreak, totalCorrect, totalAttempts, timeRemainingSeconds, isGameOver, isWaitingForNext
+
 ## Planned Features (Not Yet Built)
 
-- **Square Trainer**: Combines files + ranks into full square names (e.g., "e4"). Will need 64 additional audio clips. AudioService already has `speakSquare()` ready.
-- **Move Trainer**: Given notation like "Qb6", user makes the move on the board. Will use `Chessboard` with `GameData` for interactive drag-and-drop, and `dartchess` for move validation (`position.parseSan("Qb6")`, `position.isLegal(move)`, `position.play(move)`, `makeLegalMoves(position)`).
-- **Tactics Trainer**: Show positions with forks/pins/skewers, user identifies them. Will use Lichess puzzle database (CC0, 5.7M tagged puzzles). Positions loaded via `Chess.fromSetup(Setup.parseFen(fen))`. Interactive board via `Chessboard` + `GameData`.
+- **Tactics Trainer**: Show positions with forks/pins/skewers, user identifies them. Will use Lichess puzzle database (same CC0 source as move trainer, different filtering). Interactive board via `Chessboard` + `GameData`.
 - **Firebase**: Auth + Firestore for user profiles, progress persistence, leaderboards. Packages installed but not configured. Needs `flutterfire configure` with the Internut Education Firebase project.
 
 ## Project Info

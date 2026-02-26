@@ -88,6 +88,33 @@ class AudioService {
     await _playAsset(_voicePlayer, 'assets/sounds/new_record.mp3');
   }
 
+  Future<void> speakPiece(String pieceName) async {
+    HapticFeedback.lightImpact();
+    await _playAsset(_voicePlayer, 'assets/sounds/piece_$pieceName.mp3');
+  }
+
+  Future<void> speakMove(
+    String pieceName,
+    String file,
+    String rank, {
+    bool isCapture = false,
+    bool isCheck = false,
+    bool isCheckmate = false,
+  }) async {
+    HapticFeedback.lightImpact();
+    await _playAsset(_voicePlayer, 'assets/sounds/piece_$pieceName.mp3', awaitCompletion: true);
+    if (isCapture) {
+      await _playAsset(_voicePlayer, 'assets/sounds/move_takes.mp3', awaitCompletion: true);
+    }
+    await _playAsset(_voicePlayer, 'assets/sounds/file_$file.mp3', awaitCompletion: true);
+    await _playAsset(_voicePlayer, 'assets/sounds/rank_$rank.mp3', awaitCompletion: isCheck || isCheckmate);
+    if (isCheckmate) {
+      await _playAsset(_voicePlayer, 'assets/sounds/move_checkmate.mp3');
+    } else if (isCheck) {
+      await _playAsset(_voicePlayer, 'assets/sounds/move_check.mp3');
+    }
+  }
+
   Future<void> playGameOver() async {
     HapticFeedback.mediumImpact();
   }

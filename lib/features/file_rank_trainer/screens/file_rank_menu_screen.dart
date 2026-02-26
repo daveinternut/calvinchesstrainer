@@ -63,7 +63,7 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                 children: [
                   _buildSubjectChip(TrainerSubject.squares, 'Squares', Icons.grid_on),
                   const SizedBox(width: 8),
-                  _buildDisabledChip('Moves', Icons.swap_horiz_rounded),
+                  _buildMovesChip(),
                 ],
               ),
               const SizedBox(height: 28),
@@ -99,7 +99,6 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
               ),
               const SizedBox(height: 28),
               if (_mode != TrainerMode.explore) ...[
-                if (_subject != TrainerSubject.squares)
                 GestureDetector(
                   onTap: () => setState(() => _isReverse = !_isReverse),
                   child: AnimatedContainer(
@@ -158,7 +157,6 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                     ),
                   ),
                 ),
-                if (_subject != TrainerSubject.squares)
                 const SizedBox(height: 10),
                 GestureDetector(
                   onTap: () => setState(() => _isHardMode = !_isHardMode),
@@ -258,9 +256,6 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
         selected: selected,
         onSelected: (_) => setState(() {
           _subject = subject;
-          if (subject == TrainerSubject.squares) {
-            _isReverse = false;
-          }
         }),
         showCheckmark: false,
         selectedColor: AppColors.primary,
@@ -273,29 +268,22 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
     );
   }
 
-  Widget _buildDisabledChip(String label, IconData icon) {
+  Widget _buildMovesChip() {
     return Expanded(
       child: ChoiceChip(
         label: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: Colors.grey.shade400),
+            Icon(Icons.swap_horiz_rounded, size: 18, color: AppColors.textSecondary),
             const SizedBox(width: 6),
-            Text(label),
+            const Text('Moves'),
           ],
         ),
         selected: false,
-        onSelected: (_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Coming soon!'),
-              duration: Duration(seconds: 1),
-            ),
-          );
-        },
+        onSelected: (_) => context.go('/move-trainer'),
         showCheckmark: false,
         labelStyle: TextStyle(
-          color: Colors.grey.shade400,
+          color: AppColors.textPrimary,
           fontWeight: FontWeight.w600,
         ),
         padding: const EdgeInsets.symmetric(vertical: 12),

@@ -6,6 +6,9 @@ import 'features/home/screens/home_screen.dart';
 import 'features/file_rank_trainer/screens/file_rank_menu_screen.dart';
 import 'features/file_rank_trainer/screens/file_rank_game_screen.dart';
 import 'features/file_rank_trainer/models/file_rank_game_state.dart';
+import 'features/move_trainer/screens/move_menu_screen.dart';
+import 'features/move_trainer/screens/move_game_screen.dart';
+import 'features/move_trainer/models/move_game_state.dart';
 import 'features/tactics_trainer/screens/tactics_trainer_screen.dart';
 
 final _router = GoRouter(
@@ -62,6 +65,41 @@ final _router = GoRouter(
           subject: subject,
           mode: mode,
           isReverse: reverseParam == 'true',
+          isHardMode: hardModeParam == 'true',
+        );
+      },
+    ),
+    GoRoute(
+      path: '/move-trainer',
+      builder: (context, state) {
+        final modeParam = state.uri.queryParameters['mode'];
+        final hardModeParam = state.uri.queryParameters['hardMode'];
+
+        return MoveMenuScreen(
+          initialMode: modeParam != null
+              ? MoveTrainerMode.values.firstWhere(
+                  (m) => m.name == modeParam,
+                  orElse: () => MoveTrainerMode.practice,
+                )
+              : MoveTrainerMode.practice,
+          initialHardMode: hardModeParam == 'true',
+        );
+      },
+    ),
+    GoRoute(
+      path: '/move-trainer/game',
+      builder: (context, state) {
+        final modeParam = state.uri.queryParameters['mode'] ?? 'practice';
+        final hardModeParam =
+            state.uri.queryParameters['hardMode'] ?? 'false';
+
+        final mode = MoveTrainerMode.values.firstWhere(
+          (m) => m.name == modeParam,
+          orElse: () => MoveTrainerMode.practice,
+        );
+
+        return MoveGameScreen(
+          mode: mode,
           isHardMode: hardModeParam == 'true',
         );
       },

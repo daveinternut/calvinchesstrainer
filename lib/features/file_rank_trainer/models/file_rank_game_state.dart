@@ -46,6 +46,8 @@ class FileRankGameState {
   final AnswerFeedback? lastFeedback;
   final bool isGameOver;
   final bool isWaitingForNext;
+  final int? reverseSelectedFileIndex;
+  final int? reverseSelectedRankIndex;
 
   const FileRankGameState({
     required this.subject,
@@ -64,6 +66,8 @@ class FileRankGameState {
     this.lastFeedback,
     this.isGameOver = false,
     this.isWaitingForNext = false,
+    this.reverseSelectedFileIndex,
+    this.reverseSelectedRankIndex,
   });
 
   FileRankGameState copyWith({
@@ -83,6 +87,8 @@ class FileRankGameState {
     AnswerFeedback? Function()? lastFeedback,
     bool? isGameOver,
     bool? isWaitingForNext,
+    int? Function()? reverseSelectedFileIndex,
+    int? Function()? reverseSelectedRankIndex,
   }) {
     return FileRankGameState(
       subject: subject ?? this.subject,
@@ -109,6 +115,12 @@ class FileRankGameState {
           lastFeedback != null ? lastFeedback() : this.lastFeedback,
       isGameOver: isGameOver ?? this.isGameOver,
       isWaitingForNext: isWaitingForNext ?? this.isWaitingForNext,
+      reverseSelectedFileIndex: reverseSelectedFileIndex != null
+          ? reverseSelectedFileIndex()
+          : this.reverseSelectedFileIndex,
+      reverseSelectedRankIndex: reverseSelectedRankIndex != null
+          ? reverseSelectedRankIndex()
+          : this.reverseSelectedRankIndex,
     );
   }
 

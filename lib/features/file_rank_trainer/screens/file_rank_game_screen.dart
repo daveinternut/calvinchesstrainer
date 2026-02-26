@@ -132,15 +132,39 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
                   if (gameState.isReverse &&
                       gameState.mode != TrainerMode.explore) ...[
                     const SizedBox(height: 16),
-                    AnswerButtons(
-                      isFile: gameState.currentPromptIsFile,
-                      feedback: gameState.lastFeedback,
-                      onTap: (index) {
-                        ref
-                            .read(fileRankGameProvider.notifier)
-                            .handleAnswerButtonTap(index);
-                      },
-                    ),
+                    if (gameState.subject == TrainerSubject.squares) ...[
+                      AnswerButtons(
+                        isFile: true,
+                        feedback: gameState.lastFeedback,
+                        selectedIndex: gameState.reverseSelectedFileIndex,
+                        onTap: (index) {
+                          ref
+                              .read(fileRankGameProvider.notifier)
+                              .handleSquareReverseFileTap(index);
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      AnswerButtons(
+                        isFile: false,
+                        feedback: gameState.lastFeedback,
+                        selectedIndex: gameState.reverseSelectedRankIndex,
+                        useRankIndices: true,
+                        onTap: (index) {
+                          ref
+                              .read(fileRankGameProvider.notifier)
+                              .handleSquareReverseRankTap(index);
+                        },
+                      ),
+                    ] else
+                      AnswerButtons(
+                        isFile: gameState.currentPromptIsFile,
+                        feedback: gameState.lastFeedback,
+                        onTap: (index) {
+                          ref
+                              .read(fileRankGameProvider.notifier)
+                              .handleAnswerButtonTap(index);
+                        },
+                      ),
                   ],
                   const SizedBox(height: 16),
                 ],
