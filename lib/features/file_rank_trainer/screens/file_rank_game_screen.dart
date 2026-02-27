@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chessground/chessground.dart';
 import 'package:dartchess/dartchess.dart';
+import '../../../core/audio/audio_service.dart';
 import '../../../core/constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/square_name_overlay.dart';
@@ -31,9 +32,12 @@ class FileRankGameScreen extends ConsumerStatefulWidget {
 }
 
 class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
+  late final AudioService _audioService;
+
   @override
   void initState() {
     super.initState();
+    _audioService = ref.read(audioServiceProvider);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(fileRankGameProvider.notifier).startGame(
             widget.subject,
@@ -41,6 +45,12 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
             isHardMode: widget.isHardMode,
           );
     });
+  }
+
+  @override
+  void dispose() {
+    _audioService.stop();
+    super.dispose();
   }
 
   @override

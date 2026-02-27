@@ -6,6 +6,7 @@ import 'package:chessground/chessground.dart';
 import 'package:dartchess/dartchess.dart' show Piece, Side;
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
+import '../../../core/audio/audio_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../file_rank_trainer/widgets/streak_counter.dart';
 import '../../file_rank_trainer/widgets/timer_bar.dart';
@@ -35,9 +36,12 @@ class ChessVisionGameScreen extends ConsumerStatefulWidget {
 
 class _ChessVisionGameScreenState
     extends ConsumerState<ChessVisionGameScreen> {
+  late final AudioService _audioService;
+
   @override
   void initState() {
     super.initState();
+    _audioService = ref.read(audioServiceProvider);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(chessVisionProvider.notifier).startGame(
             widget.drill,
@@ -46,6 +50,12 @@ class _ChessVisionGameScreenState
             targetPiece: widget.target,
           );
     });
+  }
+
+  @override
+  void dispose() {
+    _audioService.stop();
+    super.dispose();
   }
 
   @override

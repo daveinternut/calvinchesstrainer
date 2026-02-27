@@ -41,179 +41,193 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Drill type',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Drill type',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  _buildDrillChip(
-                    VisionDrillType.forksAndSkewers,
-                    'Forks & Skewers',
-                    Icons.call_split_rounded,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildDrillChip(
-                    VisionDrillType.pawnAttack,
-                    'Pawn Attack',
-                    Icons.gps_not_fixed_rounded,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  _buildDrillChip(
-                    VisionDrillType.knightSight,
-                    'Knight Sight',
-                    Icons.open_with_rounded,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildDrillChip(
-                    VisionDrillType.knightFlight,
-                    'Knight Flight',
-                    Icons.route_rounded,
-                  ),
-                ],
-              ),
-              if (_drill == VisionDrillType.forksAndSkewers) ...[
-                const SizedBox(height: 24),
-                Text(
-                  'Choose your piece',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    for (final p in WhitePiece.values) ...[
-                      if (p != WhitePiece.values.first)
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        _buildDrillChip(
+                          VisionDrillType.forksAndSkewers,
+                          'Forks & Skewers',
+                          Icons.call_split_rounded,
+                        ),
                         const SizedBox(width: 8),
-                      _buildPieceImageChip(
-                        pieceKind: p.pieceKind,
-                        selected: _piece == p,
-                        onSelected: () => setState(() => _piece = p),
-                        selectedColor: AppColors.primary,
-                        tooltip: p.label,
+                        _buildDrillChip(
+                          VisionDrillType.pawnAttack,
+                          'Pawn Attack',
+                          Icons.gps_not_fixed_rounded,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _buildDrillChip(
+                          VisionDrillType.knightSight,
+                          'Knight Sight',
+                          Icons.open_with_rounded,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildDrillChip(
+                          VisionDrillType.knightFlight,
+                          'Knight Flight',
+                          Icons.route_rounded,
+                        ),
+                      ],
+                    ),
+                    if (_drill == VisionDrillType.forksAndSkewers) ...[
+                      const SizedBox(height: 24),
+                      Text(
+                        'Choose your piece',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          for (final p in WhitePiece.values) ...[
+                            if (p != WhitePiece.values.first)
+                              const SizedBox(width: 8),
+                            _buildPieceImageChip(
+                              pieceKind: p.pieceKind,
+                              selected: _piece == p,
+                              onSelected: () => setState(() => _piece = p),
+                              selectedColor: AppColors.primary,
+                              tooltip: p.label,
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Target piece',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          for (final t in TargetPiece.values) ...[
+                            if (t != TargetPiece.values.first)
+                              const SizedBox(width: 8),
+                            _buildPieceImageChip(
+                              pieceKind: t.pieceKind,
+                              selected: _target == t,
+                              onSelected: () => setState(() => _target = t),
+                              selectedColor: Colors.grey.shade800,
+                              tooltip: t.label,
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Choose a mode',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildModeCard(
+                        VisionMode.practice,
+                        'Practice',
+                        'Find forks and skewers — no timer',
+                        Icons.school_rounded,
+                        const Color(0xFF1565C0),
+                      ),
+                      const SizedBox(height: 10),
+                      _buildModeCard(
+                        VisionMode.speed,
+                        'Speed Round',
+                        '60 seconds — solve as many as you can!',
+                        Icons.timer_rounded,
+                        const Color(0xFFE65100),
+                      ),
+                      const SizedBox(height: 10),
+                      _buildModeCard(
+                        VisionMode.concentric,
+                        'Concentric Drill',
+                        'Complete all positions — beat your time!',
+                        Icons.track_changes_rounded,
+                        const Color(0xFF6A1B9A),
+                      ),
+                    ],
+                    if (_drill == VisionDrillType.pawnAttack) ...[
+                      const SizedBox(height: 24),
+                      Text(
+                        'Choose your piece',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          for (final p in WhitePiece.values) ...[
+                            if (p != WhitePiece.values.first)
+                              const SizedBox(width: 8),
+                            _buildPieceImageChip(
+                              pieceKind: p.pieceKind,
+                              selected: _piece == p,
+                              onSelected: () => setState(() => _piece = p),
+                              selectedColor: AppColors.primary,
+                              tooltip: p.label,
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Choose a mode',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildModeCard(
+                        VisionMode.practice,
+                        'Practice',
+                        'Capture all pawns — no timer',
+                        Icons.school_rounded,
+                        const Color(0xFF1565C0),
+                      ),
+                      const SizedBox(height: 10),
+                      _buildModeCard(
+                        VisionMode.speed,
+                        'Timed',
+                        'Clear 3 to 8 pawns — beat your time!',
+                        Icons.timer_rounded,
+                        const Color(0xFFE65100),
                       ),
                     ],
                   ],
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  'Target piece',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    for (final t in TargetPiece.values) ...[
-                      if (t != TargetPiece.values.first)
-                        const SizedBox(width: 8),
-                      _buildPieceImageChip(
-                        pieceKind: t.pieceKind,
-                        selected: _target == t,
-                        onSelected: () => setState(() => _target = t),
-                        selectedColor: Colors.grey.shade800,
-                        tooltip: t.label,
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Choose a mode',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                _buildModeCard(
-                  VisionMode.practice,
-                  'Practice',
-                  'Find forks and skewers — no timer',
-                  Icons.school_rounded,
-                  const Color(0xFF1565C0),
-                ),
-                const SizedBox(height: 10),
-                _buildModeCard(
-                  VisionMode.speed,
-                  'Speed Round',
-                  '60 seconds — solve as many as you can!',
-                  Icons.timer_rounded,
-                  const Color(0xFFE65100),
-                ),
-                const SizedBox(height: 10),
-                _buildModeCard(
-                  VisionMode.concentric,
-                  'Concentric Drill',
-                  'Complete all positions — beat your time!',
-                  Icons.track_changes_rounded,
-                  const Color(0xFF6A1B9A),
-                ),
-              ],
-              if (_drill == VisionDrillType.pawnAttack) ...[
-                const SizedBox(height: 24),
-                Text(
-                  'Choose your piece',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    for (final p in WhitePiece.values) ...[
-                      if (p != WhitePiece.values.first)
-                        const SizedBox(width: 8),
-                      _buildPieceImageChip(
-                        pieceKind: p.pieceKind,
-                        selected: _piece == p,
-                        onSelected: () => setState(() => _piece = p),
-                        selectedColor: AppColors.primary,
-                        tooltip: p.label,
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Choose a mode',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                _buildModeCard(
-                  VisionMode.practice,
-                  'Practice',
-                  'Capture all pawns — no timer',
-                  Icons.school_rounded,
-                  const Color(0xFF1565C0),
-                ),
-                const SizedBox(height: 10),
-                _buildModeCard(
-                  VisionMode.speed,
-                  'Timed',
-                  'Clear 3 to 8 pawns — beat your time!',
-                  Icons.timer_rounded,
-                  const Color(0xFFE65100),
-                ),
-              ],
-              const Spacer(),
-              SizedBox(
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+              child: SizedBox(
                 height: 56,
+                width: double.infinity,
                 child: FilledButton(
                   onPressed: _startGame,
                   style: FilledButton.styleFrom(
@@ -228,9 +242,8 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                   child: const Text('Start'),
                 ),
               ),
-              const SizedBox(height: 16),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/audio/audio_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/square_name_overlay.dart';
 import '../../file_rank_trainer/widgets/streak_counter.dart';
@@ -31,15 +32,24 @@ class MoveGameScreen extends ConsumerStatefulWidget {
 }
 
 class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
+  late final AudioService _audioService;
+
   @override
   void initState() {
     super.initState();
+    _audioService = ref.read(audioServiceProvider);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(moveGameProvider.notifier).startGame(
             widget.mode,
             isHardMode: widget.isHardMode,
           );
     });
+  }
+
+  @override
+  void dispose() {
+    _audioService.stop();
+    super.dispose();
   }
 
   @override

@@ -119,6 +119,12 @@ class AudioService {
     HapticFeedback.mediumImpact();
   }
 
+  Future<void> stop() async {
+    await _voicePlayer.stop();
+    await _sfxPlayer.stop();
+    await _tts.stop();
+  }
+
   void dispose() {
     _tts.stop();
     _voicePlayer.dispose();
