@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyDIC53Bl8Swz3vwYlzUEixRikWZxEjXpMg</string>
+	<key>GCM_SENDER_ID</key>
+	<string>522968736205</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>education.internut.calvinchesstrainer.dev</string>
+	<key>PROJECT_ID</key>
+	<string>calvin-chess-trainer</string>
+	<key>STORAGE_BUCKET</key>
+	<string>calvin-chess-trainer.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:522968736205:ios:22715df195c09ba4bc2484</string>
+</dict>
+</plist>

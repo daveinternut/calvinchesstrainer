@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/audio/audio_service.dart';
 import '../../../core/constants.dart';
+import '../../../core/services/analytics_service.dart';
 import '../models/file_rank_game_state.dart';
 
 final fileRankGameProvider =
@@ -18,6 +19,7 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
   final Map<String, int> _personalBests = {};
 
   AudioService get _audio => ref.read(audioServiceProvider);
+  AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
 
   String get _bestKey =>
       '${state.subject.name}_${state.mode.name}_${state.isHardMode}';
@@ -40,6 +42,12 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
       mode: mode,
       isHardMode: isHardMode,
       timeRemainingSeconds: mode == TrainerMode.speed ? 30 : null,
+    );
+
+    _analytics.logFileRankDrillStarted(
+      subject: subject.name,
+      mode: mode.name,
+      hardMode: isHardMode,
     );
 
     if (mode != TrainerMode.explore) {
@@ -296,11 +304,21 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
 
   void _checkAndUpdatePersonalBest() {
     if (state.mode != TrainerMode.speed) return;
-    final current = _personalBests[_bestKey] ?? 0;
-    if (state.totalCorrect > current) {
+    final newRecord = state.totalCorrect > (_personalBests[_bestKey] ?? 0) &&
+        state.totalCorrect > 0;
+    if (newRecord) {
       _personalBests[_bestKey] = state.totalCorrect;
       _audio.playNewRecord();
     }
+    _analytics.logFileRankDrillCompleted(
+      subject: state.subject.name,
+      mode: state.mode.name,
+      hardMode: state.isHardMode,
+      totalCorrect: state.totalCorrect,
+      totalAttempts: state.totalAttempts,
+      bestStreak: state.bestStreak,
+      isNewRecord: newRecord,
+    );
   }
 
   void _cancelTimers() {

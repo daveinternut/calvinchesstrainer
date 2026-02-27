@@ -89,7 +89,6 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Expanded(
-                      flex: 3,
                       child: _BigTrainingCard(
                         title: 'Chess Notation',
                         subtitle: 'Learn the board!',
@@ -100,20 +99,32 @@ class HomeScreen extends StatelessWidget {
                         onTap: () => context.push('/file-rank-trainer'),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     Expanded(
-                      flex: 2,
                       child: _BigTrainingCard(
-                        title: 'Opening Fundamentals',
-                        subtitle: 'Coming soon!',
-                        icon: Icons.castle_rounded,
-                        secondaryIcon: Icons.auto_awesome_rounded,
-                        color: const Color(0xFFE65100),
-                        imagePath: 'assets/images/card_openings.png',
-                        comingSoon: true,
-                        onTap: null,
+                        title: 'Chess Vision',
+                        subtitle: 'See the board!',
+                        icon: Icons.visibility_rounded,
+                        secondaryIcon: Icons.call_split_rounded,
+                        color: const Color(0xFF6A1B9A),
+                        imagePath: 'assets/images/card_vision.png',
+                        onTap: () => context.push('/chess-vision'),
                       ),
                     ),
+                    // TODO: Re-add for post-launch
+                    // const SizedBox(height: 12),
+                    // Expanded(
+                    //   child: _BigTrainingCard(
+                    //     title: 'Opening Fundamentals',
+                    //     subtitle: 'Coming soon!',
+                    //     icon: Icons.castle_rounded,
+                    //     secondaryIcon: Icons.auto_awesome_rounded,
+                    //     color: const Color(0xFFE65100),
+                    //     imagePath: 'assets/images/card_openings.png',
+                    //     comingSoon: true,
+                    //     onTap: null,
+                    //   ),
+                    // ),
                   ],
                 ),
               ),

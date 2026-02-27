@@ -5,6 +5,7 @@ import 'package:dartchess/dartchess.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/audio/audio_service.dart';
+import '../../../core/services/analytics_service.dart';
 import '../../../core/services/puzzle_service.dart';
 import '../models/move_game_state.dart';
 
@@ -18,6 +19,7 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
 
   PuzzleService get _puzzles => ref.read(puzzleServiceProvider);
   AudioService get _audio => ref.read(audioServiceProvider);
+  AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
 
   String get _bestKey => '${state.mode.name}_${state.isHardMode}';
   int get personalBest => _personalBests[_bestKey] ?? 0;
@@ -35,6 +37,11 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
       isHardMode: isHardMode,
       timeRemainingSeconds: mode == MoveTrainerMode.speed ? 30 : null,
       isLoading: true,
+    );
+
+    _analytics.logMoveDrillStarted(
+      mode: mode.name,
+      hardMode: isHardMode,
     );
 
     await _puzzles.loadPuzzles();
@@ -174,11 +181,20 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
 
   void _checkAndUpdatePersonalBest() {
     if (state.mode != MoveTrainerMode.speed) return;
-    final current = _personalBests[_bestKey] ?? 0;
-    if (state.totalCorrect > current) {
+    final newRecord = state.totalCorrect > (_personalBests[_bestKey] ?? 0) &&
+        state.totalCorrect > 0;
+    if (newRecord) {
       _personalBests[_bestKey] = state.totalCorrect;
       _audio.playNewRecord();
     }
+    _analytics.logMoveDrillCompleted(
+      mode: state.mode.name,
+      hardMode: state.isHardMode,
+      totalCorrect: state.totalCorrect,
+      totalAttempts: state.totalAttempts,
+      bestStreak: state.bestStreak,
+      isNewRecord: newRecord,
+    );
   }
 
   void _cancelTimers() {

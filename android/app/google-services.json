@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "522968736205",
+    "project_id": "calvin-chess-trainer",
+    "storage_bucket": "calvin-chess-trainer.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:522968736205:android:c103c5a3903aaa35bc2484",
+        "android_client_info": {
+          "package_name": "education.internut.calvinchesstrainer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKfuRrhOmubtUEiqfo2NeutWEdmCHLzis"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
