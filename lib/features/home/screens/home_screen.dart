@@ -7,6 +7,12 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final scale = (screenHeight / 812).clamp(0.7, 1.0);
+    final iconSize = 200 * scale;
+    final titleFontSize = 72 * scale;
+    final iconRadius = 40 * scale;
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -25,16 +31,15 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-            // App icon + title
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 children: [
                   Container(
-                    width: 200,
-                    height: 200,
+                    width: iconSize,
+                    height: iconSize,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(40),
+                      borderRadius: BorderRadius.circular(iconRadius),
                       boxShadow: [
                         BoxShadow(
                           color: AppColors.primary.withValues(alpha: 0.3),
@@ -44,7 +49,7 @@ class HomeScreen extends StatelessWidget {
                       ],
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(40),
+                      borderRadius: BorderRadius.circular(iconRadius),
                       child: Image.asset(
                         'assets/images/app_icon.png',
                         fit: BoxFit.cover,
@@ -59,18 +64,18 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16 * scale),
                   Text(
                     'Calvin Chess\nTrainer',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'BradBunR',
-                      fontSize: 72,
+                      fontSize: titleFontSize,
                       color: AppColors.primary,
                       height: 1.1,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8 * scale),
                   Text(
                     'Master the fundamentals!',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -81,8 +86,7 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 32),
-            // Training cards
+            SizedBox(height: 32 * scale),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -96,6 +100,7 @@ class HomeScreen extends StatelessWidget {
                         secondaryIcon: Icons.abc_rounded,
                         color: AppColors.primary,
                         imagePath: 'assets/images/card_notation.png',
+                        scale: scale,
                         onTap: () => context.push('/file-rank-trainer'),
                       ),
                     ),
@@ -108,6 +113,7 @@ class HomeScreen extends StatelessWidget {
                         secondaryIcon: Icons.call_split_rounded,
                         color: const Color(0xFF6A1B9A),
                         imagePath: 'assets/images/card_vision.png',
+                        scale: scale,
                         onTap: () => context.push('/chess-vision'),
                       ),
                     ),
@@ -145,6 +151,7 @@ class _BigTrainingCard extends StatelessWidget {
   final Color color;
   final String? imagePath;
   final bool comingSoon;
+  final double scale;
   final VoidCallback? onTap;
 
   const _BigTrainingCard({
@@ -155,6 +162,7 @@ class _BigTrainingCard extends StatelessWidget {
     required this.color,
     this.imagePath,
     this.comingSoon = false,
+    this.scale = 1.0,
     required this.onTap,
   });
 
@@ -216,7 +224,7 @@ class _BigTrainingCard extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: 'BradBunR',
                         color: AppColors.primary,
-                        fontSize: 56,
+                        fontSize: 56 * scale,
                         shadows: [
                           Shadow(
                             color: Colors.white.withValues(alpha: 0.8),

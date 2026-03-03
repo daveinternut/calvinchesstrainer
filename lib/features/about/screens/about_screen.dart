@@ -100,6 +100,21 @@ class AboutScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _buildSection(
               context,
+              icon: Icons.menu_book_rounded,
+              title: 'Inspired by Rapid Chess Improvement',
+              body: 'This app owes a great deal to Michael de la Maza\'s book '
+                  'Rapid Chess Improvement (Everyman Chess, 2002). His concept '
+                  'of "chess vision" — the ability to instantly recognize '
+                  'tactical patterns and piece relationships — transformed the '
+                  'way I thought about training. Following his ideas helped me '
+                  'improve my own game dramatically, and I built Calvin Chess '
+                  'Trainer in the hope that his approach to chess vision will '
+                  'help a new generation of players see the board more clearly. '
+                  'Thank you, Michael!',
+            ),
+            const SizedBox(height: 16),
+            _buildSection(
+              context,
               icon: Icons.info_outline_rounded,
               title: 'About Internut Education',
               body: 'Internut Education creates engaging learning apps '

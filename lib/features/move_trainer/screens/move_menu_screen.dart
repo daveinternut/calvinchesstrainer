@@ -33,118 +33,127 @@ class _MoveMenuScreenState extends State<MoveMenuScreen> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'See a position, make the move!',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textSecondary,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'See a position, make the move!',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                      textAlign: TextAlign.center,
                     ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 28),
-              Text(
-                'Choose a mode',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 28),
+                    Text(
+                      'Choose a mode',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
-              ),
-              const SizedBox(height: 12),
-              _buildModeCard(
-                MoveTrainerMode.practice,
-                'Practice',
-                'Quiz yourself — build your streak!',
-                Icons.school_rounded,
-                const Color(0xFF1565C0),
-              ),
-              const SizedBox(height: 10),
-              _buildModeCard(
-                MoveTrainerMode.speed,
-                'Speed Round',
-                '30 seconds — how many can you get?',
-                Icons.timer_rounded,
-                const Color(0xFFE65100),
-              ),
-              const SizedBox(height: 28),
-              GestureDetector(
-                onTap: () => setState(() => _isHardMode = !_isHardMode),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: _isHardMode
-                        ? const Color(0xFFB71C1C)
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: _isHardMode
-                          ? const Color(0xFFB71C1C)
-                          : Colors.grey.shade300,
-                      width: _isHardMode ? 2 : 1,
+                    const SizedBox(height: 12),
+                    _buildModeCard(
+                      MoveTrainerMode.practice,
+                      'Practice',
+                      'Quiz yourself — build your streak!',
+                      Icons.school_rounded,
+                      const Color(0xFF1565C0),
                     ),
-                    boxShadow: _isHardMode
-                        ? [
-                            BoxShadow(
-                              color: const Color(0xFFB71C1C)
-                                  .withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            )
-                          ]
-                        : [],
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.local_fire_department_rounded,
-                        color: _isHardMode
-                            ? Colors.white
-                            : Colors.grey.shade400,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 10),
+                    _buildModeCard(
+                      MoveTrainerMode.speed,
+                      'Speed Round',
+                      '30 seconds — how many can you get?',
+                      Icons.timer_rounded,
+                      const Color(0xFFE65100),
+                    ),
+                    const SizedBox(height: 28),
+                    GestureDetector(
+                      onTap: () => setState(() => _isHardMode = !_isHardMode),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _isHardMode
+                              ? const Color(0xFFB71C1C)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: _isHardMode
+                                ? const Color(0xFFB71C1C)
+                                : Colors.grey.shade300,
+                            width: _isHardMode ? 2 : 1,
+                          ),
+                          boxShadow: _isHardMode
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(0xFFB71C1C)
+                                        .withValues(alpha: 0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  )
+                                ]
+                              : [],
+                        ),
+                        child: Row(
                           children: [
-                            Text(
-                              'HARD MODE',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.2,
-                                color: _isHardMode
-                                    ? Colors.white
-                                    : AppColors.textPrimary,
+                            Icon(
+                              Icons.local_fire_department_rounded,
+                              color: _isHardMode
+                                  ? Colors.white
+                                  : Colors.grey.shade400,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'HARD MODE',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 1.2,
+                                      color: _isHardMode
+                                          ? Colors.white
+                                          : AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'User controls black!',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _isHardMode
+                                          ? Colors.white.withValues(alpha: 0.85)
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'User controls black!',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: _isHardMode
-                                    ? Colors.white.withValues(alpha: 0.85)
-                                    : AppColors.textSecondary,
-                              ),
-                            ),
+                            if (_isHardMode)
+                              const Icon(Icons.check_circle,
+                                  color: Colors.white, size: 22),
                           ],
                         ),
                       ),
-                      if (_isHardMode)
-                        const Icon(Icons.check_circle,
-                            color: Colors.white, size: 22),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              const Spacer(),
-              SizedBox(
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+              child: SizedBox(
                 height: 56,
+                width: double.infinity,
                 child: FilledButton(
                   onPressed: _startGame,
                   style: FilledButton.styleFrom(
@@ -159,9 +168,8 @@ class _MoveMenuScreenState extends State<MoveMenuScreen> {
                   child: const Text('Start'),
                 ),
               ),
-              const SizedBox(height: 16),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

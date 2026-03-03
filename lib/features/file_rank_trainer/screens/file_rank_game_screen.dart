@@ -59,7 +59,10 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_title),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(_title),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
