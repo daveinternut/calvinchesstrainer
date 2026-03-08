@@ -119,7 +119,6 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
     final isCorrect = tappedIndex == target;
     final newStreak = isCorrect ? state.streak + 1 : 0;
     final newBestStreak = max(newStreak, state.bestStreak);
-    final isMilestone = isCorrect && newStreak > 0 && newStreak % 5 == 0;
 
     state = state.copyWith(
       streak: newStreak,
@@ -137,9 +136,6 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
 
     if (isCorrect) {
       _audio.playCorrect();
-      if (isMilestone) {
-        _audio.playStreakMilestone(newStreak);
-      }
     } else {
       _audio.playIncorrect();
     }
@@ -163,7 +159,6 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
     final isCorrect = file == targetFile && rank == targetRank;
     final newStreak = isCorrect ? state.streak + 1 : 0;
     final newBestStreak = max(newStreak, state.bestStreak);
-    final isMilestone = isCorrect && newStreak > 0 && newStreak % 5 == 0;
 
     state = state.copyWith(
       streak: newStreak,
@@ -183,9 +178,6 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
 
     if (isCorrect) {
       _audio.playCorrect();
-      if (isMilestone) {
-        _audio.playStreakMilestone(newStreak);
-      }
     } else {
       _audio.playIncorrect();
     }

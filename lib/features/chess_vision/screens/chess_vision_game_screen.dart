@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chessground/chessground.dart';
@@ -8,6 +9,7 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
 import '../../../core/audio/audio_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../file_rank_trainer/widgets/milestone_banner.dart';
 import '../../file_rank_trainer/widgets/streak_counter.dart';
 import '../../file_rank_trainer/widgets/timer_bar.dart';
 import '../../file_rank_trainer/widgets/results_card.dart';
@@ -60,6 +62,7 @@ class _ChessVisionGameScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final gameState = ref.watch(chessVisionProvider);
 
     return Scaffold(
@@ -77,7 +80,7 @@ class _ChessVisionGameScreenState
             padding: const EdgeInsets.only(right: 16),
             child: Center(
               child: Text(
-                _scoreText(gameState),
+                _scoreText(gameState, l10n),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -94,7 +97,7 @@ class _ChessVisionGameScreenState
               child: Column(
                 children: [
                   const SizedBox(height: 8),
-                  _buildProgressArea(gameState),
+                  _buildProgressArea(gameState, l10n),
                   const SizedBox(height: 8),
                   StreakCounter(
                     streak: gameState.streak,
@@ -135,11 +138,11 @@ class _ChessVisionGameScreenState
                   ),
                   if (_showNoneButton) ...[
                     const SizedBox(height: 12),
-                    _buildNoneButton(gameState),
+                    _buildNoneButton(gameState, l10n),
                   ],
                   if (_showFlightRetryButtons(gameState)) ...[
                     const SizedBox(height: 12),
-                    _buildFlightRetryButtons(),
+                    _buildFlightRetryButtons(l10n),
                   ],
                   if (widget.drill != VisionDrillType.pawnAttack &&
                       widget.mode == VisionMode.speed &&
@@ -152,21 +155,22 @@ class _ChessVisionGameScreenState
                   ],
                   if (widget.mode == VisionMode.concentric) ...[
                     const SizedBox(height: 12),
-                    _buildConcentricProgress(gameState),
+                    _buildConcentricProgress(gameState, l10n),
                   ],
                   if (widget.drill == VisionDrillType.pawnAttack &&
                       widget.mode == VisionMode.speed) ...[
                     const SizedBox(height: 12),
-                    _buildPawnAttackStopwatch(gameState),
+                    _buildPawnAttackStopwatch(gameState, l10n),
                   ],
                   const SizedBox(height: 16),
                 ],
               ),
             ),
+            MilestoneBanner(streak: gameState.streak),
             if (gameState.isGameOver)
               Container(
                 color: Colors.black54,
-                child: _buildResultsOverlay(gameState),
+                child: _buildResultsOverlay(gameState, l10n),
               ),
           ],
         ),
@@ -185,7 +189,7 @@ class _ChessVisionGameScreenState
     return !isOptimal;
   }
 
-  Widget _buildFlightRetryButtons() {
+  Widget _buildFlightRetryButtons(AppLocalizations l10n) {
     return Row(
       children: [
         Expanded(
@@ -193,7 +197,7 @@ class _ChessVisionGameScreenState
             onPressed: () =>
                 ref.read(chessVisionProvider.notifier).retryFlight(),
             icon: const Icon(Icons.replay_rounded, size: 20),
-            label: const Text('Retry'),
+            label: Text(l10n.retry),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
@@ -208,7 +212,7 @@ class _ChessVisionGameScreenState
             onPressed: () =>
                 ref.read(chessVisionProvider.notifier).skipFlight(),
             icon: const Icon(Icons.skip_next_rounded, size: 20),
-            label: const Text('Skip'),
+            label: Text(l10n.skip),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
@@ -223,7 +227,8 @@ class _ChessVisionGameScreenState
 
   // --- Progress area ---
 
-  Widget _buildProgressArea(ChessVisionState gameState) {
+  Widget _buildProgressArea(
+      ChessVisionState gameState, AppLocalizations l10n) {
     switch (widget.drill) {
       case VisionDrillType.forksAndSkewers:
       case VisionDrillType.knightSight:
@@ -233,15 +238,17 @@ class _ChessVisionGameScreenState
           showNoneHint: widget.drill == VisionDrillType.forksAndSkewers &&
               !gameState.isRoundComplete &&
               !gameState.showingRevealedAnswer,
+          l10n: l10n,
         );
       case VisionDrillType.knightFlight:
-        return _buildFlightProgress(gameState);
+        return _buildFlightProgress(gameState, l10n);
       case VisionDrillType.pawnAttack:
-        return _buildPawnAttackProgress(gameState);
+        return _buildPawnAttackProgress(gameState, l10n);
     }
   }
 
-  Widget _buildFlightProgress(ChessVisionState gameState) {
+  Widget _buildFlightProgress(
+      ChessVisionState gameState, AppLocalizations l10n) {
     final min = gameState.minimumMoves ?? 0;
     final current = gameState.flightPath.length;
 
@@ -255,7 +262,7 @@ class _ChessVisionGameScreenState
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'Minimum: $min',
+            l10n.minimumMoves(min),
             style: TextStyle(
               fontSize: 15,
               color: AppColors.textSecondary,
@@ -264,7 +271,7 @@ class _ChessVisionGameScreenState
           ),
           const SizedBox(width: 24),
           Text(
-            'Your moves: $current',
+            l10n.yourMoves(current),
             style: TextStyle(
               fontSize: 15,
               color: current > min
@@ -278,7 +285,8 @@ class _ChessVisionGameScreenState
     );
   }
 
-  Widget _buildPawnAttackProgress(ChessVisionState gameState) {
+  Widget _buildPawnAttackProgress(
+      ChessVisionState gameState, AppLocalizations l10n) {
     final remaining = gameState.remainingPawns.length;
     final difficulty = gameState.pawnAttackDifficulty;
     final isTimed = widget.mode == VisionMode.speed;
@@ -293,7 +301,7 @@ class _ChessVisionGameScreenState
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'Pawns: $remaining',
+            l10n.pawnsRemaining(remaining),
             style: TextStyle(
               fontSize: 15,
               color: AppColors.textPrimary,
@@ -303,7 +311,7 @@ class _ChessVisionGameScreenState
           if (isTimed) ...[
             const SizedBox(width: 24),
             Text(
-              'Level $difficulty of 8',
+              l10n.levelOfEight(difficulty),
               style: TextStyle(
                 fontSize: 15,
                 color: AppColors.textSecondary,
@@ -313,7 +321,7 @@ class _ChessVisionGameScreenState
           ],
           const SizedBox(width: 24),
           Text(
-            'Moves: ${gameState.pawnAttackMoves}',
+            l10n.movesCount(gameState.pawnAttackMoves),
             style: TextStyle(
               fontSize: 15,
               color: AppColors.textSecondary,
@@ -440,7 +448,7 @@ class _ChessVisionGameScreenState
 
   // --- None button ---
 
-  Widget _buildNoneButton(ChessVisionState gameState) {
+  Widget _buildNoneButton(ChessVisionState gameState, AppLocalizations l10n) {
     final enabled = !gameState.isGameOver &&
         !gameState.isRoundComplete &&
         !gameState.showingRevealedAnswer;
@@ -453,7 +461,7 @@ class _ChessVisionGameScreenState
             ? () => ref.read(chessVisionProvider.notifier).handleNoneTap()
             : null,
         icon: const Icon(Icons.block_rounded, size: 20),
-        label: const Text('None'),
+        label: Text(l10n.none),
         style: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -473,7 +481,8 @@ class _ChessVisionGameScreenState
 
   // --- Pawn Attack stopwatch ---
 
-  Widget _buildPawnAttackStopwatch(ChessVisionState gameState) {
+  Widget _buildPawnAttackStopwatch(
+      ChessVisionState gameState, AppLocalizations l10n) {
     final minutes = gameState.elapsedSeconds ~/ 60;
     final seconds = gameState.elapsedSeconds % 60;
     final timeStr = '$minutes:${seconds.toString().padLeft(2, '0')}';
@@ -486,7 +495,7 @@ class _ChessVisionGameScreenState
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Level $difficulty of 8',
+              l10n.levelOfEight(difficulty),
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
@@ -520,7 +529,8 @@ class _ChessVisionGameScreenState
 
   // --- Concentric progress ---
 
-  Widget _buildConcentricProgress(ChessVisionState gameState) {
+  Widget _buildConcentricProgress(
+      ChessVisionState gameState, AppLocalizations l10n) {
     final total = ref.read(chessVisionProvider.notifier).concentricTotal;
     final progress = total > 0 ? gameState.concentricIndex / total : 0.0;
     final minutes = gameState.elapsedSeconds ~/ 60;
@@ -533,7 +543,7 @@ class _ChessVisionGameScreenState
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Position ${gameState.concentricIndex} of $total',
+              l10n.positionOfTotal(gameState.concentricIndex, total),
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
@@ -567,14 +577,15 @@ class _ChessVisionGameScreenState
 
   // --- Results ---
 
-  Widget _buildResultsOverlay(ChessVisionState gameState) {
+  Widget _buildResultsOverlay(
+      ChessVisionState gameState, AppLocalizations l10n) {
     if (widget.mode == VisionMode.concentric) {
-      return _buildConcentricResults(gameState);
+      return _buildConcentricResults(gameState, l10n);
     }
 
     if (widget.drill == VisionDrillType.pawnAttack &&
         widget.mode == VisionMode.speed) {
-      return _buildPawnAttackTimedResults(gameState);
+      return _buildPawnAttackTimedResults(gameState, l10n);
     }
 
     return ResultsCard(
@@ -587,7 +598,8 @@ class _ChessVisionGameScreenState
     );
   }
 
-  Widget _buildConcentricResults(ChessVisionState gameState) {
+  Widget _buildConcentricResults(
+      ChessVisionState gameState, AppLocalizations l10n) {
     final minutes = gameState.elapsedSeconds ~/ 60;
     final seconds = gameState.elapsedSeconds % 60;
     final timeStr = '$minutes:${seconds.toString().padLeft(2, '0')}';
@@ -611,8 +623,8 @@ class _ChessVisionGameScreenState
                     color: AppColors.correctGreen,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'New Record!',
+                  child: Text(
+                    l10n.newRecord,
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -623,18 +635,18 @@ class _ChessVisionGameScreenState
                 const SizedBox(height: 16),
               ],
               Text(
-                'Drill Complete!',
+                l10n.drillComplete,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
               const SizedBox(height: 24),
-              _StatRow(label: 'Time', value: timeStr),
+              _StatRow(label: l10n.time, value: timeStr),
               const SizedBox(height: 10),
-              _StatRow(label: 'Errors', value: '${gameState.totalErrors}'),
+              _StatRow(label: l10n.errors, value: '${gameState.totalErrors}'),
               const SizedBox(height: 10),
               _StatRow(
-                  label: 'Best Streak', value: '${gameState.bestStreak}'),
+                  label: l10n.bestStreak, value: '${gameState.bestStreak}'),
               const SizedBox(height: 28),
               Row(
                 children: [
@@ -647,7 +659,7 @@ class _ChessVisionGameScreenState
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('Menu'),
+                      child: Text(l10n.menu),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -661,7 +673,7 @@ class _ChessVisionGameScreenState
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('Play Again'),
+                      child: Text(l10n.playAgain),
                     ),
                   ),
                 ],
@@ -673,7 +685,8 @@ class _ChessVisionGameScreenState
     );
   }
 
-  Widget _buildPawnAttackTimedResults(ChessVisionState gameState) {
+  Widget _buildPawnAttackTimedResults(
+      ChessVisionState gameState, AppLocalizations l10n) {
     final minutes = gameState.elapsedSeconds ~/ 60;
     final seconds = gameState.elapsedSeconds % 60;
     final timeStr = '$minutes:${seconds.toString().padLeft(2, '0')}';
@@ -697,8 +710,8 @@ class _ChessVisionGameScreenState
                     color: AppColors.correctGreen,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'New Record!',
+                  child: Text(
+                    l10n.newRecord,
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -709,18 +722,19 @@ class _ChessVisionGameScreenState
                 const SizedBox(height: 16),
               ],
               Text(
-                'All Clear!',
+                l10n.allClear,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
               const SizedBox(height: 24),
-              _StatRow(label: 'Time', value: timeStr),
+              _StatRow(label: l10n.time, value: timeStr),
               const SizedBox(height: 10),
-              _StatRow(label: 'Errors', value: '${gameState.totalErrors}'),
+              _StatRow(label: l10n.errors, value: '${gameState.totalErrors}'),
               const SizedBox(height: 10),
               _StatRow(
-                  label: 'Rounds', value: '${gameState.configurationsCompleted}'),
+                  label: l10n.rounds,
+                  value: '${gameState.configurationsCompleted}'),
               const SizedBox(height: 28),
               Row(
                 children: [
@@ -733,7 +747,7 @@ class _ChessVisionGameScreenState
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('Menu'),
+                      child: Text(l10n.menu),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -747,7 +761,7 @@ class _ChessVisionGameScreenState
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('Play Again'),
+                      child: Text(l10n.playAgain),
                     ),
                   ),
                 ],
@@ -771,28 +785,29 @@ class _ChessVisionGameScreenState
   // --- Title & score ---
 
   String get _title {
+    final l10n = AppLocalizations.of(context)!;
     switch (widget.drill) {
       case VisionDrillType.forksAndSkewers:
-        final pieceName = widget.piece.label;
+        final pieceName = widget.piece.localizedLabel(l10n);
         final modeName = switch (widget.mode) {
-          VisionMode.practice => 'Practice',
-          VisionMode.speed => 'Speed Round',
-          VisionMode.concentric => 'Concentric',
+          VisionMode.practice => l10n.practice,
+          VisionMode.speed => l10n.speedRound,
+          VisionMode.concentric => l10n.concentric,
         };
-        return '$pieceName \u2014 $modeName';
+        return l10n.titleForksAndSkewers(pieceName, modeName);
       case VisionDrillType.knightSight:
-        return 'Knight Sight';
+        return l10n.knightSight;
       case VisionDrillType.knightFlight:
-        return 'Knight Flight';
+        return l10n.knightFlight;
       case VisionDrillType.pawnAttack:
-        final pieceName = widget.piece.label;
+        final pieceName = widget.piece.localizedLabel(l10n);
         final modeName =
-            widget.mode == VisionMode.speed ? 'Timed' : 'Practice';
-        return 'Pawn Attack \u2014 $pieceName $modeName';
+            widget.mode == VisionMode.speed ? l10n.timed : l10n.practice;
+        return l10n.titlePawnAttack(pieceName, modeName);
     }
   }
 
-  String _scoreText(ChessVisionState gameState) {
+  String _scoreText(ChessVisionState gameState, AppLocalizations l10n) {
     if (widget.mode == VisionMode.concentric) {
       final total = ref.read(chessVisionProvider.notifier).concentricTotal;
       return '${gameState.configurationsCompleted}/$total';
@@ -801,7 +816,7 @@ class _ChessVisionGameScreenState
         widget.mode == VisionMode.speed) {
       return '${gameState.configurationsCompleted}/6';
     }
-    return '${gameState.configurationsCompleted} solved';
+    return l10n.solvedCount(gameState.configurationsCompleted);
   }
 }
 

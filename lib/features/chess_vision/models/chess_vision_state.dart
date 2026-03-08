@@ -1,3 +1,4 @@
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:chessground/chessground.dart' show SquareHighlight;
 import 'package:dartchess/dartchess.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
@@ -18,6 +19,13 @@ enum WhitePiece {
   final String label;
   final PieceKind pieceKind;
   const WhitePiece(this.role, this.label, this.pieceKind);
+
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+        WhitePiece.queen => l10n.queen,
+        WhitePiece.rook => l10n.rook,
+        WhitePiece.bishop => l10n.bishop,
+        WhitePiece.knight => l10n.knight,
+      };
 }
 
 enum TargetPiece {
@@ -30,6 +38,13 @@ enum TargetPiece {
   final String label;
   final PieceKind pieceKind;
   const TargetPiece(this.role, this.label, this.pieceKind);
+
+  String localizedLabel(AppLocalizations l10n) => switch (this) {
+        TargetPiece.rook => l10n.rook,
+        TargetPiece.bishop => l10n.bishop,
+        TargetPiece.knight => l10n.knight,
+        TargetPiece.queen => l10n.queen,
+      };
 }
 
 class ChessVisionState {

@@ -126,7 +126,6 @@ chessground renders coordinates inside the edge squares (lichess-style), not as 
 - `speakPiece(String pieceName)` — plays piece name clip (pawn/rook/bishop/knight/queen/king) + haptic
 - `speakMove(String pieceName, String file, String rank)` — chains piece → file → rank clips with await sequencing. Example: "Queen b6" = piece_queen.mp3 → file_b.mp3 → rank_6.mp3
 - `playCorrect()` / `playIncorrect()` — SFX + haptic
-- `playStreakMilestone(int streak)` — milestone clip at 5/10/15/20
 - `playNewRecord()` — "New record!" clip
 - `speak(String text)` — flutter_tts fallback for dynamic text (used for castling prompts: "castle kingside")
 

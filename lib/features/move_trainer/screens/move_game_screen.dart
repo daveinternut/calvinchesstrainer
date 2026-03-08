@@ -4,12 +4,14 @@ import 'package:chessground/chessground.dart';
 import 'package:dartchess/dartchess.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/audio/audio_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/square_name_overlay.dart';
+import '../../file_rank_trainer/widgets/milestone_banner.dart';
 import '../../file_rank_trainer/widgets/streak_counter.dart';
 import '../../file_rank_trainer/widgets/timer_bar.dart';
 import '../../file_rank_trainer/widgets/results_card.dart';
@@ -116,6 +118,7 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
                 ],
               ),
             ),
+            MilestoneBanner(streak: gameState.streak),
             if (gameState.isGameOver)
               Container(
                 color: Colors.black54,
@@ -244,10 +247,11 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
   }
 
   String get _title {
+    final l10n = AppLocalizations.of(context)!;
     final mode = switch (widget.mode) {
-      MoveTrainerMode.practice => 'Practice',
-      MoveTrainerMode.speed => 'Speed Round',
+      MoveTrainerMode.practice => l10n.practice,
+      MoveTrainerMode.speed => l10n.speedRound,
     };
-    return 'Moves - $mode';
+    return l10n.titleMovesGame(mode);
   }
 }

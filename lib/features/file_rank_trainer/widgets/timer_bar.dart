@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 
 class TimerBar extends StatefulWidget {
   final int remainingSeconds;
@@ -47,6 +48,7 @@ class _TimerBarState extends State<TimerBar>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final fraction = widget.remainingSeconds / widget.totalSeconds;
     final color = _timerColor(widget.remainingSeconds);
     final isUrgent = widget.remainingSeconds <= 5;
@@ -69,7 +71,7 @@ class _TimerBarState extends State<TimerBar>
               ),
               if (isUrgent)
                 Text(
-                  'Hurry!',
+                  l10n.hurry,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,

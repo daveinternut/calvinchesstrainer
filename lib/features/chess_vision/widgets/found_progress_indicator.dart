@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
+
 import '../../../core/theme/app_theme.dart';
 
 class FoundProgressIndicator extends StatelessWidget {
   final int totalCorrect;
   final int totalFound;
   final bool showNoneHint;
+  final AppLocalizations l10n;
 
   const FoundProgressIndicator({
     super.key,
     required this.totalCorrect,
     required this.totalFound,
+    required this.l10n,
     this.showNoneHint = false,
   });
 
@@ -23,7 +27,7 @@ class FoundProgressIndicator extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
-          'Tap None if no solutions exist',
+          l10n.tapNoneHint,
           style: TextStyle(
             fontSize: 14,
             color: AppColors.textSecondary,
@@ -42,7 +46,7 @@ class FoundProgressIndicator extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          'Found  ',
+          '${l10n.found}  ',
           style: TextStyle(
             fontSize: 15,
             color: AppColors.textSecondary,
@@ -55,7 +59,7 @@ class FoundProgressIndicator extends StatelessWidget {
         ],
         const SizedBox(width: 10),
         Text(
-          '$totalFound of $totalCorrect',
+          l10n.foundOfTotal(totalFound, totalCorrect),
           style: TextStyle(
             fontSize: 15,
             color: AppColors.textPrimary,

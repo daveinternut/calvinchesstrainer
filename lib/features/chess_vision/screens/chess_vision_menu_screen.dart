@@ -1,6 +1,7 @@
 import 'package:chessground/chessground.dart' show PieceSet;
 import 'package:dartchess/dartchess.dart' show PieceKind;
 import 'package:flutter/material.dart';
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -32,9 +33,10 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chess Vision'),
+        title: Text(l10n.chessVision),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -50,7 +52,7 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Drill type',
+                      l10n.drillType,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -60,13 +62,13 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                       children: [
                         _buildDrillChip(
                           VisionDrillType.forksAndSkewers,
-                          'Forks & Skewers',
+                          l10n.forksAndSkewers,
                           Icons.call_split_rounded,
                         ),
                         const SizedBox(width: 8),
                         _buildDrillChip(
                           VisionDrillType.pawnAttack,
-                          'Pawn Attack',
+                          l10n.pawnAttack,
                           Icons.gps_not_fixed_rounded,
                         ),
                       ],
@@ -76,13 +78,13 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                       children: [
                         _buildDrillChip(
                           VisionDrillType.knightSight,
-                          'Knight Sight',
+                          l10n.knightSight,
                           Icons.open_with_rounded,
                         ),
                         const SizedBox(width: 8),
                         _buildDrillChip(
                           VisionDrillType.knightFlight,
-                          'Knight Flight',
+                          l10n.knightFlight,
                           Icons.route_rounded,
                         ),
                       ],
@@ -90,7 +92,7 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                     if (_drill == VisionDrillType.forksAndSkewers) ...[
                       const SizedBox(height: 24),
                       Text(
-                        'Choose your piece',
+                        l10n.chooseYourPiece,
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
@@ -107,14 +109,14 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                               selected: _piece == p,
                               onSelected: () => setState(() => _piece = p),
                               selectedColor: AppColors.primary,
-                              tooltip: p.label,
+                              tooltip: p.localizedLabel(l10n),
                             ),
                           ],
                         ],
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'Target piece',
+                        l10n.targetPiece,
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
@@ -131,14 +133,14 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                               selected: _target == t,
                               onSelected: () => setState(() => _target = t),
                               selectedColor: Colors.grey.shade800,
-                              tooltip: t.label,
+                              tooltip: t.localizedLabel(l10n),
                             ),
                           ],
                         ],
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'Choose a mode',
+                        l10n.chooseAMode,
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
@@ -147,24 +149,24 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                       const SizedBox(height: 12),
                       _buildModeCard(
                         VisionMode.practice,
-                        'Practice',
-                        'Find forks and skewers — no timer',
+                        l10n.practice,
+                        l10n.findForksNoTimer,
                         Icons.school_rounded,
                         const Color(0xFF1565C0),
                       ),
                       const SizedBox(height: 10),
                       _buildModeCard(
                         VisionMode.speed,
-                        'Speed Round',
-                        '60 seconds — solve as many as you can!',
+                        l10n.speedRound,
+                        l10n.speedRound60Desc,
                         Icons.timer_rounded,
                         const Color(0xFFE65100),
                       ),
                       const SizedBox(height: 10),
                       _buildModeCard(
                         VisionMode.concentric,
-                        'Concentric Drill',
-                        'Complete all positions — beat your time!',
+                        l10n.concentricDrill,
+                        l10n.concentricDrillDesc,
                         Icons.track_changes_rounded,
                         const Color(0xFF6A1B9A),
                       ),
@@ -172,7 +174,7 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                     if (_drill == VisionDrillType.pawnAttack) ...[
                       const SizedBox(height: 24),
                       Text(
-                        'Choose your piece',
+                        l10n.chooseYourPiece,
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
@@ -189,14 +191,14 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                               selected: _piece == p,
                               onSelected: () => setState(() => _piece = p),
                               selectedColor: AppColors.primary,
-                              tooltip: p.label,
+                              tooltip: p.localizedLabel(l10n),
                             ),
                           ],
                         ],
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'Choose a mode',
+                        l10n.chooseAMode,
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
@@ -205,16 +207,16 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                       const SizedBox(height: 12),
                       _buildModeCard(
                         VisionMode.practice,
-                        'Practice',
-                        'Capture all pawns — no timer',
+                        l10n.practice,
+                        l10n.captureAllPawnsNoTimer,
                         Icons.school_rounded,
                         const Color(0xFF1565C0),
                       ),
                       const SizedBox(height: 10),
                       _buildModeCard(
                         VisionMode.speed,
-                        'Timed',
-                        'Clear 3 to 8 pawns — beat your time!',
+                        l10n.timed,
+                        l10n.timedPawnAttackDesc,
                         Icons.timer_rounded,
                         const Color(0xFFE65100),
                       ),
@@ -239,7 +241,7 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  child: const Text('Start'),
+                  child: Text(l10n.start),
                 ),
               ),
             ),

@@ -1,3 +1,4 @@
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class MoveTrainerScreen extends StatelessWidget {
@@ -5,10 +6,11 @@ class MoveTrainerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Move Trainer')),
-      body: const Center(
-        child: Text('Move trainer coming soon'),
+      appBar: AppBar(title: Text(l10n.moveTrainer)),
+      body: Center(
+        child: Text(l10n.moveComingSoon),
       ),
     );
   }

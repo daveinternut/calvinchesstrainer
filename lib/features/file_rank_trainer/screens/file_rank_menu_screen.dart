@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../models/file_rank_game_state.dart';
@@ -27,9 +28,10 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chess Notation'),
+        title: Text(l10n.chessNotation),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -45,7 +47,7 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'What to practice?',
+                      l10n.whatToPractice,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -53,22 +55,22 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        _buildSubjectChip(TrainerSubject.files, 'Files', Icons.view_column),
+                        _buildSubjectChip(TrainerSubject.files, l10n.files, Icons.view_column),
                         const SizedBox(width: 8),
-                        _buildSubjectChip(TrainerSubject.ranks, 'Ranks', Icons.view_stream),
+                        _buildSubjectChip(TrainerSubject.ranks, l10n.ranks, Icons.view_stream),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        _buildSubjectChip(TrainerSubject.squares, 'Squares', Icons.grid_on),
+                        _buildSubjectChip(TrainerSubject.squares, l10n.squares, Icons.grid_on),
                         const SizedBox(width: 8),
-                        _buildSubjectChip(TrainerSubject.moves, 'Moves', Icons.swap_horiz_rounded),
+                        _buildSubjectChip(TrainerSubject.moves, l10n.moves, Icons.swap_horiz_rounded),
                       ],
                     ),
                     const SizedBox(height: 28),
                     Text(
-                      'Choose a mode',
+                      l10n.chooseAMode,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -77,8 +79,8 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                     if (_subject != TrainerSubject.moves) ...[
                       _buildModeCard(
                         TrainerMode.explore,
-                        'Explore',
-                        'Tap to learn — no pressure, no scoring',
+                        l10n.explore,
+                        l10n.exploreDesc,
                         Icons.touch_app_rounded,
                         AppColors.primary,
                       ),
@@ -86,16 +88,16 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                     ],
                     _buildModeCard(
                       TrainerMode.practice,
-                      'Practice',
-                      'Quiz yourself — build your streak!',
+                      l10n.practice,
+                      l10n.practiceDesc,
                       Icons.school_rounded,
                       const Color(0xFF1565C0),
                     ),
                     const SizedBox(height: 10),
                     _buildModeCard(
                       TrainerMode.speed,
-                      'Speed Round',
-                      '30 seconds — how many can you get?',
+                      l10n.speedRound,
+                      l10n.speedRoundDesc,
                       Icons.timer_rounded,
                       const Color(0xFFE65100),
                     ),
@@ -130,7 +132,7 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'HARD MODE',
+                                      l10n.hardMode,
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w800,
@@ -141,8 +143,8 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                                     const SizedBox(height: 2),
                                     Text(
                                       _subject == TrainerSubject.moves
-                                          ? 'User controls black!'
-                                          : 'Board flipped — black\'s perspective!',
+                                          ? l10n.hardModeBlack
+                                          : l10n.hardModeFlipped,
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: _isHardMode
@@ -180,7 +182,7 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  child: const Text('Start'),
+                  child: Text(l10n.start),
                 ),
               ),
             ),

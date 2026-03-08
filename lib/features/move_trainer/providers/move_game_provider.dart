@@ -65,7 +65,6 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
 
     final newStreak = isCorrect ? state.streak + 1 : 0;
     final newBestStreak = max(newStreak, state.bestStreak);
-    final isMilestone = isCorrect && newStreak > 0 && newStreak % 5 == 0;
 
     if (isCorrect) {
       final newPosition = puzzle.position.playUnchecked(move);
@@ -84,9 +83,6 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
       );
 
       _audio.playCorrect();
-      if (isMilestone) {
-        _audio.playStreakMilestone(newStreak);
-      }
     } else {
       state = state.copyWith(
         streak: 0,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 
 class StreakCounter extends StatefulWidget {
@@ -76,13 +77,14 @@ class _StreakCounterState extends State<StreakCounter>
   }
 
   String get _milestoneLabel {
+    final l10n = AppLocalizations.of(context)!;
     return switch (widget.streak) {
-      5 => 'Nice!',
-      10 => 'Amazing!',
-      15 => 'Incredible!',
-      20 => 'Unstoppable!',
-      _ when widget.streak % 10 == 0 => 'Legendary!',
-      _ => 'Great!',
+      5 => l10n.milestoneNice,
+      10 => l10n.milestoneAmazing,
+      15 => l10n.milestoneIncredible,
+      20 => l10n.milestoneUnstoppable,
+      _ when widget.streak % 10 == 0 => l10n.milestoneLegendary,
+      _ => l10n.milestoneGreat,
     };
   }
 
@@ -126,7 +128,7 @@ class _StreakCounterState extends State<StreakCounter>
                   Text(
                     _showMilestone
                         ? _milestoneLabel
-                        : 'Best: ${widget.bestStreak}',
+                        : AppLocalizations.of(context)!.bestLabel(widget.bestStreak),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight:

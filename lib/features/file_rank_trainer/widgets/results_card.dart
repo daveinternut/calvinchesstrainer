@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 
 class ResultsCard extends StatelessWidget {
@@ -21,6 +22,7 @@ class ResultsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Card(
         margin: const EdgeInsets.all(32),
@@ -39,8 +41,8 @@ class ResultsCard extends StatelessWidget {
                     color: AppColors.correctGreen,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text(
-                    'New Record!',
+                  child: Text(
+                    l10n.newRecord,
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -51,22 +53,22 @@ class ResultsCard extends StatelessWidget {
                 const SizedBox(height: 16),
               ],
               Text(
-                'Time\'s Up!',
+                l10n.timesUp,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
               const SizedBox(height: 24),
-              _StatRow(label: 'Correct', value: '$totalCorrect'),
+              _StatRow(label: l10n.correct, value: '$totalCorrect'),
               const SizedBox(height: 10),
               _StatRow(
-                label: 'Accuracy',
+                label: l10n.accuracy,
                 value: totalAttempts > 0
                     ? '${(totalCorrect / totalAttempts * 100).round()}%'
                     : '-',
               ),
               const SizedBox(height: 10),
-              _StatRow(label: 'Best Streak', value: '$bestStreak'),
+              _StatRow(label: l10n.bestStreak, value: '$bestStreak'),
               const SizedBox(height: 28),
               Row(
                 children: [
@@ -79,7 +81,7 @@ class ResultsCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('Menu'),
+                      child: Text(l10n.menu),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -93,7 +95,7 @@ class ResultsCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('Play Again'),
+                      child: Text(l10n.playAgain),
                     ),
                   ),
                 ],

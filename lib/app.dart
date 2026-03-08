@@ -1,5 +1,7 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
@@ -104,18 +106,14 @@ final _router = GoRouter(
       name: 'move_game',
       builder: (context, state) {
         final modeParam = state.uri.queryParameters['mode'] ?? 'practice';
-        final hardModeParam =
-            state.uri.queryParameters['hardMode'] ?? 'false';
+        final hardModeParam = state.uri.queryParameters['hardMode'] ?? 'false';
 
         final mode = MoveTrainerMode.values.firstWhere(
           (m) => m.name == modeParam,
           orElse: () => MoveTrainerMode.practice,
         );
 
-        return MoveGameScreen(
-          mode: mode,
-          isHardMode: hardModeParam == 'true',
-        );
+        return MoveGameScreen(mode: mode, isHardMode: hardModeParam == 'true');
       },
     ),
     GoRoute(
@@ -212,11 +210,13 @@ class CalvinChessTrainerApp extends StatelessWidget {
       theme: AppTheme.light,
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) {
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.noScaling,
-          ),
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.noScaling),
           child: child!,
         );
       },

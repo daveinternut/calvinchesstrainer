@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chessground/chessground.dart';
@@ -11,6 +12,7 @@ import '../../../core/widgets/square_name_overlay.dart';
 import '../models/file_rank_game_state.dart';
 import '../providers/file_rank_game_provider.dart';
 import '../widgets/prompt_display.dart';
+import '../widgets/milestone_banner.dart';
 import '../widgets/streak_counter.dart';
 import '../widgets/timer_bar.dart';
 import '../widgets/results_card.dart';
@@ -157,6 +159,8 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
                 ],
               ),
             ),
+            if (gameState.mode != TrainerMode.explore)
+              MilestoneBanner(streak: gameState.streak),
             if (gameState.isGameOver)
               Container(
                 color: Colors.black54,
@@ -222,17 +226,18 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
   }
 
   String get _title {
+    final l10n = AppLocalizations.of(context)!;
     final subject = switch (widget.subject) {
-      TrainerSubject.files => 'Files',
-      TrainerSubject.ranks => 'Ranks',
-      TrainerSubject.squares => 'Squares',
-      TrainerSubject.moves => 'Moves',
+      TrainerSubject.files => l10n.files,
+      TrainerSubject.ranks => l10n.ranks,
+      TrainerSubject.squares => l10n.squares,
+      TrainerSubject.moves => l10n.moves,
     };
     final mode = switch (widget.mode) {
-      TrainerMode.explore => 'Explore',
-      TrainerMode.practice => 'Practice',
-      TrainerMode.speed => 'Speed Round',
+      TrainerMode.explore => l10n.explore,
+      TrainerMode.practice => l10n.practice,
+      TrainerMode.speed => l10n.speedRound,
     };
-    return '$subject - $mode';
+    return l10n.titleFileRankGame(subject, mode);
   }
 }

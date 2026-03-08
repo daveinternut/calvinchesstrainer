@@ -68,21 +68,6 @@ class AudioService {
     await _playAsset(_sfxPlayer, 'assets/sounds/incorrect.m4a');
   }
 
-  Future<void> playStreakMilestone(int streak) async {
-    HapticFeedback.heavyImpact();
-    final clip = switch (streak) {
-      5 => 'streak_5',
-      10 => 'streak_10',
-      15 => 'streak_15',
-      20 => 'streak_20',
-      _ when streak > 0 && streak % 10 == 0 => 'streak_20',
-      _ => null,
-    };
-    if (clip != null) {
-      await _playAsset(_voicePlayer, 'assets/sounds/$clip.mp3');
-    }
-  }
-
   Future<void> playNewRecord() async {
     HapticFeedback.heavyImpact();
     await _playAsset(_voicePlayer, 'assets/sounds/new_record.mp3');

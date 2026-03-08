@@ -1,14 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/feedback_service.dart';
 import '../../../core/theme/app_theme.dart';
 
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends ConsumerStatefulWidget {
   const AboutScreen({super.key});
 
   @override
+  ConsumerState<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends ConsumerState<AboutScreen> {
+  final _feedbackController = TextEditingController();
+  bool _isSending = false;
+  bool _sent = false;
+
+  @override
+  void dispose() {
+    _feedbackController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitFeedback(AppLocalizations l10n) async {
+    final message = _feedbackController.text.trim();
+    if (message.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.feedbackEmpty)),
+      );
+      return;
+    }
+
+    setState(() => _isSending = true);
+
+    final success =
+        await ref.read(feedbackServiceProvider).sendFeedback(message);
+
+    if (!mounted) return;
+    setState(() => _isSending = false);
+
+    if (success) {
+      _feedbackController.clear();
+      setState(() => _sent = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.feedbackThanks),
+          backgroundColor: AppColors.correctGreen,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.feedbackError),
+          backgroundColor: AppColors.incorrectRed,
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('About'),
+        title: Text(l10n.about),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -37,7 +92,7 @@ class AboutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Calvin Chess Trainer',
+              l10n.appTitle,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
@@ -46,7 +101,7 @@ class AboutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Version 1.0.0',
+              l10n.aboutVersion('1.0.0'),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -59,7 +114,7 @@ class AboutScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                'by Internut Education',
+                l10n.aboutByInternut,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w600,
@@ -70,60 +125,42 @@ class AboutScreen extends StatelessWidget {
             _buildSection(
               context,
               icon: Icons.school_rounded,
-              title: 'What is Calvin Chess Trainer?',
-              body: 'A fun, interactive app that teaches chess fundamentals '
-                  'to kids. Learn files, ranks, squares, and piece moves '
-                  'through drills, quizzes, and timed challenges — all with '
-                  'audio feedback and streak tracking to keep you motivated!',
+              title: l10n.aboutWhatIs,
+              body: l10n.aboutWhatIsBody,
             ),
             const SizedBox(height: 16),
             _buildSection(
               context,
               icon: Icons.sports_esports_rounded,
-              title: 'Training Modes',
-              body: '• Explore — learn at your own pace\n'
-                  '• Practice — quiz yourself and build streaks\n'
-                  '• Speed Round — 30 seconds, how many can you get?\n'
-                  '• Hard Mode — hide coordinates for a real challenge',
+              title: l10n.aboutTrainingModes,
+              body: l10n.aboutTrainingModesBody,
             ),
             const SizedBox(height: 16),
             _buildSection(
               context,
               icon: Icons.favorite_rounded,
-              title: 'Credits & Acknowledgments',
-              body: '• Chess puzzles from the Lichess database (CC0 license)\n'
-                  '• Board UI powered by Lichess chessground\n'
-                  '• Chess logic by Lichess dartchess\n'
-                  '• Voice clips by ElevenLabs\n'
-                  '• Built with Flutter & Dart',
+              title: l10n.aboutCredits,
+              body: l10n.aboutCreditsBody,
             ),
             const SizedBox(height: 16),
             _buildSection(
               context,
               icon: Icons.menu_book_rounded,
-              title: 'Inspired by Rapid Chess Improvement',
-              body: 'This app owes a great deal to Michael de la Maza\'s book '
-                  'Rapid Chess Improvement (Everyman Chess, 2002). His concept '
-                  'of "chess vision" — the ability to instantly recognize '
-                  'tactical patterns and piece relationships — transformed the '
-                  'way I thought about training. Following his ideas helped me '
-                  'improve my own game dramatically, and I built Calvin Chess '
-                  'Trainer in the hope that his approach to chess vision will '
-                  'help a new generation of players see the board more clearly. '
-                  'Thank you, Michael!',
+              title: l10n.aboutInspired,
+              body: l10n.aboutInspiredBody,
             ),
             const SizedBox(height: 16),
             _buildSection(
               context,
               icon: Icons.info_outline_rounded,
-              title: 'About Internut Education',
-              body: 'Internut Education creates engaging learning apps '
-                  'for kids. We believe the best way to learn is through '
-                  'play, practice, and positive reinforcement.',
+              title: l10n.aboutInternut,
+              body: l10n.aboutInternutBody,
             ),
+            const SizedBox(height: 24),
+            _buildFeedbackSection(context, l10n),
             const SizedBox(height: 32),
             Text(
-              'Made with ❤️ for young chess players everywhere',
+              l10n.aboutFooter,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
                     fontStyle: FontStyle.italic,
@@ -133,6 +170,127 @@ class AboutScreen extends StatelessWidget {
             const SizedBox(height: 24),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFeedbackSection(BuildContext context, AppLocalizations l10n) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.chat_bubble_outline_rounded,
+                  color: AppColors.primary, size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  l10n.feedbackTitle,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            l10n.feedbackBody,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+          ),
+          const SizedBox(height: 16),
+          if (_sent)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: AppColors.correctGreen.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.check_circle_rounded,
+                      color: AppColors.correctGreen, size: 32),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.feedbackThanks,
+                    style: TextStyle(
+                      color: AppColors.correctGreen,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () => setState(() => _sent = false),
+                    child: Text(l10n.feedbackSend),
+                  ),
+                ],
+              ),
+            )
+          else ...[
+            TextField(
+              controller: _feedbackController,
+              maxLines: 4,
+              enabled: !_isSending,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                hintText: l10n.feedbackHint,
+                hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.6)),
+                filled: true,
+                fillColor: Colors.grey.shade50,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+                ),
+                contentPadding: const EdgeInsets.all(14),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _isSending ? null : () => _submitFeedback(l10n),
+                icon: _isSending
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.send_rounded, size: 18),
+                label: Text(_isSending ? l10n.feedbackSending : l10n.feedbackSend),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

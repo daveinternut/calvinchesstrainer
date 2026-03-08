@@ -350,10 +350,6 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     final newStreak = state.hadErrorThisRound ? 0 : state.streak + 1;
     final newBestStreak = max(newStreak, state.bestStreak);
 
-    if (!state.hadErrorThisRound && newStreak > 0 && newStreak % 5 == 0) {
-      _audio.playStreakMilestone(newStreak);
-    }
-
     final nextDifficulty = state.pawnAttackDifficulty + 1;
 
     if (state.mode == VisionMode.speed && nextDifficulty > 8) {
@@ -445,11 +441,6 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
 
     final newStreak = madeError ? 0 : state.streak + 1;
     final newBestStreak = max(newStreak, state.bestStreak);
-    final isMilestone = !madeError && newStreak > 0 && newStreak % 5 == 0;
-
-    if (isMilestone) {
-      _audio.playStreakMilestone(newStreak);
-    }
 
     if (state.mode == VisionMode.concentric) {
       if (state.concentricIndex >= _filteredConcentricPath.length) {
