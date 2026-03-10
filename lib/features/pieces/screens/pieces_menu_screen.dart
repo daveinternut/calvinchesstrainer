@@ -6,12 +6,10 @@ import '../models/which_side_wins_state.dart';
 
 class PiecesMenuScreen extends StatefulWidget {
   final WhichSideWinsMode initialMode;
-  final PiecesDifficulty initialDifficulty;
 
   const PiecesMenuScreen({
     super.key,
     this.initialMode = WhichSideWinsMode.practice,
-    this.initialDifficulty = PiecesDifficulty.easy,
   });
 
   @override
@@ -20,7 +18,6 @@ class PiecesMenuScreen extends StatefulWidget {
 
 class _PiecesMenuScreenState extends State<PiecesMenuScreen> {
   late WhichSideWinsMode _mode = widget.initialMode;
-  late PiecesDifficulty _difficulty = widget.initialDifficulty;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +39,6 @@ class _PiecesMenuScreenState extends State<PiecesMenuScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Section: Which Side Wins game
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -96,37 +92,6 @@ class _PiecesMenuScreenState extends State<PiecesMenuScreen> {
                     const SizedBox(height: 28),
 
                     Text(
-                      l10n.difficulty,
-                      style:
-                          Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        _buildDifficultyChip(
-                          PiecesDifficulty.easy,
-                          l10n.easy,
-                          l10n.piecesEasyDesc,
-                        ),
-                        const SizedBox(width: 8),
-                        _buildDifficultyChip(
-                          PiecesDifficulty.medium,
-                          l10n.medium,
-                          l10n.piecesMediumDesc,
-                        ),
-                        const SizedBox(width: 8),
-                        _buildDifficultyChip(
-                          PiecesDifficulty.hard,
-                          l10n.hard,
-                          l10n.piecesHardDesc,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 28),
-
-                    Text(
                       l10n.chooseAMode,
                       style:
                           Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -160,7 +125,7 @@ class _PiecesMenuScreenState extends State<PiecesMenuScreen> {
                 child: FilledButton(
                   onPressed: () {
                     context.push(
-                      '/the-pieces/which-side-wins?mode=${_mode.name}&difficulty=${_difficulty.name}',
+                      '/the-pieces/which-side-wins?mode=${_mode.name}',
                     );
                   },
                   style: FilledButton.styleFrom(
@@ -180,65 +145,6 @@ class _PiecesMenuScreenState extends State<PiecesMenuScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDifficultyChip(
-    PiecesDifficulty difficulty,
-    String label,
-    String description,
-  ) {
-    final selected = _difficulty == difficulty;
-    const color = Color(0xFF0277BD);
-    return Expanded(
-      child: Tooltip(
-        message: description,
-        child: GestureDetector(
-          onTap: () => setState(() => _difficulty = difficulty),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: selected ? color.withValues(alpha: 0.1) : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: selected ? color : Colors.grey.shade300,
-                width: selected ? 2 : 1,
-              ),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.2),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : [],
-            ),
-            child: Column(
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                    color: selected ? color : AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

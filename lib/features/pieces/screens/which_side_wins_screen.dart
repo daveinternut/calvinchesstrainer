@@ -13,12 +13,10 @@ import '../widgets/vs_divider.dart';
 
 class WhichSideWinsScreen extends ConsumerStatefulWidget {
   final WhichSideWinsMode mode;
-  final PiecesDifficulty difficulty;
 
   const WhichSideWinsScreen({
     super.key,
     required this.mode,
-    this.difficulty = PiecesDifficulty.easy,
   });
 
   @override
@@ -31,10 +29,7 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(whichSideWinsProvider.notifier).startGame(
-            widget.mode,
-            difficulty: widget.difficulty,
-          );
+      ref.read(whichSideWinsProvider.notifier).startGame(widget.mode);
     });
   }
 
@@ -119,7 +114,7 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
                   onPlayAgain: () {
                     ref
                         .read(whichSideWinsProvider.notifier)
-                        .startGame(widget.mode, difficulty: widget.difficulty);
+                        .startGame(widget.mode);
                   },
                   onBack: () => context.pop(),
                 ),
@@ -175,14 +170,12 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
     if (gameState.lastResult == null) return null;
 
     if (gameState.lastResult == AnswerResult.correct) {
-      // Correct answer: highlight the tapped (correct) side green
       if (side == gameState.lastAnswerSide) {
         return AppColors.correctGreen.withValues(alpha: 0.2);
       }
       return null;
     }
 
-    // Incorrect answer: red on tapped side, green on correct side
     if (side == gameState.lastAnswerSide) {
       return AppColors.incorrectRed.withValues(alpha: 0.2);
     }
@@ -193,13 +186,10 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
   }
 
   Widget _buildDifficultyIndicator(WhichSideWinsState gameState) {
-    final bounds = gameState.difficulty;
-    final levelCount = bounds.maxLevel - bounds.minLevel + 1;
-    final filledCount = gameState.currentLevel - bounds.minLevel + 1;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(levelCount, (index) {
-        final active = index < filledCount;
+      children: List.generate(5, (index) {
+        final active = index < gameState.currentDifficulty;
         return Container(
           width: 10,
           height: 10,

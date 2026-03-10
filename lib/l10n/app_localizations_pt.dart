@@ -526,13 +526,4 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get whichSideWinsPracticeDesc =>
       'Build your streak — difficulty increases as you go!';
-
-  @override
-  String get piecesEasyDesc => 'Single pieces';
-
-  @override
-  String get piecesMediumDesc => 'Small groups';
-
-  @override
-  String get piecesHardDesc => 'Tricky trades';
 }

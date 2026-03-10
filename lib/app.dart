@@ -207,7 +207,6 @@ final _router = GoRouter(
       name: 'pieces_menu',
       builder: (context, state) {
         final modeParam = state.uri.queryParameters['mode'];
-        final difficultyParam = state.uri.queryParameters['difficulty'];
         return PiecesMenuScreen(
           initialMode: modeParam != null
               ? WhichSideWinsMode.values.firstWhere(
@@ -215,12 +214,6 @@ final _router = GoRouter(
                   orElse: () => WhichSideWinsMode.practice,
                 )
               : WhichSideWinsMode.practice,
-          initialDifficulty: difficultyParam != null
-              ? PiecesDifficulty.values.firstWhere(
-                  (d) => d.name == difficultyParam,
-                  orElse: () => PiecesDifficulty.easy,
-                )
-              : PiecesDifficulty.easy,
         );
       },
     ),
@@ -230,17 +223,11 @@ final _router = GoRouter(
       builder: (context, state) {
         final modeParam =
             state.uri.queryParameters['mode'] ?? 'practice';
-        final difficultyParam =
-            state.uri.queryParameters['difficulty'] ?? 'easy';
         final mode = WhichSideWinsMode.values.firstWhere(
           (m) => m.name == modeParam,
           orElse: () => WhichSideWinsMode.practice,
         );
-        final difficulty = PiecesDifficulty.values.firstWhere(
-          (d) => d.name == difficultyParam,
-          orElse: () => PiecesDifficulty.easy,
-        );
-        return WhichSideWinsScreen(mode: mode, difficulty: difficulty);
+        return WhichSideWinsScreen(mode: mode);
       },
     ),
     GoRoute(

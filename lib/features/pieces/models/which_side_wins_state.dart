@@ -15,21 +15,6 @@ enum PieceType {
 
 enum WhichSideWinsMode { practice, speed }
 
-enum PiecesDifficulty {
-  easy(1, 1, 2),
-  medium(3, 2, 4),
-  hard(4, 3, 5);
-
-  /// Starting difficulty level (1-5)
-  final int startLevel;
-  /// Minimum level the difficulty can drop to on wrong answers
-  final int minLevel;
-  /// Maximum level the difficulty can reach
-  final int maxLevel;
-
-  const PiecesDifficulty(this.startLevel, this.minLevel, this.maxLevel);
-}
-
 enum AnswerSide { left, right }
 
 enum AnswerResult { correct, incorrect }
@@ -53,7 +38,6 @@ class PieceGroupPuzzle {
 
 class WhichSideWinsState {
   final WhichSideWinsMode mode;
-  final PiecesDifficulty difficulty;
   final PieceGroupPuzzle? currentPuzzle;
   final AnswerResult? lastResult;
   final AnswerSide? lastAnswerSide;
@@ -61,14 +45,13 @@ class WhichSideWinsState {
   final int bestStreak;
   final int totalCorrect;
   final int totalAttempts;
-  final int currentLevel;
+  final int currentDifficulty;
   final int? timeRemainingSeconds;
   final bool isGameOver;
   final bool isWaitingForNext;
 
   const WhichSideWinsState({
     required this.mode,
-    this.difficulty = PiecesDifficulty.easy,
     this.currentPuzzle,
     this.lastResult,
     this.lastAnswerSide,
@@ -76,7 +59,7 @@ class WhichSideWinsState {
     this.bestStreak = 0,
     this.totalCorrect = 0,
     this.totalAttempts = 0,
-    this.currentLevel = 1,
+    this.currentDifficulty = 1,
     this.timeRemainingSeconds,
     this.isGameOver = false,
     this.isWaitingForNext = false,
@@ -84,7 +67,6 @@ class WhichSideWinsState {
 
   WhichSideWinsState copyWith({
     WhichSideWinsMode? mode,
-    PiecesDifficulty? difficulty,
     PieceGroupPuzzle? Function()? currentPuzzle,
     AnswerResult? Function()? lastResult,
     AnswerSide? Function()? lastAnswerSide,
@@ -92,14 +74,13 @@ class WhichSideWinsState {
     int? bestStreak,
     int? totalCorrect,
     int? totalAttempts,
-    int? currentLevel,
+    int? currentDifficulty,
     int? Function()? timeRemainingSeconds,
     bool? isGameOver,
     bool? isWaitingForNext,
   }) {
     return WhichSideWinsState(
       mode: mode ?? this.mode,
-      difficulty: difficulty ?? this.difficulty,
       currentPuzzle:
           currentPuzzle != null ? currentPuzzle() : this.currentPuzzle,
       lastResult: lastResult != null ? lastResult() : this.lastResult,
@@ -109,7 +90,7 @@ class WhichSideWinsState {
       bestStreak: bestStreak ?? this.bestStreak,
       totalCorrect: totalCorrect ?? this.totalCorrect,
       totalAttempts: totalAttempts ?? this.totalAttempts,
-      currentLevel: currentLevel ?? this.currentLevel,
+      currentDifficulty: currentDifficulty ?? this.currentDifficulty,
       timeRemainingSeconds: timeRemainingSeconds != null
           ? timeRemainingSeconds()
           : this.timeRemainingSeconds,

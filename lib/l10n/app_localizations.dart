@@ -1055,24 +1055,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Build your streak — difficulty increases as you go!'**
   String get whichSideWinsPracticeDesc;
-
-  /// No description provided for @piecesEasyDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Single pieces'**
-  String get piecesEasyDesc;
-
-  /// No description provided for @piecesMediumDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Small groups'**
-  String get piecesMediumDesc;
-
-  /// No description provided for @piecesHardDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Tricky trades'**
-  String get piecesHardDesc;
 }
 
 class _AppLocalizationsDelegate

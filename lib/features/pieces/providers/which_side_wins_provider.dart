@@ -14,6 +14,7 @@ final whichSideWinsProvider =
 
 class WhichSideWinsNotifier extends Notifier<WhichSideWinsState> {
   final _engine = PieceValueEngine();
+  final _random = Random();
   Timer? _advanceTimer;
   Timer? _countdownTimer;
   final Map<String, int> _personalBests = {};
@@ -21,7 +22,7 @@ class WhichSideWinsNotifier extends Notifier<WhichSideWinsState> {
   AudioService get _audio => ref.read(audioServiceProvider);
   AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
 
-  String get _bestKey => '${state.mode.name}_${state.difficulty.name}';
+  String get _bestKey => state.mode.name;
 
   int get personalBest => _personalBests[_bestKey] ?? 0;
 
@@ -31,12 +32,10 @@ class WhichSideWinsNotifier extends Notifier<WhichSideWinsState> {
     return const WhichSideWinsState(mode: WhichSideWinsMode.practice);
   }
 
-  void startGame(WhichSideWinsMode mode, {PiecesDifficulty difficulty = PiecesDifficulty.easy}) {
+  void startGame(WhichSideWinsMode mode) {
     _cancelTimers();
     state = WhichSideWinsState(
       mode: mode,
-      difficulty: difficulty,
-      currentLevel: difficulty.startLevel,
       timeRemainingSeconds: mode == WhichSideWinsMode.speed ? 30 : null,
     );
 
@@ -57,19 +56,18 @@ class WhichSideWinsNotifier extends Notifier<WhichSideWinsState> {
     final newStreak = isCorrect ? state.streak + 1 : 0;
     final newBestStreak = max(newStreak, state.bestStreak);
 
-    final bounds = state.difficulty;
-    var newLevel = state.currentLevel;
+    var newDifficulty = state.currentDifficulty;
     if (isCorrect &&
         state.mode == WhichSideWinsMode.practice &&
         newStreak > 0 &&
         newStreak % 3 == 0 &&
-        newLevel < bounds.maxLevel) {
-      newLevel++;
+        newDifficulty < 5) {
+      newDifficulty++;
     }
     if (!isCorrect &&
         state.mode == WhichSideWinsMode.practice &&
-        newLevel > bounds.minLevel) {
-      newLevel--;
+        newDifficulty > 1) {
+      newDifficulty--;
     }
 
     state = state.copyWith(
@@ -77,7 +75,7 @@ class WhichSideWinsNotifier extends Notifier<WhichSideWinsState> {
       bestStreak: newBestStreak,
       totalCorrect: isCorrect ? state.totalCorrect + 1 : state.totalCorrect,
       totalAttempts: state.totalAttempts + 1,
-      currentLevel: newLevel,
+      currentDifficulty: newDifficulty,
       lastResult: () => isCorrect ? AnswerResult.correct : AnswerResult.incorrect,
       lastAnswerSide: () => side,
       isWaitingForNext: true,
@@ -101,10 +99,9 @@ class WhichSideWinsNotifier extends Notifier<WhichSideWinsState> {
   }
 
   void _generateNextPuzzle() {
-    final bounds = state.difficulty;
     final difficulty = state.mode == WhichSideWinsMode.speed
-        ? bounds.minLevel + _random.nextInt(bounds.maxLevel - bounds.minLevel + 1)
-        : state.currentLevel;
+        ? _random.nextInt(5) + 1
+        : state.currentDifficulty;
 
     final puzzle = _engine.generate(difficulty);
 
@@ -115,8 +112,6 @@ class WhichSideWinsNotifier extends Notifier<WhichSideWinsState> {
       isWaitingForNext: false,
     );
   }
-
-  final _random = Random();
 
   void _startCountdown() {
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {

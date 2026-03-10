@@ -160,8 +160,5 @@
   "whichSideWins": "Which Side Wins?",
   "whichSideWinsDesc": "Compare groups of pieces — tap the side worth more!",
   "tapTheSideWorthMore": "Tap the side worth more",
-  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!",
-  "piecesEasyDesc": "Single pieces",
-  "piecesMediumDesc": "Small groups",
-  "piecesHardDesc": "Tricky trades"
+  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!"
 }
