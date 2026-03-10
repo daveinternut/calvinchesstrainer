@@ -39,4 +39,13 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
   end
+
+  # Strip -flto=full from stockfish xcconfigs — LTO breaks the .incbin
+  # assembly directive used to embed NNUE neural-net weights at compile time.
+  sf_dir = File.join(__dir__, 'Pods', 'Target Support Files', 'stockfish')
+  Dir.glob(File.join(sf_dir, '*.xcconfig')).each do |path|
+    content = File.read(path)
+    next unless content.include?('-flto=full')
+    File.write(path, content.gsub('-flto=full', ''))
+  end
 end

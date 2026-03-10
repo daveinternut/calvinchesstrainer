@@ -17,6 +17,12 @@ import 'features/move_trainer/screens/move_menu_screen.dart';
 import 'features/chess_vision/screens/chess_vision_menu_screen.dart';
 import 'features/chess_vision/screens/chess_vision_game_screen.dart';
 import 'features/chess_vision/models/chess_vision_state.dart';
+import 'package:dartchess/dartchess.dart' show Side;
+import 'features/opening_trainer/screens/opening_game_screen.dart';
+import 'features/opening_trainer/models/opening_game_state.dart';
+import 'features/pieces/screens/pieces_menu_screen.dart';
+import 'features/pieces/screens/which_side_wins_screen.dart';
+import 'features/pieces/models/which_side_wins_state.dart';
 
 final _analytics = FirebaseAnalytics.instance;
 
@@ -185,6 +191,56 @@ final _router = GoRouter(
           target: target,
           mode: mode,
         );
+      },
+    ),
+    GoRoute(
+      path: '/opening-trainer',
+      name: 'opening_trainer',
+      builder: (context, state) => const OpeningGameScreen(
+        mode: OpeningMode.practice,
+        difficulty: OpeningDifficulty.easy,
+        playerColor: Side.white,
+      ),
+    ),
+    GoRoute(
+      path: '/the-pieces',
+      name: 'pieces_menu',
+      builder: (context, state) {
+        final modeParam = state.uri.queryParameters['mode'];
+        final difficultyParam = state.uri.queryParameters['difficulty'];
+        return PiecesMenuScreen(
+          initialMode: modeParam != null
+              ? WhichSideWinsMode.values.firstWhere(
+                  (m) => m.name == modeParam,
+                  orElse: () => WhichSideWinsMode.practice,
+                )
+              : WhichSideWinsMode.practice,
+          initialDifficulty: difficultyParam != null
+              ? PiecesDifficulty.values.firstWhere(
+                  (d) => d.name == difficultyParam,
+                  orElse: () => PiecesDifficulty.easy,
+                )
+              : PiecesDifficulty.easy,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/the-pieces/which-side-wins',
+      name: 'which_side_wins',
+      builder: (context, state) {
+        final modeParam =
+            state.uri.queryParameters['mode'] ?? 'practice';
+        final difficultyParam =
+            state.uri.queryParameters['difficulty'] ?? 'easy';
+        final mode = WhichSideWinsMode.values.firstWhere(
+          (m) => m.name == modeParam,
+          orElse: () => WhichSideWinsMode.practice,
+        );
+        final difficulty = PiecesDifficulty.values.firstWhere(
+          (d) => d.name == difficultyParam,
+          orElse: () => PiecesDifficulty.easy,
+        );
+        return WhichSideWinsScreen(mode: mode, difficulty: difficulty);
       },
     ),
     GoRoute(

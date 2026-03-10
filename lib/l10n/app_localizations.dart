@@ -857,6 +857,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'rank'**
   String get promptRank;
+
+  /// No description provided for @openingFundamentals.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening\nExplorer'**
+  String get openingFundamentals;
+
+  /// No description provided for @playTheOpening.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore openings!'**
+  String get playTheOpening;
+
+  /// No description provided for @openingPractice.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening Practice'**
+  String get openingPractice;
+
+  /// No description provided for @openingChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening Challenge'**
+  String get openingChallenge;
+
+  /// No description provided for @playAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Play as'**
+  String get playAs;
+
+  /// No description provided for @playAsWhite.
+  ///
+  /// In en, this message translates to:
+  /// **'White'**
+  String get playAsWhite;
+
+  /// No description provided for @playAsBlack.
+  ///
+  /// In en, this message translates to:
+  /// **'Black'**
+  String get playAsBlack;
+
+  /// No description provided for @difficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty'**
+  String get difficulty;
+
+  /// No description provided for @easy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get easy;
+
+  /// No description provided for @medium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get medium;
+
+  /// No description provided for @hard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get hard;
+
+  /// No description provided for @challenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge'**
+  String get challenge;
+
+  /// No description provided for @practiceHintsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Play with hints — top 3 moves shown as arrows'**
+  String get practiceHintsDesc;
+
+  /// No description provided for @challengeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Test your opening skills — earn medals!'**
+  String get challengeDesc;
+
+  /// No description provided for @engineThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Engine thinking...'**
+  String get engineThinking;
+
+  /// No description provided for @yourTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Your turn'**
+  String get yourTurn;
+
+  /// No description provided for @gameOver.
+  ///
+  /// In en, this message translates to:
+  /// **'Game Over'**
+  String get gameOver;
+
+  /// No description provided for @youSurvivedMoves.
+  ///
+  /// In en, this message translates to:
+  /// **'You survived {count} move(s)'**
+  String youSurvivedMoves(int count);
+
+  /// No description provided for @reviewGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Review Game'**
+  String get reviewGame;
+
+  /// No description provided for @openingTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening Tip'**
+  String get openingTip;
+
+  /// No description provided for @gotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it!'**
+  String get gotIt;
+
+  /// No description provided for @medalBronze.
+  ///
+  /// In en, this message translates to:
+  /// **'Bronze!'**
+  String get medalBronze;
+
+  /// No description provided for @medalSilver.
+  ///
+  /// In en, this message translates to:
+  /// **'Silver!'**
+  String get medalSilver;
+
+  /// No description provided for @medalGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold!'**
+  String get medalGold;
+
+  /// No description provided for @previousMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous move'**
+  String get previousMove;
+
+  /// No description provided for @nextMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Next move'**
+  String get nextMove;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @thePieces.
+  ///
+  /// In en, this message translates to:
+  /// **'The Pieces'**
+  String get thePieces;
+
+  /// No description provided for @knowYourPieces.
+  ///
+  /// In en, this message translates to:
+  /// **'Know your pieces!'**
+  String get knowYourPieces;
+
+  /// No description provided for @whichSideWins.
+  ///
+  /// In en, this message translates to:
+  /// **'Which Side Wins?'**
+  String get whichSideWins;
+
+  /// No description provided for @whichSideWinsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare groups of pieces — tap the side worth more!'**
+  String get whichSideWinsDesc;
+
+  /// No description provided for @tapTheSideWorthMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the side worth more'**
+  String get tapTheSideWorthMore;
+
+  /// No description provided for @whichSideWinsPracticeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Build your streak — difficulty increases as you go!'**
+  String get whichSideWinsPracticeDesc;
+
+  /// No description provided for @piecesEasyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Single pieces'**
+  String get piecesEasyDesc;
+
+  /// No description provided for @piecesMediumDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Small groups'**
+  String get piecesMediumDesc;
+
+  /// No description provided for @piecesHardDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Tricky trades'**
+  String get piecesHardDesc;
 }
 
 class _AppLocalizationsDelegate

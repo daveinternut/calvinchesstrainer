@@ -113,6 +113,79 @@ class AnalyticsService {
     );
   }
 
+  // --- Opening Trainer ---
+
+  void logOpeningDrillStarted({
+    required String mode,
+    required String difficulty,
+    required String playerColor,
+  }) {
+    _analytics.logEvent(
+      name: 'opening_drill_started',
+      parameters: {
+        'mode': mode,
+        'difficulty': difficulty,
+        'player_color': playerColor,
+      },
+    );
+  }
+
+  void logOpeningDrillCompleted({
+    required String mode,
+    required String difficulty,
+    required String playerColor,
+    required int userMoves,
+    required String medal,
+    required int livesUsed,
+  }) {
+    _analytics.logEvent(
+      name: 'opening_drill_completed',
+      parameters: {
+        'mode': mode,
+        'difficulty': difficulty,
+        'player_color': playerColor,
+        'user_moves': userMoves,
+        'medal': medal,
+        'lives_used': livesUsed,
+      },
+    );
+  }
+
+  // --- Pieces (Which Side Wins) ---
+
+  void logPiecesDrillStarted({
+    required String mode,
+  }) {
+    _analytics.logEvent(
+      name: 'pieces_drill_started',
+      parameters: {
+        'mode': mode,
+      },
+    );
+  }
+
+  void logPiecesDrillCompleted({
+    required String mode,
+    required int totalCorrect,
+    required int totalAttempts,
+    required int bestStreak,
+    required bool isNewRecord,
+  }) {
+    _analytics.logEvent(
+      name: 'pieces_drill_completed',
+      parameters: {
+        'mode': mode,
+        'total_correct': totalCorrect,
+        'total_attempts': totalAttempts,
+        'best_streak': bestStreak,
+        'accuracy': totalAttempts > 0
+            ? ((totalCorrect / totalAttempts) * 100).round()
+            : 0,
+        'is_new_record': isNewRecord.toString(),
+      },
+    );
+  }
+
   void logVisionDrillCompleted({
     required String drill,
     required String mode,

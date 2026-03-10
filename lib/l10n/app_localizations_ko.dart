@@ -419,4 +419,116 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get promptRank => '랭크';
+
+  @override
+  String get openingFundamentals => '오프닝\n탐색기';
+
+  @override
+  String get playTheOpening => '오프닝을 탐색하세요!';
+
+  @override
+  String get openingPractice => '오프닝 연습';
+
+  @override
+  String get openingChallenge => '오프닝 챌린지';
+
+  @override
+  String get playAs => '플레이';
+
+  @override
+  String get playAsWhite => '백';
+
+  @override
+  String get playAsBlack => '흑';
+
+  @override
+  String get difficulty => '난이도';
+
+  @override
+  String get easy => '쉬움';
+
+  @override
+  String get medium => '보통';
+
+  @override
+  String get hard => '어려움';
+
+  @override
+  String get challenge => '챌린지';
+
+  @override
+  String get practiceHintsDesc => '힌트와 함께 플레이 — 상위 3수 화살표로 표시';
+
+  @override
+  String get challengeDesc => '오프닝 실력을 테스트하세요 — 메달을 획득하세요!';
+
+  @override
+  String get engineThinking => '엔진 분석 중...';
+
+  @override
+  String get yourTurn => '당신 차례';
+
+  @override
+  String get gameOver => '게임 오버';
+
+  @override
+  String youSurvivedMoves(int count) {
+    return '$count수 생존했습니다';
+  }
+
+  @override
+  String get reviewGame => '게임 복기';
+
+  @override
+  String get openingTip => '오프닝 팁';
+
+  @override
+  String get gotIt => '알겠습니다!';
+
+  @override
+  String get medalBronze => '동메달!';
+
+  @override
+  String get medalSilver => '은메달!';
+
+  @override
+  String get medalGold => '금메달!';
+
+  @override
+  String get previousMove => '이전 수';
+
+  @override
+  String get nextMove => '다음 수';
+
+  @override
+  String get done => '완료';
+
+  @override
+  String get thePieces => 'The Pieces';
+
+  @override
+  String get knowYourPieces => 'Know your pieces!';
+
+  @override
+  String get whichSideWins => 'Which Side Wins?';
+
+  @override
+  String get whichSideWinsDesc =>
+      'Compare groups of pieces — tap the side worth more!';
+
+  @override
+  String get tapTheSideWorthMore => 'Tap the side worth more';
+
+  @override
+  String get whichSideWinsPracticeDesc =>
+      'Build your streak — difficulty increases as you go!';
+
+  @override
+  String get piecesEasyDesc => 'Single pieces';
+
+  @override
+  String get piecesMediumDesc => 'Small groups';
+
+  @override
+  String get piecesHardDesc => 'Tricky trades';
 }

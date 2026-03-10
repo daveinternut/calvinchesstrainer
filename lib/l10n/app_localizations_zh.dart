@@ -418,4 +418,116 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get promptRank => '行';
+
+  @override
+  String get openingFundamentals => '开局\n探索器';
+
+  @override
+  String get playTheOpening => '探索开局！';
+
+  @override
+  String get openingPractice => '开局练习';
+
+  @override
+  String get openingChallenge => '开局挑战';
+
+  @override
+  String get playAs => '执棋';
+
+  @override
+  String get playAsWhite => '白方';
+
+  @override
+  String get playAsBlack => '黑方';
+
+  @override
+  String get difficulty => '难度';
+
+  @override
+  String get easy => '简单';
+
+  @override
+  String get medium => '中等';
+
+  @override
+  String get hard => '困难';
+
+  @override
+  String get challenge => '挑战';
+
+  @override
+  String get practiceHintsDesc => '带提示练习 — 显示前3步最佳着法箭头';
+
+  @override
+  String get challengeDesc => '测试你的开局水平 — 赢取奖牌！';
+
+  @override
+  String get engineThinking => '引擎分析中...';
+
+  @override
+  String get yourTurn => '轮到你';
+
+  @override
+  String get gameOver => '游戏结束';
+
+  @override
+  String youSurvivedMoves(int count) {
+    return '你坚持了$count步';
+  }
+
+  @override
+  String get reviewGame => '复盘';
+
+  @override
+  String get openingTip => '开局提示';
+
+  @override
+  String get gotIt => '知道了！';
+
+  @override
+  String get medalBronze => '铜牌！';
+
+  @override
+  String get medalSilver => '银牌！';
+
+  @override
+  String get medalGold => '金牌！';
+
+  @override
+  String get previousMove => '上一步';
+
+  @override
+  String get nextMove => '下一步';
+
+  @override
+  String get done => '完成';
+
+  @override
+  String get thePieces => 'The Pieces';
+
+  @override
+  String get knowYourPieces => 'Know your pieces!';
+
+  @override
+  String get whichSideWins => 'Which Side Wins?';
+
+  @override
+  String get whichSideWinsDesc =>
+      'Compare groups of pieces — tap the side worth more!';
+
+  @override
+  String get tapTheSideWorthMore => 'Tap the side worth more';
+
+  @override
+  String get whichSideWinsPracticeDesc =>
+      'Build your streak — difficulty increases as you go!';
+
+  @override
+  String get piecesEasyDesc => 'Single pieces';
+
+  @override
+  String get piecesMediumDesc => 'Small groups';
+
+  @override
+  String get piecesHardDesc => 'Tricky trades';
 }

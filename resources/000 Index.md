@@ -44,6 +44,7 @@ For detailed explanations of each topic, see [000 Explanations.md](000%20Explana
 | Audio | just_audio (pre-recorded clips), flutter_tts (fallback) |
 | Chess board UI | chessground (lichess) — board widget, 28 piece sets, 25+ themes, drag-and-drop, animations |
 | Chess logic | dartchess (lichess) — legal moves, FEN/PGN, SAN notation, game state, variants |
+| Chess engine | stockfish (v1.8.1) — Stockfish 18 via FFI, UCI protocol, position evaluation, best move search |
 | Splash screen | flutter_native_splash — Internut Education logo (white) on dark green (#1B5E20) |
 | App icons | flutter_launcher_icons — generated for iOS (21 sizes) and Android (5 mipmap densities) from 2048x2048 source |
 | Custom font | BradBunR (assets/fonts/BradBunR.ttf) — playful font used for app title and card labels |
@@ -68,6 +69,8 @@ Feature-based folder structure. Each feature has `screens/`, `widgets/`, `provid
 | `lib/core/audio/audio_service.dart` | AudioService — plays pre-recorded MP3/M4A clips for letters, numbers, piece names, SFX, milestones. Uses two AudioPlayers (voice + sfx). `speakSquare()` chains file+rank clips; `speakMove()` chains piece+file+rank clips. Riverpod provider. |
 | `lib/core/services/puzzle_service.dart` | PuzzleService + ParsedPuzzle — loads `assets/puzzles/moves_puzzles.json`, parses FEN with dartchess, computes SAN notation and piece info. `getRandomPuzzle(exclude, sideToMove)` serves random puzzles, optionally filtered by side to move (white default, black for hard mode). Riverpod provider. |
 | `lib/core/services/analytics_service.dart` | AnalyticsService — Riverpod provider wrapping `FirebaseAnalytics`. Typed methods for custom events: `logFileRankDrillStarted/Completed`, `logMoveDrillStarted/Completed`, `logVisionDrillStarted/Completed`. Each event includes parameters like subject, mode, hardMode, score, accuracy, bestStreak, isNewRecord, elapsedSeconds. Called from game providers at drill start and game-over. |
+| `lib/core/services/stockfish_service.dart` | StockfishService — wraps Stockfish 18 engine via FFI/UCI protocol. Lazy initialization, async evaluation. `evaluate(fen, depth)` returns centipawn score. `getBestMove(fen, depth, skillLevel)` returns UCI move. `getTopMoves(fen, count, depth)` returns multipv scored moves for hint arrows. Riverpod provider. |
+| `lib/core/services/opening_book_service.dart` | OpeningBookService — loads `assets/data/eco_openings.json` (3640 ECO openings from Lichess). `getOpening(sanMoves)` returns the longest-matching opening name/ECO code for a move sequence. Riverpod provider. |
 | `lib/core/board_utils.dart` | Highlight helpers — `highlightFile()`, `highlightRank()`, `highlightSquare()` convert our 0-based file/rank indices into chessground's `IMap<Square, SquareHighlight>` format |
 | `lib/core/theme/app_theme.dart` | AppColors, AppTheme — Material 3 theme, feedback colors (correctGreen, incorrectRed, highlightYellow) |
 | `lib/core/constants.dart` | ChessConstants — file/rank name arrays, squareName helper, timer durations |
@@ -106,6 +109,31 @@ Feature-based folder structure. Each feature has `screens/`, `widgets/`, `provid
 | `lib/features/chess_vision/screens/chess_vision_game_screen.dart` | Unified game screen branching on drill type. Forks: found-progress dots, None button, ghost pieces on found squares via `PieceShape`. Knight Sight: found-progress dots, ghost knights on found squares. Knight Flight: minimum/your-moves counter, ghost knight target, arrow trail, retry/skip buttons for non-optimal paths. Pawn Attack: pawns-remaining counter, pawn threat highlights (subtle red), stopwatch for timed mode, progressive difficulty display. All drills share streak counter, results overlay, app bar score. |
 | `lib/features/chess_vision/widgets/found_progress_indicator.dart` | Shows "Found 2 of 4" with filled/empty dot indicators. Displays hint text when no solutions exist. Reused by Forks & Skewers and Knight Sight drills. |
 
+### Opening Trainer (engine-based opening practice)
+| File | Purpose |
+|---|---|
+| `lib/features/opening_trainer/models/opening_game_state.dart` | OpeningDifficulty (easy/medium/hard with skill level, search depth, mistake threshold, lives), OpeningMode (practice/challenge), MedalLevel (none/bronze/silver/gold), MoveRecord, SuggestedMove, OpeningGameState immutable state. Medal computed from user move count (3=bronze, 6=silver, 10=gold). `evalForPlayer` adjusts eval perspective. |
+| `lib/features/opening_trainer/models/opening_principles.dart` | Static list of 12 beginner opening principles shown as pre-game tips. |
+| `lib/features/opening_trainer/providers/opening_game_provider.dart` | OpeningGameNotifier — full game flow against Stockfish engine. `startGame` initializes position, shows principle card. `handlePlayerMove` plays move via dartchess, evaluates via StockfishService, checks mistake threshold, deducts lives. `_engineMove` gets best move at configured skill/depth. `_requestHints` gets top 3 moves for practice mode arrows. `startReview/reviewForward/reviewBack` for post-game move navigation. Updates opening name via OpeningBookService. Logs analytics events. |
+| `lib/features/opening_trainer/screens/opening_menu_screen.dart` | Menu: color picker (white/black king images), difficulty chips (Easy/Medium/Hard), mode cards (Practice with hint arrows, Challenge with medals). Start button routes to game screen. |
+| `lib/features/opening_trainer/screens/opening_game_screen.dart` | Game screen: interactive `Chessboard` + `GameData` with drag-and-drop. EvalBar above board. Lives + medal progress for challenge mode. Arrow shapes for practice mode hints (green=best, yellow=2nd, orange=3rd). Move history panel below board. Engine thinking indicator. Game over overlay with medal display and review button. Post-game review with forward/back navigation. |
+| `lib/features/opening_trainer/widgets/eval_bar.dart` | Horizontal evaluation bar — white section (left) / black section (right) with sigmoid mapping. Animated transitions. Centipawn label in center. |
+| `lib/features/opening_trainer/widgets/lives_display.dart` | Row of heart icons (filled=remaining, empty=lost). Pulse animation on life loss. |
+| `lib/features/opening_trainer/widgets/medal_progress.dart` | Three medal circles (bronze/silver/gold) with move-count labels. Animated fill when earned. |
+| `lib/features/opening_trainer/widgets/move_history_panel.dart` | Horizontal scrolling move list in standard notation (1. e4 e5 2. Nf3 ...). Auto-scrolls to latest. Tappable in review mode. |
+| `lib/features/opening_trainer/widgets/principle_card.dart` | Pre-game overlay card with lightbulb icon, random opening principle, "Got it!" dismiss button. |
+
+### The Pieces (piece value training)
+| File | Purpose |
+|---|---|
+| `lib/features/pieces/models/which_side_wins_state.dart` | PieceType enum (pawn/knight/bishop/rook/queen with values and PieceKind), WhichSideWinsMode (practice/speed), AnswerSide (left/right), AnswerResult, PieceGroupPuzzle (left/right piece groups with correct side), WhichSideWinsState immutable state with copyWith. |
+| `lib/features/pieces/services/piece_value_engine.dart` | PieceValueEngine — generates random piece group comparison puzzles at 5 difficulty levels. Level 1: single piece, large gap. Level 2: single piece, close values. Level 3: 2-3 pieces, clear winner. Level 4: 2-3 pieces, close values. Level 5: 3-4 pieces, tricky. Ensures sides are never equal. Randomly assigns groups to left/right. |
+| `lib/features/pieces/providers/which_side_wins_provider.dart` | WhichSideWinsNotifier — game flow: `startGame` initializes state, `handleAnswer` evaluates left/right tap, manages streaks, progressive difficulty in practice (advances every 3 correct, drops on wrong), mixed difficulty in speed mode. Timer countdown for speed round. Personal bests. Logs `pieces_drill_started/completed` via AnalyticsService. |
+| `lib/features/pieces/screens/pieces_menu_screen.dart` | Menu: "Which Side Wins?" header card with balance icon, mode cards (Practice/Speed Round). Start button routes to game screen. Future expansion point for more piece-learning games. |
+| `lib/features/pieces/screens/which_side_wins_screen.dart` | Game screen: two side-by-side PieceGroupPanels with VS divider. Tap left or right to answer. Green/red flash feedback. Reuses StreakCounter, TimerBar, ResultsCard from file_rank_trainer. Difficulty dot indicator in practice mode. |
+| `lib/features/pieces/widgets/piece_group_panel.dart` | Tappable panel rendering a group of chess piece images (from PieceSet.cburnett.assets). Responsive piece sizing based on group count. Animated background color for feedback. |
+| `lib/features/pieces/widgets/vs_divider.dart` | Circular "VS" badge between the two panels. BradBunR font. |
+
 ### About
 | File | Purpose |
 |---|---|
@@ -119,7 +147,7 @@ Feature-based folder structure. Each feature has `screens/`, `widgets/`, `provid
 ### Other Features
 | File | Purpose |
 |---|---|
-| `lib/features/home/screens/home_screen.dart` | Main menu: large app icon (200px), "Calvin Chess Trainer" in BradBunR font (72pt), 3 training cards with AI-generated illustrations overlaid with BradBunR labels. Chess Notation (green, active → `/file-rank-trainer`), Chess Vision (purple, active → `/chess-vision`, 4 drill types: Forks & Skewers, Knight Sight, Knight Flight, Pawn Attack), Opening Fundamentals (orange, coming soon/disabled). Info button links to About page. |
+| `lib/features/home/screens/home_screen.dart` | Main menu: large app icon, "Calvin Chess Trainer" in BradBunR font (72pt), 4 training cards overlaid with BradBunR labels. The Pieces (blue → `/the-pieces`), Chess Notation (green → `/file-rank-trainer`), Chess Vision (purple → `/chess-vision`), Opening Fundamentals (orange → `/opening-trainer`). Info button links to About page. |
 | `lib/features/tactics_trainer/screens/tactics_trainer_screen.dart` | Placeholder |
 
 ### Assets
@@ -143,6 +171,7 @@ Feature-based folder structure. Each feature has `screens/`, `widgets/`, `provid
 | `assets/sounds/correct.m4a` | macOS Glass system sound (ding) |
 | `assets/sounds/incorrect.m4a` | macOS Basso system sound (thud) |
 | `assets/puzzles/moves_puzzles.json` | 500 curated Lichess puzzles (CC0 license) for the move trainer. Each entry has `fen` and `moves` (UCI). Generated by `scripts/curate_puzzles.py`. |
+| `assets/data/eco_openings.json` | 3640 ECO openings from Lichess chess-openings database. Each entry has `eco` (code), `name` (opening name), `pgn` (move sequence). Used by OpeningBookService for opening name display during play. |
 
 ### Build Tools
 | Path | Purpose |
@@ -176,5 +205,9 @@ Feature-based folder structure. Each feature has `screens/`, `widgets/`, `provid
 | `/move-trainer/game` | MoveGameScreen | `?mode=practice\|speed&hardMode=true\|false` |
 | `/chess-vision` | ChessVisionMenuScreen | `?drill=...&piece=...&target=...&mode=...` (optional, for state preservation) |
 | `/chess-vision/game` | ChessVisionGameScreen | `?drill=forksAndSkewers\|knightSight\|knightFlight\|pawnAttack&piece=queen\|rook\|bishop\|knight&target=rook\|bishop\|knight\|queen&mode=practice\|speed\|concentric` |
+| `/opening-trainer` | OpeningMenuScreen | `?mode=practice\|challenge&difficulty=easy\|medium\|hard&playerColor=white\|black` (optional, for state preservation) |
+| `/opening-trainer/game` | OpeningGameScreen | `?mode=practice\|challenge&difficulty=easy\|medium\|hard&playerColor=white\|black` |
+| `/the-pieces` | PiecesMenuScreen | `?mode=practice\|speed` (optional, for state preservation) |
+| `/the-pieces/which-side-wins` | WhichSideWinsScreen | `?mode=practice\|speed` |
 | `/about` | AboutScreen | — |
 | `/tactics-trainer` | TacticsTrainerScreen | — |

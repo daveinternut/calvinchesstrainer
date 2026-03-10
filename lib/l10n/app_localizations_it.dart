@@ -423,4 +423,118 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get promptRank => 'traversa';
+
+  @override
+  String get openingFundamentals => 'Esploratore\nDi Aperture';
+
+  @override
+  String get playTheOpening => 'Esplora le aperture!';
+
+  @override
+  String get openingPractice => 'Pratica di Apertura';
+
+  @override
+  String get openingChallenge => 'Sfida di Apertura';
+
+  @override
+  String get playAs => 'Gioca come';
+
+  @override
+  String get playAsWhite => 'Bianco';
+
+  @override
+  String get playAsBlack => 'Nero';
+
+  @override
+  String get difficulty => 'Difficoltà';
+
+  @override
+  String get easy => 'Facile';
+
+  @override
+  String get medium => 'Medio';
+
+  @override
+  String get hard => 'Difficile';
+
+  @override
+  String get challenge => 'Sfida';
+
+  @override
+  String get practiceHintsDesc =>
+      'Gioca con suggerimenti — le 3 migliori mosse mostrate come frecce';
+
+  @override
+  String get challengeDesc =>
+      'Metti alla prova le tue capacità di apertura — guadagna medaglie!';
+
+  @override
+  String get engineThinking => 'Motore in analisi...';
+
+  @override
+  String get yourTurn => 'Il tuo turno';
+
+  @override
+  String get gameOver => 'Fine partita';
+
+  @override
+  String youSurvivedMoves(int count) {
+    return 'Sei sopravvissuto $count mossa/e';
+  }
+
+  @override
+  String get reviewGame => 'Rivedi partita';
+
+  @override
+  String get openingTip => 'Consiglio di apertura';
+
+  @override
+  String get gotIt => 'Capito!';
+
+  @override
+  String get medalBronze => 'Bronzo!';
+
+  @override
+  String get medalSilver => 'Argento!';
+
+  @override
+  String get medalGold => 'Oro!';
+
+  @override
+  String get previousMove => 'Mossa precedente';
+
+  @override
+  String get nextMove => 'Prossima mossa';
+
+  @override
+  String get done => 'Fatto';
+
+  @override
+  String get thePieces => 'The Pieces';
+
+  @override
+  String get knowYourPieces => 'Know your pieces!';
+
+  @override
+  String get whichSideWins => 'Which Side Wins?';
+
+  @override
+  String get whichSideWinsDesc =>
+      'Compare groups of pieces — tap the side worth more!';
+
+  @override
+  String get tapTheSideWorthMore => 'Tap the side worth more';
+
+  @override
+  String get whichSideWinsPracticeDesc =>
+      'Build your streak — difficulty increases as you go!';
+
+  @override
+  String get piecesEasyDesc => 'Single pieces';
+
+  @override
+  String get piecesMediumDesc => 'Small groups';
+
+  @override
+  String get piecesHardDesc => 'Tricky trades';
 }

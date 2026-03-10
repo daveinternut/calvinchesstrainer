@@ -28,7 +28,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             Flexible(
-              flex: 3,
+              flex: 2,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
@@ -95,11 +95,22 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Flexible(
-              flex: 2,
+              flex: 3,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   children: [
+                    Expanded(
+                      child: _BigTrainingCard(
+                        title: l10n.thePieces,
+                        subtitle: l10n.knowYourPieces,
+                        icon: Icons.extension_rounded,
+                        secondaryIcon: Icons.balance_rounded,
+                        color: const Color(0xFF0277BD),
+                        onTap: () => context.push('/the-pieces'),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     Expanded(
                       child: _BigTrainingCard(
                         title: l10n.chessNotation,
@@ -111,7 +122,7 @@ class HomeScreen extends StatelessWidget {
                         onTap: () => context.push('/file-rank-trainer'),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Expanded(
                       child: _BigTrainingCard(
                         title: l10n.chessVision,
@@ -123,20 +134,18 @@ class HomeScreen extends StatelessWidget {
                         onTap: () => context.push('/chess-vision'),
                       ),
                     ),
-                    // TODO: Re-add for post-launch
-                    // const SizedBox(height: 12),
-                    // Expanded(
-                    //   child: _BigTrainingCard(
-                    //     title: 'Opening Fundamentals',
-                    //     subtitle: 'Coming soon!',
-                    //     icon: Icons.castle_rounded,
-                    //     secondaryIcon: Icons.auto_awesome_rounded,
-                    //     color: const Color(0xFFE65100),
-                    //     imagePath: 'assets/images/card_openings.png',
-                    //     comingSoon: true,
-                    //     onTap: null,
-                    //   ),
-                    // ),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: _BigTrainingCard(
+                        title: l10n.openingFundamentals,
+                        subtitle: l10n.playTheOpening,
+                        icon: Icons.castle_rounded,
+                        secondaryIcon: Icons.auto_awesome_rounded,
+                        color: const Color(0xFFE65100),
+                        imagePath: 'assets/images/card_openings.png',
+                        onTap: () => context.push('/opening-trainer'),
+                      ),
+                    ),
                   ],
                 ),
               ),
