@@ -527,4 +527,60 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get whichSideWinsPracticeDesc =>
       'Build your streak — difficulty increases as you go!';
+
+  @override
+  String get letters => 'Buchstaben';
+
+  @override
+  String get king => 'König';
+
+  @override
+  String get pawn => 'Bauer';
+
+  @override
+  String get hardModeBlackPieces => 'Schwarze Figuren werden gezeigt!';
+
+  @override
+  String get tapPieceToLearnLetter =>
+      'Tippe auf eine Figur, um ihren Buchstaben zu lernen!';
+
+  @override
+  String get whichPieceForLetter => 'Welche Figur hat diesen Buchstaben?';
+
+  @override
+  String get whichLetterForPiece => 'Welcher Buchstabe gehört zu dieser Figur?';
+
+  @override
+  String get tapPieceNoLetter => 'Tippe auf die Figur OHNE Buchstaben!';
+
+  @override
+  String get noLetter => 'Kein Buchstabe';
+
+  @override
+  String letterEquals(String letter, String piece) {
+    return '$letter = $piece!';
+  }
+
+  @override
+  String get pawnNoLetterFact => 'Bauern brauchen keinen Buchstaben!';
+
+  @override
+  String get mnemonicKing => 'K wie King — der König auf Englisch, der Chef!';
+
+  @override
+  String get mnemonicQueen => 'Q wie Queen — die Dame auf Englisch!';
+
+  @override
+  String get mnemonicRook => 'R wie Rook — der Turm auf Englisch!';
+
+  @override
+  String get mnemonicBishop => 'B wie Bishop — der Läufer auf Englisch!';
+
+  @override
+  String get mnemonicKnight =>
+      'N wie kNight — der Springer! Das K hat schon der König.';
+
+  @override
+  String get mnemonicPawn =>
+      'Bauern sind so tapfer, sie brauchen keinen Buchstaben!';
 }

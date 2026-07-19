@@ -40,9 +40,9 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
   /// The square the user tapped to select a piece for per-move analysis.
   Square? _selectedPieceSquare;
 
-  /// Async-evaluated deltas for moves not in the top 5.
-  /// Key = UCI string, value = eval delta in centipawns.
-  Map<String, int> _extraMoveEvals = {};
+  /// Dedicated per-move evaluations for the selected piece, filled in
+  /// progressively as the engine finishes each move. Key = UCI string.
+  Map<String, MoveEval> _extraMoveEvals = {};
 
   @override
   void initState() {
@@ -156,11 +156,11 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
                       Expanded(
                         child: EvalBar(eval: gameState.currentEval),
                       ),
-                      if (gameState.thinkingTotalWaves > 0) ...[
+                      if (gameState.engineTargetDepth > 0) ...[
                         const SizedBox(width: 8),
                         ThinkingIndicator(
-                          currentWave: gameState.thinkingWave,
-                          totalWaves: gameState.thinkingTotalWaves,
+                          depth: gameState.engineDepth,
+                          targetDepth: gameState.engineTargetDepth,
                         ),
                       ],
                     ],
@@ -356,6 +356,13 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
       });
       if (newSelection != null) {
         _evaluateMissingMoves(newSelection, position);
+      } else {
+        // Deselected — cancel the running per-move evals and restart the
+        // hint analysis (otherwise arrows, eval bar and depth readout stay
+        // stale, and resumed hints would queue behind stale evals).
+        final notifier = ref.read(openingGameProvider.notifier);
+        notifier.cancelPieceEvals();
+        notifier.resumeHints();
       }
       return;
     }
@@ -382,13 +389,21 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
 
     ref
         .read(openingGameProvider.notifier)
-        .evaluateSpecificMoves(movesToEval)
-        .then((results) {
-      if (mounted && _selectedPieceSquare == fromSquare) {
-        setState(() {
-          _extraMoveEvals = results;
-        });
-      }
+        .evaluateSpecificMoves(
+          movesToEval,
+          onResult: (uci, eval) {
+            if (mounted && _selectedPieceSquare == fromSquare) {
+              setState(() {
+                _extraMoveEvals = {..._extraMoveEvals, uci: eval};
+              });
+            }
+          },
+        )
+        // This future is fire-and-forget (results stream via onResult) — an
+        // error here must never surface as an unhandled async exception.
+        .catchError((Object e) {
+      debugPrint('evaluateSpecificMoves failed: $e');
+      return <String, MoveEval>{};
     });
   }
 
@@ -402,8 +417,10 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
     if (dests == null || dests.isEmpty) return null;
 
     final topMovesMap = <String, SuggestedMove>{};
+    String? bestUci;
     for (final sm in gameState.topMoves) {
       topMovesMap[sm.uci] = sm;
+      if (sm.isBest) bestUci = sm.uci;
     }
 
     final openingBook = ref.read(openingBookServiceProvider);
@@ -413,38 +430,42 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
 
     for (final dest in dests) {
       final uci = '${fromSquare.name}${dest.name}';
+      final move = NormalMove(from: fromSquare, to: dest);
       final topMove = topMovesMap[uci];
+      final isBook = openingBook.isBookMove(position, move);
 
-      MoveClassification classification;
-      double? deltaPawns;
+      MoveClassification? classification;
+      String? scoreText;
 
-      // Prefer dedicated per-move evaluation over top-5 data (which may
-      // be from an early/inaccurate wave).
-      final extraDeltaCp = _extraMoveEvals[uci];
-      if (extraDeltaCp != null) {
-        deltaPawns = extraDeltaCp / 100.0;
-        classification = classifyDelta(deltaPawns);
-      } else if (topMove != null) {
+      // Prefer the dedicated per-move evaluation (same fixed depth as the
+      // baseline, so scores match the arrow view); fall back to top-5 data.
+      final extra = _extraMoveEvals[uci];
+      if (extra != null) {
+        classification = classifyDelta(extra.deltaPawns);
+        scoreText = formatEval(extra.centipawns, extra.mateIn);
+      } else if (topMove != null && topMove.hasEval) {
         classification = topMove.classification;
-        deltaPawns = topMove.deltaPawns;
-      } else {
-        final move = NormalMove(from: fromSquare, to: dest);
-        final (_, san) = position.makeSan(move);
-        final isBook = openingBook.isBookMove(gameState.sanMoves, san);
-        classification = isBook ? MoveClassification.book : MoveClassification.inaccuracy;
+        scoreText = formatEval(topMove.centipawns, topMove.mateIn);
       }
 
-      // Book override
-      if (classification != MoveClassification.book) {
-        final move = NormalMove(from: fromSquare, to: dest);
-        final (_, san) = position.makeSan(move);
-        if (openingBook.isBookMove(gameState.sanMoves, san)) {
-          classification = MoveClassification.book;
-        }
+      // Book membership wins the color; the engine's #1 move gets `best`.
+      if (isBook) {
+        classification = MoveClassification.book;
+      } else if (classification != null && uci == bestUci) {
+        classification = MoveClassification.best;
       }
 
-      final color = colorForClassification(classification);
-      final style = classificationStyle(classification);
+      // No data yet (evaluation still running) → animated thinking badge.
+      final isPending = classification == null;
+      final effective = classification ?? MoveClassification.good;
+      final color = isPending
+          ? Colors.blueGrey.shade200
+          : colorForClassification(effective);
+      final icon = uci == bestUci
+          ? '👑'
+          : isPending
+              ? ''
+              : classificationStyle(effective).icon;
 
       highlights[dest] = SquareHighlight(
         details: HighlightDetails(
@@ -452,17 +473,13 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
         ),
       );
 
-      String? scoreText;
-      if (deltaPawns != null) {
-        scoreText = '${deltaPawns >= 0 ? "+" : ""}${deltaPawns.toStringAsFixed(1)}';
-      }
-
       entries.add(_PieceAnalysisEntry(
         square: dest,
-        classification: classification,
+        classification: effective,
         color: color,
-        icon: style.icon,
+        icon: icon,
         scoreText: scoreText,
+        isPending: isPending,
       ));
     }
 
@@ -483,12 +500,17 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
       final suggested = gameState.topMoves[i];
       final move = _parseUciMove(suggested.uci);
       if (move != null) {
-        final color = colorForClassification(suggested.classification);
+        // Shade carries "how far behind the best move" even when score
+        // badges are hidden; the thick arrow is the engine's #1 move.
+        final base = colorForClassification(suggested.classification);
+        final color = suggested.hasEval
+            ? shadeForDelta(base, suggested.deltaPawns)
+            : base;
         shapes.add(Arrow(
           color: color.withValues(alpha: 0.8),
           orig: move.from,
           dest: move.to,
-          scale: i == 0 ? 0.55 : 0.35,
+          scale: suggested.isBest ? 0.55 : 0.35,
         ));
       }
     }
@@ -549,12 +571,16 @@ class _PieceAnalysisEntry {
   final String icon;
   final String? scoreText;
 
+  /// True while this move's evaluation hasn't arrived yet.
+  final bool isPending;
+
   const _PieceAnalysisEntry({
     required this.square,
     required this.classification,
     required this.color,
     required this.icon,
     this.scoreText,
+    this.isPending = false,
   });
 }
 
@@ -568,7 +594,7 @@ class _PieceAnalysisResult {
   });
 }
 
-class _PieceAnalysisOverlay extends StatelessWidget {
+class _PieceAnalysisOverlay extends StatefulWidget {
   final double boardSize;
   final Side orientation;
   final List<_PieceAnalysisEntry> analysisEntries;
@@ -581,13 +607,52 @@ class _PieceAnalysisOverlay extends StatelessWidget {
     this.showScores = false,
   });
 
-  double get _squareSize => boardSize / 8;
+  @override
+  State<_PieceAnalysisOverlay> createState() => _PieceAnalysisOverlayState();
+}
+
+class _PieceAnalysisOverlayState extends State<_PieceAnalysisOverlay>
+    with SingleTickerProviderStateMixin {
+  /// One shared ticker drives every pending badge's bouncing dots.
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _syncAnimation();
+  }
+
+  @override
+  void didUpdateWidget(_PieceAnalysisOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncAnimation();
+  }
+
+  void _syncAnimation() {
+    final hasPending = widget.analysisEntries.any((e) => e.isPending);
+    if (hasPending && !_pulse.isAnimating) {
+      _pulse.repeat();
+    } else if (!hasPending && _pulse.isAnimating) {
+      _pulse.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  double get _squareSize => widget.boardSize / 8;
 
   Offset _squareOffset(Square square) {
     final file = square.file.value;
     final rank = square.rank.value;
-    final x = orientation == Side.white ? file : 7 - file;
-    final y = orientation == Side.white ? 7 - rank : rank;
+    final x = widget.orientation == Side.white ? file : 7 - file;
+    final y = widget.orientation == Side.white ? 7 - rank : rank;
     return Offset(x * _squareSize, y * _squareSize);
   }
 
@@ -595,12 +660,12 @@ class _PieceAnalysisOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return IgnorePointer(
       child: SizedBox.square(
-        dimension: boardSize,
+        dimension: widget.boardSize,
         child: Stack(
           children: [
-            for (final entry in analysisEntries) ...[
+            for (final entry in widget.analysisEntries) ...[
               _buildIconBadge(entry),
-              if (showScores && entry.scoreText != null)
+              if (widget.showScores && entry.scoreText != null)
                 _buildScoreLabel(entry),
             ],
           ],
@@ -630,20 +695,62 @@ class _PieceAnalysisOverlay extends StatelessWidget {
             ),
           ],
         ),
-        child: FittedBox(
-          child: Padding(
-            padding: const EdgeInsets.all(2),
-            child: Text(
-              entry.icon,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
+        child: entry.isPending
+            ? _buildThinkingDots(size)
+            : FittedBox(
+                child: Padding(
+                  padding: const EdgeInsets.all(2),
+                  child: Text(
+                    entry.icon,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-        ),
       ),
     );
+  }
+
+  /// Three white dots bouncing in sequence (chat "typing" style) — reads
+  /// instantly as "the engine is thinking about this square".
+  Widget _buildThinkingDots(double badgeSize) {
+    final dotSize = badgeSize * 0.16;
+    final amplitude = badgeSize * 0.12;
+
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, _) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (int i = 0; i < 3; i++) ...[
+              if (i > 0) SizedBox(width: dotSize * 0.5),
+              Transform.translate(
+                offset: Offset(0, -_bounce(_pulse.value, i) * amplitude),
+                child: Container(
+                  width: dotSize,
+                  height: dotSize,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  /// Bounce curve for dot [i]: each dot rises and falls over 55% of the
+  /// cycle, staggered so they follow each other.
+  double _bounce(double t, int i) {
+    final phase = (t - i * 0.15) % 1.0;
+    if (phase < 0 || phase > 0.55) return 0;
+    return math.sin(phase / 0.55 * math.pi);
   }
 
   Widget _buildScoreLabel(_PieceAnalysisEntry entry) {

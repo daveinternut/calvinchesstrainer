@@ -526,4 +526,59 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get whichSideWinsPracticeDesc =>
       'Build your streak — difficulty increases as you go!';
+
+  @override
+  String get letters => 'Letras';
+
+  @override
+  String get king => 'Rei';
+
+  @override
+  String get pawn => 'Peão';
+
+  @override
+  String get hardModeBlackPieces => 'Peças pretas mostradas!';
+
+  @override
+  String get tapPieceToLearnLetter =>
+      'Toque em uma peça para aprender sua letra!';
+
+  @override
+  String get whichPieceForLetter => 'Qual peça usa esta letra?';
+
+  @override
+  String get whichLetterForPiece => 'Qual é a letra desta peça?';
+
+  @override
+  String get tapPieceNoLetter => 'Toque na peça SEM letra!';
+
+  @override
+  String get noLetter => 'Sem letra';
+
+  @override
+  String letterEquals(String letter, String piece) {
+    return '$letter = $piece!';
+  }
+
+  @override
+  String get pawnNoLetterFact => 'Os peões não precisam de letra!';
+
+  @override
+  String get mnemonicKing => 'K de King — o Rei em inglês!';
+
+  @override
+  String get mnemonicQueen => 'Q de Queen — a Dama em inglês!';
+
+  @override
+  String get mnemonicRook => 'R de Rook — a Torre em inglês!';
+
+  @override
+  String get mnemonicBishop => 'B de Bishop — o Bispo em inglês!';
+
+  @override
+  String get mnemonicKnight => 'N de kNight — o Cavalo! O K já é do Rei.';
+
+  @override
+  String get mnemonicPawn =>
+      'Os peões são tão corajosos que não precisam de letra!';
 }

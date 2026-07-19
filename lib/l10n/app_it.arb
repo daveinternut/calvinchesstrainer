@@ -160,5 +160,23 @@
   "whichSideWins": "Which Side Wins?",
   "whichSideWinsDesc": "Compare groups of pieces — tap the side worth more!",
   "tapTheSideWorthMore": "Tap the side worth more",
-  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!"
+  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!",
+
+  "letters": "Lettere",
+  "king": "Re",
+  "pawn": "Pedone",
+  "hardModeBlackPieces": "Si mostrano i pezzi neri!",
+  "tapPieceToLearnLetter": "Tocca un pezzo per imparare la sua lettera!",
+  "whichPieceForLetter": "Quale pezzo usa questa lettera?",
+  "whichLetterForPiece": "Qual è la lettera di questo pezzo?",
+  "tapPieceNoLetter": "Tocca il pezzo SENZA lettera!",
+  "noLetter": "Senza lettera",
+  "letterEquals": "{letter} = {piece}!",
+  "pawnNoLetterFact": "I pedoni non hanno bisogno di una lettera!",
+  "mnemonicKing": "K come King — il Re in inglese!",
+  "mnemonicQueen": "Q come Queen — la Donna in inglese!",
+  "mnemonicRook": "R come Rook — la Torre in inglese!",
+  "mnemonicBishop": "B come Bishop — l'Alfiere in inglese!",
+  "mnemonicKnight": "N come kNight — il Cavallo! La K è già del Re.",
+  "mnemonicPawn": "I pedoni sono così coraggiosi che non hanno una lettera!"
 }

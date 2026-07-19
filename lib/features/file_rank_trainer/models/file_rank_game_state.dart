@@ -5,7 +5,10 @@ import '../../../core/board_utils.dart';
 import '../../../core/constants.dart';
 import '../../../core/theme/app_theme.dart';
 
-enum TrainerSubject { files, ranks, squares, moves }
+/// `moves` and `letters` are menu-only subjects: the notation menu routes
+/// them to the move trainer and letter trainer respectively — this
+/// provider never handles them.
+enum TrainerSubject { files, ranks, squares, moves, letters }
 
 enum TrainerMode { explore, practice, speed }
 

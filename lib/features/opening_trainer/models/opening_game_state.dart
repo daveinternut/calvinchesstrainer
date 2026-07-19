@@ -55,45 +55,86 @@ class MoveRecord {
   });
 }
 
-/// Chess.com-style move classification based on how the move changes the game.
+/// Move classification. `best` is assigned by rank (the engine's #1 move),
+/// `book` by opening-theory membership; the rest come from [classifyDelta].
 enum MoveClassification {
-  /// Significantly improves position (gaining > 1.0 pawn)
+  /// Reserved (not currently produced by [classifyDelta]).
   brilliant,
-  /// Improves position (gaining 0.3 - 1.0 pawns)
+  /// The engine's top choice in this position.
   best,
-  /// Maintains or slightly improves position (within +0.3 to -0.1)
+  /// Keeps the eval close to the best move (loss ≤ 0.4 pawns)
   good,
   /// Part of established opening theory
   book,
-  /// Slightly worsens position (losing 0.1 - 0.5 pawns)
+  /// Loses 0.4 - 1.0 pawns vs. the best move
   inaccuracy,
-  /// Moderately worsens position (losing 0.5 - 1.5 pawns)
+  /// Loses 1.0 - 2.0 pawns vs. the best move
   mistake,
-  /// Severely worsens position (losing > 1.5 pawns)
+  /// Loses more than 2.0 pawns vs. the best move
   blunder,
 }
 
+/// Classify by centipawn loss vs. the best available move ([deltaPawns] ≤ 0
+/// normally; small positives from search noise are treated as good).
+/// Thresholds are deliberately forgiving: being 0.3 behind the engine's top
+/// choice is a fine move, not an inaccuracy.
 MoveClassification classifyDelta(double deltaPawns) {
-  if (deltaPawns >= 1.0) return MoveClassification.brilliant;
-  if (deltaPawns >= 0.3) return MoveClassification.best;
-  if (deltaPawns >= -0.1) return MoveClassification.good;
-  if (deltaPawns >= -0.5) return MoveClassification.inaccuracy;
-  if (deltaPawns >= -1.5) return MoveClassification.mistake;
+  if (deltaPawns >= -0.4) return MoveClassification.good;
+  if (deltaPawns >= -1.0) return MoveClassification.inaccuracy;
+  if (deltaPawns >= -2.0) return MoveClassification.mistake;
   return MoveClassification.blunder;
+}
+
+/// Format a white-perspective eval for badge display: "+0.3", "-1.2", "M3".
+String formatEval(int centipawns, int? mateIn) {
+  if (mateIn != null) {
+    return mateIn > 0 ? 'M$mateIn' : '-M${-mateIn}';
+  }
+  final pawns = centipawns / 100.0;
+  return '${pawns >= 0 ? "+" : ""}${pawns.toStringAsFixed(1)}';
+}
+
+/// A dedicated single-move evaluation (selected-piece analysis).
+class MoveEval {
+  /// Position eval after the move, white's perspective.
+  final int centipawns;
+  final int? mateIn;
+
+  /// Centipawn change vs. the current position's eval at the same depth,
+  /// from the mover's perspective (negative = worsens their position).
+  final int deltaCp;
+
+  const MoveEval({
+    required this.centipawns,
+    this.mateIn,
+    required this.deltaCp,
+  });
+
+  double get deltaPawns => deltaCp / 100.0;
 }
 
 class SuggestedMove {
   final String uci;
   final String san;
+
+  /// Position eval after this move, white's perspective (only meaningful
+  /// when [hasEval] is true).
   final int centipawns;
   final int? mateIn;
 
-  /// Eval change in centipawns from the side-to-move's perspective.
-  /// Compared to current position eval — positive = improves, negative = worsens.
+  /// Centipawn loss vs. the best move of the same search, from the mover's
+  /// perspective (0 for the best move, negative for the rest). Drives color
+  /// classification only — badges display the absolute [centipawns].
   final int evalDelta;
 
   /// Whether this move appears in established opening theory.
   final bool isBook;
+
+  /// Whether this is the engine's #1 move (multipv 1).
+  final bool isBest;
+
+  /// False for book moves shown before/without an engine score.
+  final bool hasEval;
 
   const SuggestedMove({
     required this.uci,
@@ -102,6 +143,8 @@ class SuggestedMove {
     this.mateIn,
     this.evalDelta = 0,
     this.isBook = false,
+    this.isBest = false,
+    this.hasEval = true,
   });
 
   double get pawns => centipawns / 100.0;
@@ -109,6 +152,7 @@ class SuggestedMove {
 
   MoveClassification get classification {
     if (isBook) return MoveClassification.book;
+    if (isBest) return MoveClassification.best;
     return classifyDelta(deltaPawns);
   }
 }
@@ -146,10 +190,10 @@ class OpeningGameState {
 
   final NormalMove? lastEngineMove;
 
-  /// Which analysis wave is currently running (0-based), -1 = idle.
-  final int thinkingWave;
-  /// Total number of waves for this analysis pass.
-  final int thinkingTotalWaves;
+  /// Depth the engine has reached in the current analysis (-1 = idle).
+  final int engineDepth;
+  /// Final depth the current analysis will run to (0 = no analysis running).
+  final int engineTargetDepth;
 
   const OpeningGameState({
     required this.mode,
@@ -175,8 +219,8 @@ class OpeningGameState {
     this.isReviewing = false,
     this.reviewIndex = -1,
     this.lastEngineMove,
-    this.thinkingWave = -1,
-    this.thinkingTotalWaves = 0,
+    this.engineDepth = -1,
+    this.engineTargetDepth = 0,
   });
 
   MedalLevel get currentMedal => medalForMoves(userMoveCount);
@@ -210,8 +254,8 @@ class OpeningGameState {
     bool? isReviewing,
     int? reviewIndex,
     NormalMove? Function()? lastEngineMove,
-    int? thinkingWave,
-    int? thinkingTotalWaves,
+    int? engineDepth,
+    int? engineTargetDepth,
   }) {
     return OpeningGameState(
       mode: mode ?? this.mode,
@@ -237,8 +281,8 @@ class OpeningGameState {
       isReviewing: isReviewing ?? this.isReviewing,
       reviewIndex: reviewIndex ?? this.reviewIndex,
       lastEngineMove: lastEngineMove != null ? lastEngineMove() : this.lastEngineMove,
-      thinkingWave: thinkingWave ?? this.thinkingWave,
-      thinkingTotalWaves: thinkingTotalWaves ?? this.thinkingTotalWaves,
+      engineDepth: engineDepth ?? this.engineDepth,
+      engineTargetDepth: engineTargetDepth ?? this.engineTargetDepth,
     );
   }
 }

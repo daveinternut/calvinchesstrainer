@@ -160,5 +160,23 @@
   "whichSideWins": "Which Side Wins?",
   "whichSideWinsDesc": "Compare groups of pieces — tap the side worth more!",
   "tapTheSideWorthMore": "Tap the side worth more",
-  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!"
+  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!",
+
+  "letters": "Lettres",
+  "king": "Roi",
+  "pawn": "Pion",
+  "hardModeBlackPieces": "Pièces noires affichées !",
+  "tapPieceToLearnLetter": "Touche une pièce pour apprendre sa lettre !",
+  "whichPieceForLetter": "Quelle pièce utilise cette lettre ?",
+  "whichLetterForPiece": "Quelle est la lettre de cette pièce ?",
+  "tapPieceNoLetter": "Touche la pièce SANS lettre !",
+  "noLetter": "Sans lettre",
+  "letterEquals": "{letter} = {piece} !",
+  "pawnNoLetterFact": "Les pions n'ont pas besoin de lettre !",
+  "mnemonicKing": "K comme King — le Roi en anglais !",
+  "mnemonicQueen": "Q comme Queen — la Dame en anglais !",
+  "mnemonicRook": "R comme Rook — la Tour en anglais !",
+  "mnemonicBishop": "B comme Bishop — le Fou en anglais !",
+  "mnemonicKnight": "N comme kNight — le Cavalier ! Le K est déjà pris par le Roi.",
+  "mnemonicPawn": "Les pions sont si courageux qu'ils n'ont pas de lettre !"
 }

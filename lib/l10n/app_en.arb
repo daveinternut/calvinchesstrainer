@@ -197,5 +197,24 @@
   "whichSideWins": "Which Side Wins?",
   "whichSideWinsDesc": "Compare groups of pieces — tap the side worth more!",
   "tapTheSideWorthMore": "Tap the side worth more",
-  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!"
+  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!",
+
+  "letters": "Letters",
+  "king": "King",
+  "pawn": "Pawn",
+  "hardModeBlackPieces": "Black pieces shown!",
+  "tapPieceToLearnLetter": "Tap a piece to learn its letter!",
+  "whichPieceForLetter": "Which piece uses this letter?",
+  "whichLetterForPiece": "Which letter is this piece?",
+  "tapPieceNoLetter": "Tap the piece with NO letter!",
+  "noLetter": "No letter",
+  "letterEquals": "{letter} = {piece}!",
+  "@letterEquals": { "placeholders": { "letter": { "type": "String" }, "piece": { "type": "String" } } },
+  "pawnNoLetterFact": "Pawns don't need a letter!",
+  "mnemonicKing": "K is for King — the boss of the board!",
+  "mnemonicQueen": "Q is for Queen — the most powerful piece!",
+  "mnemonicRook": "R is for Rook — the castle tower!",
+  "mnemonicBishop": "B is for Bishop — the diagonal expert!",
+  "mnemonicKnight": "N is for kNight — the King already took K!",
+  "mnemonicPawn": "Pawns are so brave they don't need a letter!"
 }

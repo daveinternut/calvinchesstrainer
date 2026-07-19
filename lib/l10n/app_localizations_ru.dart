@@ -527,4 +527,57 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get whichSideWinsPracticeDesc =>
       'Build your streak — difficulty increases as you go!';
+
+  @override
+  String get letters => 'Буквы';
+
+  @override
+  String get king => 'Король';
+
+  @override
+  String get pawn => 'Пешка';
+
+  @override
+  String get hardModeBlackPieces => 'Показаны чёрные фигуры!';
+
+  @override
+  String get tapPieceToLearnLetter => 'Нажми на фигуру, чтобы узнать её букву!';
+
+  @override
+  String get whichPieceForLetter => 'Какая фигура обозначается этой буквой?';
+
+  @override
+  String get whichLetterForPiece => 'Какой буквой обозначается эта фигура?';
+
+  @override
+  String get tapPieceNoLetter => 'Нажми на фигуру БЕЗ буквы!';
+
+  @override
+  String get noLetter => 'Без буквы';
+
+  @override
+  String letterEquals(String letter, String piece) {
+    return '$letter = $piece!';
+  }
+
+  @override
+  String get pawnNoLetterFact => 'Пешкам буква не нужна!';
+
+  @override
+  String get mnemonicKing => 'K — King, король по-английски!';
+
+  @override
+  String get mnemonicQueen => 'Q — Queen, ферзь по-английски!';
+
+  @override
+  String get mnemonicRook => 'R — Rook, ладья по-английски!';
+
+  @override
+  String get mnemonicBishop => 'B — Bishop, слон по-английски!';
+
+  @override
+  String get mnemonicKnight => 'N — kNight, конь! Буква K уже занята королём.';
+
+  @override
+  String get mnemonicPawn => 'Пешки такие храбрые, что им и буква не нужна!';
 }

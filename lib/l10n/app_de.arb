@@ -160,5 +160,23 @@
   "whichSideWins": "Which Side Wins?",
   "whichSideWinsDesc": "Compare groups of pieces — tap the side worth more!",
   "tapTheSideWorthMore": "Tap the side worth more",
-  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!"
+  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!",
+
+  "letters": "Buchstaben",
+  "king": "König",
+  "pawn": "Bauer",
+  "hardModeBlackPieces": "Schwarze Figuren werden gezeigt!",
+  "tapPieceToLearnLetter": "Tippe auf eine Figur, um ihren Buchstaben zu lernen!",
+  "whichPieceForLetter": "Welche Figur hat diesen Buchstaben?",
+  "whichLetterForPiece": "Welcher Buchstabe gehört zu dieser Figur?",
+  "tapPieceNoLetter": "Tippe auf die Figur OHNE Buchstaben!",
+  "noLetter": "Kein Buchstabe",
+  "letterEquals": "{letter} = {piece}!",
+  "pawnNoLetterFact": "Bauern brauchen keinen Buchstaben!",
+  "mnemonicKing": "K wie King — der König auf Englisch, der Chef!",
+  "mnemonicQueen": "Q wie Queen — die Dame auf Englisch!",
+  "mnemonicRook": "R wie Rook — der Turm auf Englisch!",
+  "mnemonicBishop": "B wie Bishop — der Läufer auf Englisch!",
+  "mnemonicKnight": "N wie kNight — der Springer! Das K hat schon der König.",
+  "mnemonicPawn": "Bauern sind so tapfer, sie brauchen keinen Buchstaben!"
 }

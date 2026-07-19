@@ -251,6 +251,17 @@ class ChessVisionState {
           }
         }
       case VisionDrillType.knightFlight:
+        // Landing-pad tint on the destination (paired with the amber goal ring
+        // drawn as a shape). Added first so the green move-path overrides it
+        // once the knight actually lands there.
+        final target = flightTargetSquare;
+        if (target != null) {
+          highlights = highlights.addAll(highlightSquare(
+            target.file.value,
+            target.rank.value,
+            AppColors.goalAmber.withValues(alpha: 0.30),
+          ));
+        }
         for (final sq in flightPath) {
           highlights = highlights.addAll(highlightSquare(
             sq.file.value,

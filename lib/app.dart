@@ -1,6 +1,5 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 
@@ -11,6 +10,8 @@ import 'features/file_rank_trainer/screens/file_rank_game_screen.dart';
 import 'features/file_rank_trainer/models/file_rank_game_state.dart';
 import 'features/move_trainer/screens/move_game_screen.dart';
 import 'features/move_trainer/models/move_game_state.dart';
+import 'features/letter_trainer/screens/letter_game_screen.dart';
+import 'features/letter_trainer/models/letter_game_state.dart';
 import 'features/tactics_trainer/screens/tactics_trainer_screen.dart';
 import 'features/about/screens/about_screen.dart';
 import 'features/move_trainer/screens/move_menu_screen.dart';
@@ -24,16 +25,26 @@ import 'features/pieces/screens/pieces_menu_screen.dart';
 import 'features/pieces/screens/which_side_wins_screen.dart';
 import 'features/pieces/models/which_side_wins_state.dart';
 
-final _analytics = FirebaseAnalytics.instance;
+/// Screen-view analytics for every named route. Firebase is initialized in
+/// main() before runApp; when it isn't (widget tests), render the app
+/// without analytics instead of failing to build.
+List<NavigatorObserver> _buildObservers() {
+  try {
+    return [
+      FirebaseAnalyticsObserver(
+        analytics: FirebaseAnalytics.instance,
+        nameExtractor: (settings) => settings.name ?? 'unknown',
+      ),
+    ];
+  } catch (e) {
+    debugPrint('Analytics observer disabled (Firebase not initialized): $e');
+    return [];
+  }
+}
 
 final _router = GoRouter(
   initialLocation: '/',
-  observers: [
-    FirebaseAnalyticsObserver(
-      analytics: _analytics,
-      nameExtractor: (settings) => settings.name ?? 'unknown',
-    ),
-  ],
+  observers: _buildObservers(),
   routes: [
     GoRoute(
       path: '/',
@@ -120,6 +131,24 @@ final _router = GoRouter(
         );
 
         return MoveGameScreen(mode: mode, isHardMode: hardModeParam == 'true');
+      },
+    ),
+    GoRoute(
+      path: '/letter-trainer/game',
+      name: 'letter_game',
+      builder: (context, state) {
+        final modeParam = state.uri.queryParameters['mode'] ?? 'explore';
+        final hardModeParam = state.uri.queryParameters['hardMode'] ?? 'false';
+
+        final mode = LetterTrainerMode.values.firstWhere(
+          (m) => m.name == modeParam,
+          orElse: () => LetterTrainerMode.explore,
+        );
+
+        return LetterGameScreen(
+          mode: mode,
+          isHardMode: hardModeParam == 'true',
+        );
       },
     ),
     GoRoute(

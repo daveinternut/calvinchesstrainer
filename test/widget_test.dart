@@ -12,7 +12,7 @@ void main() {
     );
 
     expect(find.text('Calvin Chess\nTrainer'), findsOneWidget);
-    expect(find.text('Master the fundamentals'), findsOneWidget);
+    expect(find.text('Master the fundamentals!'), findsOneWidget);
     expect(find.text('Chess Notation'), findsOneWidget);
   });
 }

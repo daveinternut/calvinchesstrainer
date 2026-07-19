@@ -1055,6 +1055,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Build your streak — difficulty increases as you go!'**
   String get whichSideWinsPracticeDesc;
+
+  /// No description provided for @letters.
+  ///
+  /// In en, this message translates to:
+  /// **'Letters'**
+  String get letters;
+
+  /// No description provided for @king.
+  ///
+  /// In en, this message translates to:
+  /// **'King'**
+  String get king;
+
+  /// No description provided for @pawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Pawn'**
+  String get pawn;
+
+  /// No description provided for @hardModeBlackPieces.
+  ///
+  /// In en, this message translates to:
+  /// **'Black pieces shown!'**
+  String get hardModeBlackPieces;
+
+  /// No description provided for @tapPieceToLearnLetter.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a piece to learn its letter!'**
+  String get tapPieceToLearnLetter;
+
+  /// No description provided for @whichPieceForLetter.
+  ///
+  /// In en, this message translates to:
+  /// **'Which piece uses this letter?'**
+  String get whichPieceForLetter;
+
+  /// No description provided for @whichLetterForPiece.
+  ///
+  /// In en, this message translates to:
+  /// **'Which letter is this piece?'**
+  String get whichLetterForPiece;
+
+  /// No description provided for @tapPieceNoLetter.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the piece with NO letter!'**
+  String get tapPieceNoLetter;
+
+  /// No description provided for @noLetter.
+  ///
+  /// In en, this message translates to:
+  /// **'No letter'**
+  String get noLetter;
+
+  /// No description provided for @letterEquals.
+  ///
+  /// In en, this message translates to:
+  /// **'{letter} = {piece}!'**
+  String letterEquals(String letter, String piece);
+
+  /// No description provided for @pawnNoLetterFact.
+  ///
+  /// In en, this message translates to:
+  /// **'Pawns don\'t need a letter!'**
+  String get pawnNoLetterFact;
+
+  /// No description provided for @mnemonicKing.
+  ///
+  /// In en, this message translates to:
+  /// **'K is for King — the boss of the board!'**
+  String get mnemonicKing;
+
+  /// No description provided for @mnemonicQueen.
+  ///
+  /// In en, this message translates to:
+  /// **'Q is for Queen — the most powerful piece!'**
+  String get mnemonicQueen;
+
+  /// No description provided for @mnemonicRook.
+  ///
+  /// In en, this message translates to:
+  /// **'R is for Rook — the castle tower!'**
+  String get mnemonicRook;
+
+  /// No description provided for @mnemonicBishop.
+  ///
+  /// In en, this message translates to:
+  /// **'B is for Bishop — the diagonal expert!'**
+  String get mnemonicBishop;
+
+  /// No description provided for @mnemonicKnight.
+  ///
+  /// In en, this message translates to:
+  /// **'N is for kNight — the King already took K!'**
+  String get mnemonicKnight;
+
+  /// No description provided for @mnemonicPawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Pawns are so brave they don\'t need a letter!'**
+  String get mnemonicPawn;
 }
 
 class _AppLocalizationsDelegate

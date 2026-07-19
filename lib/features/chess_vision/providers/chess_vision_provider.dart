@@ -237,6 +237,12 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
         : state.knightSquare;
     if (currentPos == null) return;
 
+    // Tapping the knight on its own square is a no-op (selecting your piece must
+    // never cost a point). This also absorbs the harmless second callback when a
+    // tap-to-select or drag move resolves: by then the knight is already on
+    // `square`, so currentPos == square.
+    if (square == currentPos) return;
+
     if (!KnightEngine.isKnightMove(currentPos, square)) {
       _handleIncorrectTap(square);
       return;

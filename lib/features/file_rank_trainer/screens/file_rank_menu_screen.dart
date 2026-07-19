@@ -65,6 +65,12 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                       children: [
                         _buildSubjectChip(TrainerSubject.squares, l10n.squares, Icons.grid_on),
                         const SizedBox(width: 8),
+                        _buildSubjectChip(TrainerSubject.letters, l10n.letters, Icons.abc_rounded),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
                         _buildSubjectChip(TrainerSubject.moves, l10n.moves, Icons.swap_horiz_rounded),
                       ],
                     ),
@@ -142,9 +148,13 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      _subject == TrainerSubject.moves
-                                          ? l10n.hardModeBlack
-                                          : l10n.hardModeFlipped,
+                                      switch (_subject) {
+                                        TrainerSubject.moves =>
+                                          l10n.hardModeBlack,
+                                        TrainerSubject.letters =>
+                                          l10n.hardModeBlackPieces,
+                                        _ => l10n.hardModeFlipped,
+                                      },
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: _isHardMode
@@ -293,6 +303,12 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
     if (_subject == TrainerSubject.moves) {
       context.push(
         '/move-trainer/game'
+        '?mode=${_mode.name}'
+        '&hardMode=$_isHardMode',
+      );
+    } else if (_subject == TrainerSubject.letters) {
+      context.push(
+        '/letter-trainer/game'
         '?mode=${_mode.name}'
         '&hardMode=$_isHardMode',
       );

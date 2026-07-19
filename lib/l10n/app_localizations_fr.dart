@@ -527,4 +527,60 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get whichSideWinsPracticeDesc =>
       'Build your streak — difficulty increases as you go!';
+
+  @override
+  String get letters => 'Lettres';
+
+  @override
+  String get king => 'Roi';
+
+  @override
+  String get pawn => 'Pion';
+
+  @override
+  String get hardModeBlackPieces => 'Pièces noires affichées !';
+
+  @override
+  String get tapPieceToLearnLetter =>
+      'Touche une pièce pour apprendre sa lettre !';
+
+  @override
+  String get whichPieceForLetter => 'Quelle pièce utilise cette lettre ?';
+
+  @override
+  String get whichLetterForPiece => 'Quelle est la lettre de cette pièce ?';
+
+  @override
+  String get tapPieceNoLetter => 'Touche la pièce SANS lettre !';
+
+  @override
+  String get noLetter => 'Sans lettre';
+
+  @override
+  String letterEquals(String letter, String piece) {
+    return '$letter = $piece !';
+  }
+
+  @override
+  String get pawnNoLetterFact => 'Les pions n\'ont pas besoin de lettre !';
+
+  @override
+  String get mnemonicKing => 'K comme King — le Roi en anglais !';
+
+  @override
+  String get mnemonicQueen => 'Q comme Queen — la Dame en anglais !';
+
+  @override
+  String get mnemonicRook => 'R comme Rook — la Tour en anglais !';
+
+  @override
+  String get mnemonicBishop => 'B comme Bishop — le Fou en anglais !';
+
+  @override
+  String get mnemonicKnight =>
+      'N comme kNight — le Cavalier ! Le K est déjà pris par le Roi.';
+
+  @override
+  String get mnemonicPawn =>
+      'Les pions sont si courageux qu\'ils n\'ont pas de lettre !';
 }

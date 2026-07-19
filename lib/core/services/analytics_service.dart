@@ -94,6 +94,45 @@ class AnalyticsService {
     );
   }
 
+  // --- Letter Trainer (piece letters) ---
+
+  void logLetterDrillStarted({
+    required String mode,
+    required bool hardMode,
+  }) {
+    _analytics.logEvent(
+      name: 'letter_drill_started',
+      parameters: {
+        'mode': mode,
+        'hard_mode': hardMode.toString(),
+      },
+    );
+  }
+
+  void logLetterDrillCompleted({
+    required String mode,
+    required bool hardMode,
+    required int totalCorrect,
+    required int totalAttempts,
+    required int bestStreak,
+    required bool isNewRecord,
+  }) {
+    _analytics.logEvent(
+      name: 'letter_drill_completed',
+      parameters: {
+        'mode': mode,
+        'hard_mode': hardMode.toString(),
+        'total_correct': totalCorrect,
+        'total_attempts': totalAttempts,
+        'best_streak': bestStreak,
+        'accuracy': totalAttempts > 0
+            ? ((totalCorrect / totalAttempts) * 100).round()
+            : 0,
+        'is_new_record': isNewRecord.toString(),
+      },
+    );
+  }
+
   // --- Chess Vision ---
 
   void logVisionDrillStarted({

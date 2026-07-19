@@ -5,6 +5,9 @@ class AppColors {
   static const correctGreen = Color(0xFF4CAF50);
   static const incorrectRed = Color(0xFFE53935);
   static const highlightYellow = Color(0xFFFFF176);
+  // Destination/goal accent (e.g. the Knight Flight target). Amber contrasts
+  // with the green board + green move path so a "land here" spot reads clearly.
+  static const goalAmber = Color(0xFFFFA000);
   static const primary = Color(0xFF1B5E20);
   static const primaryLight = Color(0xFF4C8C4A);
   static const surface = Color(0xFFFAFAFA);

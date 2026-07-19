@@ -160,5 +160,23 @@
   "whichSideWins": "Which Side Wins?",
   "whichSideWinsDesc": "Compare groups of pieces — tap the side worth more!",
   "tapTheSideWorthMore": "Tap the side worth more",
-  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!"
+  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!",
+
+  "letters": "Буквы",
+  "king": "Король",
+  "pawn": "Пешка",
+  "hardModeBlackPieces": "Показаны чёрные фигуры!",
+  "tapPieceToLearnLetter": "Нажми на фигуру, чтобы узнать её букву!",
+  "whichPieceForLetter": "Какая фигура обозначается этой буквой?",
+  "whichLetterForPiece": "Какой буквой обозначается эта фигура?",
+  "tapPieceNoLetter": "Нажми на фигуру БЕЗ буквы!",
+  "noLetter": "Без буквы",
+  "letterEquals": "{letter} = {piece}!",
+  "pawnNoLetterFact": "Пешкам буква не нужна!",
+  "mnemonicKing": "K — King, король по-английски!",
+  "mnemonicQueen": "Q — Queen, ферзь по-английски!",
+  "mnemonicRook": "R — Rook, ладья по-английски!",
+  "mnemonicBishop": "B — Bishop, слон по-английски!",
+  "mnemonicKnight": "N — kNight, конь! Буква K уже занята королём.",
+  "mnemonicPawn": "Пешки такие храбрые, что им и буква не нужна!"
 }

@@ -522,4 +522,57 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get whichSideWinsPracticeDesc =>
       'Build your streak — difficulty increases as you go!';
+
+  @override
+  String get letters => '文字';
+
+  @override
+  String get king => 'キング';
+
+  @override
+  String get pawn => 'ポーン';
+
+  @override
+  String get hardModeBlackPieces => '黒の駒で出題！';
+
+  @override
+  String get tapPieceToLearnLetter => '駒をタップして文字を覚えよう！';
+
+  @override
+  String get whichPieceForLetter => 'この文字はどの駒？';
+
+  @override
+  String get whichLetterForPiece => 'この駒の文字はどれ？';
+
+  @override
+  String get tapPieceNoLetter => '文字のない駒をタップ！';
+
+  @override
+  String get noLetter => '文字なし';
+
+  @override
+  String letterEquals(String letter, String piece) {
+    return '$letter = $piece！';
+  }
+
+  @override
+  String get pawnNoLetterFact => 'ポーンに文字はいらない！';
+
+  @override
+  String get mnemonicKing => 'KはKing — キングの頭文字！';
+
+  @override
+  String get mnemonicQueen => 'QはQueen — クイーンの頭文字！';
+
+  @override
+  String get mnemonicRook => 'RはRook — ルークの頭文字！';
+
+  @override
+  String get mnemonicBishop => 'BはBishop — ビショップの頭文字！';
+
+  @override
+  String get mnemonicKnight => 'NはkNightのN — Kはキングのものだから！';
+
+  @override
+  String get mnemonicPawn => 'ポーンは文字がなくても大活躍！';
 }

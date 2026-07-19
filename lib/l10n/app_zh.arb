@@ -160,5 +160,23 @@
   "whichSideWins": "Which Side Wins?",
   "whichSideWinsDesc": "Compare groups of pieces — tap the side worth more!",
   "tapTheSideWorthMore": "Tap the side worth more",
-  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!"
+  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!",
+
+  "letters": "字母",
+  "king": "王",
+  "pawn": "兵",
+  "hardModeBlackPieces": "显示黑方棋子！",
+  "tapPieceToLearnLetter": "点击任意棋子，学习它的字母！",
+  "whichPieceForLetter": "这个字母是哪个棋子？",
+  "whichLetterForPiece": "这个棋子用哪个字母？",
+  "tapPieceNoLetter": "点击没有字母的棋子！",
+  "noLetter": "无字母",
+  "letterEquals": "{letter} = {piece}！",
+  "pawnNoLetterFact": "兵不需要字母！",
+  "mnemonicKing": "K是King — 王的英文首字母！",
+  "mnemonicQueen": "Q是Queen — 后的英文首字母！",
+  "mnemonicRook": "R是Rook — 车的英文首字母！",
+  "mnemonicBishop": "B是Bishop — 象的英文首字母！",
+  "mnemonicKnight": "N是kNight — 马！因为K已经给了王。",
+  "mnemonicPawn": "兵很勇敢，不需要字母！"
 }

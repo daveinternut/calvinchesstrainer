@@ -160,5 +160,23 @@
   "whichSideWins": "Which Side Wins?",
   "whichSideWinsDesc": "Compare groups of pieces — tap the side worth more!",
   "tapTheSideWorthMore": "Tap the side worth more",
-  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!"
+  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!",
+
+  "letters": "Letras",
+  "king": "Rey",
+  "pawn": "Peón",
+  "hardModeBlackPieces": "¡Se muestran las piezas negras!",
+  "tapPieceToLearnLetter": "¡Toca una pieza para aprender su letra!",
+  "whichPieceForLetter": "¿Qué pieza usa esta letra?",
+  "whichLetterForPiece": "¿Cuál es la letra de esta pieza?",
+  "tapPieceNoLetter": "¡Toca la pieza SIN letra!",
+  "noLetter": "Sin letra",
+  "letterEquals": "¡{letter} = {piece}!",
+  "pawnNoLetterFact": "¡Los peones no necesitan letra!",
+  "mnemonicKing": "K de King — ¡el Rey en inglés!",
+  "mnemonicQueen": "Q de Queen — ¡la Dama en inglés!",
+  "mnemonicRook": "R de Rook — ¡la Torre en inglés!",
+  "mnemonicBishop": "B de Bishop — ¡el Alfil en inglés!",
+  "mnemonicKnight": "N de kNight — ¡el Caballo! La K ya es del Rey.",
+  "mnemonicPawn": "¡Los peones son tan valientes que no llevan letra!"
 }

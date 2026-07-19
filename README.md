@@ -4,10 +4,11 @@ A chess learning app that teaches fundamentals through interactive drills and ti
 
 ## Training Modes
 
-- **File & Rank Trainer** — Audio calls out a file or rank; tap the correct one on the board
-- **Square Trainer** — Identify squares by name with timed challenge modes
-- **Move Trainer** — Given notation like "Qb6", make the correct move on the board
-- **Tactics Trainer** — Identify forks, pins, and skewers in positions
+- **The Pieces** — Compare two groups of pieces by value and pick the stronger side ("which side wins?")
+- **Chess Notation** — Audio calls out a file, rank, or square; tap it on the board. Plus a move drill: given notation like "Qb6", make the move
+- **Chess Vision** — Spot forks & skewers, knight sight, knight flight, and pawn-attack navigation
+- **Opening Fundamentals** — Play sound opening moves against the Stockfish engine, with a live evaluation bar and hint arrows
+- _Tactics Trainer — placeholder, not yet built_
 
 ## Tech Stack
 
@@ -15,10 +16,12 @@ A chess learning app that teaches fundamentals through interactive drills and ti
 |---|---|
 | Framework | Flutter (Dart) |
 | State Management | Riverpod |
-| Backend | Firebase (Auth, Firestore) |
+| Routing | GoRouter |
+| Board & Chess Logic | chessground + dartchess (lichess, GPL-3.0) |
+| Engine | Stockfish (via FFI) |
+| Backend | Firebase — Analytics (Auth/Firestore scaffolded, not yet used) |
 | Audio | just_audio, flutter_tts |
-| Chess Logic | chess (Dart) |
-| Puzzle Content | Lichess puzzle database (CC0) |
+| Puzzle / Opening Content | Lichess puzzle database + ECO openings (CC0) |
 
 ## Platforms
 
@@ -54,6 +57,10 @@ cd calvinchesstrainer
 flutter pub get
 flutter run
 ```
+
+### Architecture & documentation
+
+New to the codebase (human or AI agent)? Start with **[CLAUDE.md](CLAUDE.md)** (mental model, repo map, task router) and **[resources/000 Index.md](resources/000%20Index.md)** (the full code map). Deeper dives live in [resources/000 Explanations.md](resources/000%20Explanations.md); the chessground/dartchess API reference is [resources/000 lichess documentation.md](resources/000%20lichess%20documentation.md).
 
 ## License
 

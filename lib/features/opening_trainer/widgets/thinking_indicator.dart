@@ -1,38 +1,40 @@
 import 'package:flutter/material.dart';
 
+/// Shows what the engine is doing: an animated brain plus a live
+/// "depth 12/18" readout of the current search.
 class ThinkingIndicator extends StatelessWidget {
-  /// Current wave index (0-based). -1 means idle (all done).
-  final int currentWave;
+  /// Depth the engine has reached so far (0 = search just started).
+  final int depth;
 
-  /// Total number of waves.
-  final int totalWaves;
+  /// Depth the search will run to (<= 0 hides the indicator).
+  final int targetDepth;
 
   const ThinkingIndicator({
     super.key,
-    required this.currentWave,
-    required this.totalWaves,
+    required this.depth,
+    required this.targetDepth,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (totalWaves <= 0 || currentWave < 0) return const SizedBox.shrink();
+    if (targetDepth <= 0) return const SizedBox.shrink();
 
-    // How many waves have completed (results received)
-    final completedWaves = currentWave;
+    final isActive = depth < targetDepth;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _BrainIcon(isActive: currentWave < totalWaves),
-        const SizedBox(width: 6),
-        for (int i = 0; i < totalWaves; i++) ...[
-          if (i > 0) const SizedBox(width: 3),
-          _WaveDot(
-            isCompleted: i < completedWaves,
-            isActive: i == currentWave,
-            index: i,
+        _BrainIcon(isActive: isActive),
+        const SizedBox(width: 4),
+        Text(
+          depth > 0 ? 'd$depth/$targetDepth' : 'd–/$targetDepth',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            fontFeatures: const [FontFeature.tabularFigures()],
+            color: isActive ? Colors.grey.shade600 : const Color(0xFF4CAF50),
           ),
-        ],
+        ),
       ],
     );
   }
@@ -97,48 +99,6 @@ class _BrainIconState extends State<_BrainIcon>
           ),
         );
       },
-    );
-  }
-}
-
-class _WaveDot extends StatelessWidget {
-  final bool isCompleted;
-  final bool isActive;
-  final int index;
-
-  const _WaveDot({
-    required this.isCompleted,
-    required this.isActive,
-    required this.index,
-  });
-
-  static const _sizes = [5.0, 6.0, 7.0, 8.0];
-
-  @override
-  Widget build(BuildContext context) {
-    final size = index < _sizes.length ? _sizes[index] : 8.0;
-    final color = isCompleted
-        ? const Color(0xFF4CAF50)
-        : isActive
-            ? const Color(0xFFFFB300)
-            : Colors.grey.shade300;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-        boxShadow: isActive
-            ? [
-                BoxShadow(
-                  color: const Color(0xFFFFB300).withValues(alpha: 0.5),
-                  blurRadius: 4,
-                ),
-              ]
-            : null,
-      ),
     );
   }
 }

@@ -521,4 +521,57 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get whichSideWinsPracticeDesc =>
       'Build your streak — difficulty increases as you go!';
+
+  @override
+  String get letters => '字母';
+
+  @override
+  String get king => '王';
+
+  @override
+  String get pawn => '兵';
+
+  @override
+  String get hardModeBlackPieces => '显示黑方棋子！';
+
+  @override
+  String get tapPieceToLearnLetter => '点击任意棋子，学习它的字母！';
+
+  @override
+  String get whichPieceForLetter => '这个字母是哪个棋子？';
+
+  @override
+  String get whichLetterForPiece => '这个棋子用哪个字母？';
+
+  @override
+  String get tapPieceNoLetter => '点击没有字母的棋子！';
+
+  @override
+  String get noLetter => '无字母';
+
+  @override
+  String letterEquals(String letter, String piece) {
+    return '$letter = $piece！';
+  }
+
+  @override
+  String get pawnNoLetterFact => '兵不需要字母！';
+
+  @override
+  String get mnemonicKing => 'K是King — 王的英文首字母！';
+
+  @override
+  String get mnemonicQueen => 'Q是Queen — 后的英文首字母！';
+
+  @override
+  String get mnemonicRook => 'R是Rook — 车的英文首字母！';
+
+  @override
+  String get mnemonicBishop => 'B是Bishop — 象的英文首字母！';
+
+  @override
+  String get mnemonicKnight => 'N是kNight — 马！因为K已经给了王。';
+
+  @override
+  String get mnemonicPawn => '兵很勇敢，不需要字母！';
 }

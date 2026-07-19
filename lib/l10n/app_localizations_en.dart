@@ -523,4 +523,57 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get whichSideWinsPracticeDesc =>
       'Build your streak — difficulty increases as you go!';
+
+  @override
+  String get letters => 'Letters';
+
+  @override
+  String get king => 'King';
+
+  @override
+  String get pawn => 'Pawn';
+
+  @override
+  String get hardModeBlackPieces => 'Black pieces shown!';
+
+  @override
+  String get tapPieceToLearnLetter => 'Tap a piece to learn its letter!';
+
+  @override
+  String get whichPieceForLetter => 'Which piece uses this letter?';
+
+  @override
+  String get whichLetterForPiece => 'Which letter is this piece?';
+
+  @override
+  String get tapPieceNoLetter => 'Tap the piece with NO letter!';
+
+  @override
+  String get noLetter => 'No letter';
+
+  @override
+  String letterEquals(String letter, String piece) {
+    return '$letter = $piece!';
+  }
+
+  @override
+  String get pawnNoLetterFact => 'Pawns don\'t need a letter!';
+
+  @override
+  String get mnemonicKing => 'K is for King — the boss of the board!';
+
+  @override
+  String get mnemonicQueen => 'Q is for Queen — the most powerful piece!';
+
+  @override
+  String get mnemonicRook => 'R is for Rook — the castle tower!';
+
+  @override
+  String get mnemonicBishop => 'B is for Bishop — the diagonal expert!';
+
+  @override
+  String get mnemonicKnight => 'N is for kNight — the King already took K!';
+
+  @override
+  String get mnemonicPawn => 'Pawns are so brave they don\'t need a letter!';
 }

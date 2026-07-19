@@ -232,6 +232,7 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
       TrainerSubject.ranks => l10n.ranks,
       TrainerSubject.squares => l10n.squares,
       TrainerSubject.moves => l10n.moves,
+      TrainerSubject.letters => l10n.letters,
     };
     final mode = switch (widget.mode) {
       TrainerMode.explore => l10n.explore,

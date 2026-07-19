@@ -160,5 +160,23 @@
   "whichSideWins": "Which Side Wins?",
   "whichSideWinsDesc": "Compare groups of pieces — tap the side worth more!",
   "tapTheSideWorthMore": "Tap the side worth more",
-  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!"
+  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!",
+
+  "letters": "글자",
+  "king": "킹",
+  "pawn": "폰",
+  "hardModeBlackPieces": "검은 기물로 출제됩니다!",
+  "tapPieceToLearnLetter": "기물을 탭하여 글자를 배우세요!",
+  "whichPieceForLetter": "이 글자는 어떤 기물일까요?",
+  "whichLetterForPiece": "이 기물의 글자는 무엇일까요?",
+  "tapPieceNoLetter": "글자가 없는 기물을 탭하세요!",
+  "noLetter": "글자 없음",
+  "letterEquals": "{letter} = {piece}!",
+  "pawnNoLetterFact": "폰은 글자가 필요 없어요!",
+  "mnemonicKing": "K는 King — 킹의 첫 글자!",
+  "mnemonicQueen": "Q는 Queen — 퀸의 첫 글자!",
+  "mnemonicRook": "R은 Rook — 룩의 첫 글자!",
+  "mnemonicBishop": "B는 Bishop — 비숍의 첫 글자!",
+  "mnemonicKnight": "N은 kNight의 N — K는 킹이 쓰니까요!",
+  "mnemonicPawn": "폰은 글자가 없어도 용감해요!"
 }

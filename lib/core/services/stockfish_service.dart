@@ -35,7 +35,10 @@ class EvalResult {
   final int centipawns;
   final int? mateIn;
 
-  const EvalResult({required this.centipawns, this.mateIn});
+  /// Search depth this eval was reported at (0 = unknown, e.g. aborted).
+  final int depth;
+
+  const EvalResult({required this.centipawns, this.mateIn, this.depth = 0});
 
   double get pawns => centipawns / 100.0;
 
@@ -72,7 +75,31 @@ class StockfishService {
   // Track pending operations so dispose() can cancel them
   final List<Completer<dynamic>> _pendingCompleters = [];
 
+  /// Serialization gate — engine operations run strictly one at a time.
+  /// The UCI protocol has no request ids: an op's stdout listener would
+  /// otherwise parse info/bestmove lines belonging to another op's search.
+  Future<void> _opTail = Future.value();
+  int _activeOps = 0;
+
   bool get isReady => _isReady;
+
+  /// Whether any engine operation is running or queued. While true, the
+  /// engine must not be disposed (see [dispose]).
+  bool get isBusy => _activeOps > 0;
+
+  Future<T> _serialized<T>(Future<T> Function() op) async {
+    _activeOps++;
+    final prev = _opTail;
+    final gate = Completer<void>();
+    _opTail = gate.future;
+    try {
+      await prev;
+      return await op();
+    } finally {
+      gate.complete();
+      _activeOps--;
+    }
+  }
 
   Future<void> initialize() async {
     if (_isReady && _stockfish != null) return;
@@ -215,6 +242,12 @@ class StockfishService {
   }
 
   String _goCommand({int? depth, int? movetime}) {
+    // Depth + movetime combine: the engine stops at whichever comes first.
+    // Callers pass movetime as a ceiling so a fixed-depth search can't run
+    // away on a slow device.
+    if (depth != null && movetime != null) {
+      return 'go depth $depth movetime $movetime';
+    }
     if (movetime != null) return 'go movetime $movetime';
     return 'go depth ${depth ?? 10}';
   }
@@ -231,6 +264,7 @@ class StockfishService {
     return EvalResult(
       centipawns: -raw.centipawns,
       mateIn: raw.mateIn != null ? -raw.mateIn! : null,
+      depth: raw.depth,
     );
   }
 
@@ -239,41 +273,54 @@ class StockfishService {
     String fen, {
     int? depth,
     int? movetime,
+  }) {
+    return _serialized(() => _evaluateNow(fen, depth: depth, movetime: movetime));
+  }
+
+  Future<EvalResult> _evaluateNow(
+    String fen, {
+    int? depth,
+    int? movetime,
   }) async {
     await _ensureReady();
+    final sf = _stockfish;
+    if (sf == null || !_isReady) {
+      throw StateError('Stockfish unavailable');
+    }
 
     final completer = Completer<EvalResult>();
     _pendingCompleters.add(completer);
     EvalResult? lastResult;
-
-    final sub = _stockfish!.stdout.listen((line) {
-      if (line.startsWith('info ') && line.contains('score ')) {
-        final result = _parseEval(line);
-        if (result != null) lastResult = result;
-      } else if (line.startsWith('bestmove ')) {
-        if (!completer.isCompleted) {
-          completer.complete(lastResult ?? const EvalResult(centipawns: 0));
-        }
-      }
-    });
-
-    _stockfish!.stdin = 'setoption name Skill Level value 20';
-    _stockfish!.stdin = 'setoption name MultiPV value 1';
-    _stockfish!.stdin = 'position fen $fen';
-    _stockfish!.stdin = _goCommand(depth: depth, movetime: movetime);
+    StreamSubscription<String>? sub;
 
     try {
+      sub = sf.stdout.listen((line) {
+        if (line.startsWith('info ') && line.contains('score ')) {
+          final result = _parseEval(line);
+          if (result != null) lastResult = result;
+        } else if (line.startsWith('bestmove ')) {
+          if (!completer.isCompleted) {
+            completer.complete(lastResult ?? const EvalResult(centipawns: 0));
+          }
+        }
+      });
+
+      sf.stdin = 'setoption name Skill Level value 20';
+      sf.stdin = 'setoption name MultiPV value 1';
+      sf.stdin = 'position fen $fen';
+      sf.stdin = _goCommand(depth: depth, movetime: movetime);
+
       final result = await completer.future.timeout(
-        const Duration(seconds: 15),
+        const Duration(seconds: 30),
         onTimeout: () {
-          try { _stockfish?.stdin = 'stop'; } catch (_) {}
+          try { sf.stdin = 'stop'; } catch (_) {}
           return lastResult ?? const EvalResult(centipawns: 0);
         },
       );
       return _toWhitePerspective(result, fen);
     } finally {
       _pendingCompleters.remove(completer);
-      await sub.cancel();
+      await sub?.cancel();
     }
   }
 
@@ -283,123 +330,196 @@ class StockfishService {
     int? depth,
     int? movetime,
     int skillLevel = 20,
+  }) {
+    return _serialized(() => _getBestMoveNow(
+          fen,
+          depth: depth,
+          movetime: movetime,
+          skillLevel: skillLevel,
+        ));
+  }
+
+  Future<String?> _getBestMoveNow(
+    String fen, {
+    int? depth,
+    int? movetime,
+    int skillLevel = 20,
   }) async {
     await _ensureReady();
+    final sf = _stockfish;
+    if (sf == null || !_isReady) {
+      throw StateError('Stockfish unavailable');
+    }
 
     final completer = Completer<String?>();
     _pendingCompleters.add(completer);
-
-    final sub = _stockfish!.stdout.listen((line) {
-      if (line.startsWith('bestmove ')) {
-        final match = RegExp(r'bestmove (\S+)').firstMatch(line);
-        if (!completer.isCompleted) {
-          completer.complete(match?.group(1));
-        }
-      }
-    });
-
-    _stockfish!.stdin = 'setoption name Skill Level value $skillLevel';
-    _stockfish!.stdin = 'setoption name MultiPV value 1';
-    _stockfish!.stdin = 'position fen $fen';
-    _stockfish!.stdin = _goCommand(depth: depth, movetime: movetime);
+    StreamSubscription<String>? sub;
 
     try {
+      sub = sf.stdout.listen((line) {
+        if (line.startsWith('bestmove ')) {
+          final match = RegExp(r'bestmove (\S+)').firstMatch(line);
+          if (!completer.isCompleted) {
+            completer.complete(match?.group(1));
+          }
+        }
+      });
+
+      sf.stdin = 'setoption name Skill Level value $skillLevel';
+      sf.stdin = 'setoption name MultiPV value 1';
+      sf.stdin = 'position fen $fen';
+      sf.stdin = _goCommand(depth: depth, movetime: movetime);
+
       return await completer.future.timeout(
-        const Duration(seconds: 15),
+        const Duration(seconds: 30),
         onTimeout: () {
-          try { _stockfish?.stdin = 'stop'; } catch (_) {}
+          try { sf.stdin = 'stop'; } catch (_) {}
           return null;
         },
       );
     } finally {
       _pendingCompleters.remove(completer);
-      await sub.cancel();
+      await sub?.cancel();
     }
   }
 
   /// Get the top N moves for a position (for practice mode hint arrows).
+  ///
+  /// All returned scores come from the same search depth (the deepest fully
+  /// reported iteration) so the moves are directly comparable — mixing depths
+  /// skews relative scores. [onDepth] streams the current search depth as
+  /// iterations complete, for a live progress readout.
   Future<List<ScoredMove>> getTopMoves(
     String fen, {
     int count = 3,
     int? depth,
     int? movetime,
+    void Function(int depth)? onDepth,
+  }) {
+    return _serialized(() => _getTopMovesNow(
+          fen,
+          count: count,
+          depth: depth,
+          movetime: movetime,
+          onDepth: onDepth,
+        ));
+  }
+
+  Future<List<ScoredMove>> _getTopMovesNow(
+    String fen, {
+    int count = 3,
+    int? depth,
+    int? movetime,
+    void Function(int depth)? onDepth,
   }) async {
     await _ensureReady();
+    final sf = _stockfish;
+    if (sf == null || !_isReady) {
+      throw StateError('Stockfish unavailable');
+    }
 
     final completer = Completer<List<ScoredMove>>();
     _pendingCompleters.add(completer);
-    // Keep the latest result for each multipv index regardless of depth.
-    // With movetime searches, the engine may output an incomplete set at
-    // the highest depth before bestmove arrives. By not clearing on depth
-    // change, earlier complete results are preserved and only overwritten
-    // when a deeper result for the same multipv index arrives.
-    final moves = <int, ScoredMove>{};
+    StreamSubscription<String>? sub;
 
-    final sub = _stockfish!.stdout.listen((line) {
-      if (line.startsWith('info ') && line.contains('multipv ')) {
-        final mpvMatch = RegExp(r'multipv (\d+)').firstMatch(line);
-        final pvMatch = RegExp(r' pv (\S+)').firstMatch(line);
-        final eval = _parseEval(line);
+    // Snapshot per depth iteration: `current` collects the iteration being
+    // reported now; when the engine moves on to a deeper iteration, the
+    // previous one is kept as `lastComplete`. On bestmove we prefer the
+    // current iteration only if it reported at least as many moves as the
+    // previous one (a `stop` can cut an iteration short mid-report).
+    var currentDepth = 0;
+    var current = <int, ScoredMove>{};
+    var lastComplete = <int, ScoredMove>{};
 
-        if (mpvMatch != null && pvMatch != null && eval != null) {
-          final mpv = int.parse(mpvMatch.group(1)!);
-          final uci = pvMatch.group(1)!;
-          final normalized = _toWhitePerspective(eval, fen);
-
-          moves[mpv] = ScoredMove(
-            uci: uci,
-            centipawns: normalized.centipawns,
-            mateIn: normalized.mateIn,
-            multipvIndex: mpv,
-          );
-        }
-      } else if (line.startsWith('bestmove ')) {
-        if (!completer.isCompleted) {
-          final sorted = moves.values.toList()
-            ..sort((a, b) => a.multipvIndex.compareTo(b.multipvIndex));
-          completer.complete(sorted);
-        }
-      }
-    });
-
-    _stockfish!.stdin = 'setoption name Skill Level value 20';
-    _stockfish!.stdin = 'setoption name MultiPV value $count';
-    _stockfish!.stdin = 'position fen $fen';
-    _stockfish!.stdin = _goCommand(depth: depth, movetime: movetime);
+    List<ScoredMove> snapshot() {
+      final chosen = current.length >= lastComplete.length ? current : lastComplete;
+      final sorted = chosen.values.toList()
+        ..sort((a, b) => a.multipvIndex.compareTo(b.multipvIndex));
+      return sorted;
+    }
 
     try {
+      sub = sf.stdout.listen((line) {
+        if (line.startsWith('info ') && line.contains('multipv ')) {
+          final mpvMatch = RegExp(r'multipv (\d+)').firstMatch(line);
+          final pvMatch = RegExp(r' pv (\S+)').firstMatch(line);
+          final eval = _parseEval(line);
+
+          if (mpvMatch != null && pvMatch != null && eval != null) {
+            if (eval.depth > currentDepth) {
+              if (current.length >= lastComplete.length) {
+                lastComplete = current;
+              }
+              current = <int, ScoredMove>{};
+              currentDepth = eval.depth;
+              onDepth?.call(currentDepth);
+            }
+            final mpv = int.parse(mpvMatch.group(1)!);
+            final uci = pvMatch.group(1)!;
+            final normalized = _toWhitePerspective(eval, fen);
+
+            current[mpv] = ScoredMove(
+              uci: uci,
+              centipawns: normalized.centipawns,
+              mateIn: normalized.mateIn,
+              multipvIndex: mpv,
+            );
+          }
+        } else if (line.startsWith('bestmove ')) {
+          if (!completer.isCompleted) {
+            completer.complete(snapshot());
+          }
+        }
+      });
+
+      sf.stdin = 'setoption name Skill Level value 20';
+      sf.stdin = 'setoption name MultiPV value $count';
+      sf.stdin = 'position fen $fen';
+      sf.stdin = _goCommand(depth: depth, movetime: movetime);
+
       return await completer.future.timeout(
-        const Duration(seconds: 15),
+        const Duration(seconds: 30),
         onTimeout: () {
-          try { _stockfish?.stdin = 'stop'; } catch (_) {}
-          final sorted = moves.values.toList()
-            ..sort((a, b) => a.multipvIndex.compareTo(b.multipvIndex));
-          return sorted;
+          try { sf.stdin = 'stop'; } catch (_) {}
+          return snapshot();
         },
       );
     } finally {
       _pendingCompleters.remove(completer);
-      await sub.cancel();
+      await sub?.cancel();
     }
   }
 
   EvalResult? _parseEval(String line) {
+    final depthMatch = RegExp(r'\bdepth (\d+)').firstMatch(line);
+    final depth = depthMatch != null ? int.parse(depthMatch.group(1)!) : 0;
+
     final mateMatch = RegExp(r'score mate (-?\d+)').firstMatch(line);
     if (mateMatch != null) {
       final mateIn = int.parse(mateMatch.group(1)!);
       final cp = mateIn > 0 ? 10000 : -10000;
-      return EvalResult(centipawns: cp, mateIn: mateIn);
+      return EvalResult(centipawns: cp, mateIn: mateIn, depth: depth);
     }
 
     final cpMatch = RegExp(r'score cp (-?\d+)').firstMatch(line);
     if (cpMatch != null) {
-      return EvalResult(centipawns: int.parse(cpMatch.group(1)!));
+      return EvalResult(centipawns: int.parse(cpMatch.group(1)!), depth: depth);
     }
 
     return null;
   }
 
   void dispose() {
+    // Never tear down a busy engine: 'quit' only starts the native exit, and
+    // until the process actually dies the Stockfish() factory throws
+    // 'Multiple instances' — so an op that re-initializes right after a
+    // dispose stalls in retry backoff for seconds. It also strands the op's
+    // completer. Abort the search instead; the engine is disposed by the
+    // next dispose() call that finds it idle.
+    if (isBusy) {
+      stopSearch();
+      return;
+    }
     _cancelAllPending();
     _subscription?.cancel();
     _subscription = null;

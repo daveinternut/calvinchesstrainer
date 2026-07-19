@@ -4,7 +4,7 @@ import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chessground/chessground.dart';
-import 'package:dartchess/dartchess.dart' show Piece, Side;
+import 'package:dartchess/dartchess.dart' show NormalMove, Piece, Side, Square;
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
 import '../../../core/audio/audio_service.dart';
@@ -15,6 +15,8 @@ import '../../file_rank_trainer/widgets/timer_bar.dart';
 import '../../file_rank_trainer/widgets/results_card.dart';
 import '../models/chess_vision_state.dart';
 import '../providers/chess_vision_provider.dart';
+import '../services/knight_engine.dart';
+import '../services/pawn_attack_engine.dart';
 import '../widgets/found_progress_indicator.dart';
 
 class ChessVisionGameScreen extends ConsumerStatefulWidget {
@@ -113,25 +115,8 @@ class _ChessVisionGameScreenState
                             constraints.maxHeight,
                           );
                           final pieceAssets = PieceSet.cburnett.assets;
-                          return Chessboard.fixed(
-                            size: boardSize,
-                            orientation: Side.white,
-                            fen: gameState.boardFen,
-                            settings: ChessboardSettings(
-                              enableCoordinates: true,
-                              colorScheme: ChessboardColorScheme.green,
-                              pieceAssets: pieceAssets,
-                              animationDuration:
-                                  const Duration(milliseconds: 200),
-                            ),
-                            squareHighlights: gameState.allHighlights,
-                            shapes: _buildShapes(gameState, pieceAssets),
-                            onTouchedSquare: (square) {
-                              ref
-                                  .read(chessVisionProvider.notifier)
-                                  .handleBoardTap(square);
-                            },
-                          );
+                          return _buildBoard(
+                              gameState, boardSize, pieceAssets);
                         },
                       ),
                     ),
@@ -335,6 +320,99 @@ class _ChessVisionGameScreenState
 
   // --- Shapes ---
 
+  Widget _buildBoard(
+      ChessVisionState gameState, double boardSize, PieceAssets pieceAssets) {
+    final drill = widget.drill;
+
+    void onTap(Square square) =>
+        ref.read(chessVisionProvider.notifier).handleBoardTap(square);
+
+    // Knight Flight and Pawn Attack move a single piece, so they use the
+    // INTERACTIVE board wired for THREE input styles at once:
+    //   • 1-tap — tap a destination square directly (onTouchedSquare), even on
+    //     the first move, matching the original drill feel;
+    //   • tap-to-select then tap a destination, and
+    //   • drag-and-drop  (both via GameData + validMoves).
+    // The move handlers no-op on a tap of the piece's own square, so the extra
+    // callback a select/drag fires alongside onTouchedSquare can't double-count.
+    // Forks & Skewers and Knight Sight mark arbitrary squares (no piece to
+    // move), so they stay on the tap-anywhere fixed board.
+    final movesAPiece = drill == VisionDrillType.knightFlight ||
+        drill == VisionDrillType.pawnAttack;
+
+    if (movesAPiece) {
+      final current = drill == VisionDrillType.knightFlight
+          ? (gameState.flightPath.isNotEmpty
+              ? gameState.flightPath.last
+              : gameState.knightSquare)
+          : gameState.pieceSquare;
+      final stillPlaying = drill == VisionDrillType.knightFlight
+          ? !gameState.flightComplete
+          : (!gameState.isRoundComplete && !gameState.isGameOver);
+      final canMove = current != null && stillPlaying;
+
+      ISet<Square> destsFrom(Square from) =>
+          drill == VisionDrillType.knightFlight
+              ? ISet(KnightEngine.knightMoves(from))
+              : ISet(PawnAttackEngine.validMoves(
+                  role: gameState.whitePiece.role,
+                  from: from,
+                  remainingPawns: gameState.remainingPawns,
+                ));
+
+      final validMoves = (current != null && canMove)
+          ? IMap<Square, ISet<Square>>({current: destsFrom(current)})
+          : const IMapConst<Square, ISet<Square>>({});
+
+      // Knight Flight shows its legal hops as dots (a helpful nudge about how a
+      // knight moves). Pawn Attack hides them so the player still has to judge
+      // which squares are safe — the pawn threats are already flagged in red.
+      final showDots = drill == VisionDrillType.knightFlight;
+
+      return Chessboard(
+        size: boardSize,
+        orientation: Side.white,
+        fen: gameState.boardFen,
+        settings: ChessboardSettings(
+          enableCoordinates: true,
+          colorScheme: ChessboardColorScheme.green,
+          pieceAssets: pieceAssets,
+          animationDuration: const Duration(milliseconds: 200),
+          showValidMoves: showDots,
+        ),
+        squareHighlights: gameState.allHighlights,
+        shapes: _buildShapes(gameState, pieceAssets),
+        game: GameData(
+          playerSide: canMove ? PlayerSide.white : PlayerSide.none,
+          sideToMove: Side.white,
+          validMoves: validMoves,
+          isCheck: false,
+          promotionMove: null,
+          onMove: (move, {bool? viaDragAndDrop}) {
+            if (move is NormalMove) onTap(move.to);
+          },
+          onPromotionSelection: (_) {},
+        ),
+        onTouchedSquare: onTap,
+      );
+    }
+
+    return Chessboard.fixed(
+      size: boardSize,
+      orientation: Side.white,
+      fen: gameState.boardFen,
+      settings: ChessboardSettings(
+        enableCoordinates: true,
+        colorScheme: ChessboardColorScheme.green,
+        pieceAssets: pieceAssets,
+        animationDuration: const Duration(milliseconds: 200),
+      ),
+      squareHighlights: gameState.allHighlights,
+      shapes: _buildShapes(gameState, pieceAssets),
+      onTouchedSquare: onTap,
+    );
+  }
+
   ISet<Shape> _buildShapes(ChessVisionState gameState, PieceAssets pieceAssets) {
     switch (widget.drill) {
       case VisionDrillType.forksAndSkewers:
@@ -398,12 +476,15 @@ class _ChessVisionGameScreenState
 
     final target = gameState.flightTargetSquare;
     if (target != null) {
-      shapes.add(PieceShape(
-        piece: Piece.whiteKnight,
+      // Goal marker: a bright ring (NOT a knight) marks the destination, so the
+      // only knight on the board is the solid one the player actually moves.
+      // chessground asserts 0 < scale <= 1.0; 1.0 is the thickest ring (stroke
+      // = 1/16 of the square). The amber landing-pad tint (see allHighlights)
+      // does the heavier visual lifting.
+      shapes.add(Circle(
+        color: AppColors.goalAmber,
         orig: target,
-        pieceAssets: pieceAssets,
-        opacity: 0.3,
-        scale: 0.85,
+        scale: 1.0,
       ));
     }
 

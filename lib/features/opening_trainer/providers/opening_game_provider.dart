@@ -16,11 +16,29 @@ final openingGameProvider =
     NotifierProvider<OpeningGameNotifier, OpeningGameState>(
         OpeningGameNotifier.new);
 
-// Time budget (ms) for position evaluation (after a move).
-const _kEvalTimeMs = 500;
+// Fixed search depth for position evaluation (after a move). Depth-based
+// searches (unlike movetime) return near-identical results for the same
+// position, so displayed scores don't drift between views.
+const _kEvalDepth = 12;
 
-// Progressive hint waves — fast first result, then deeper refinement.
-const _kHintWavesMs = [500, 1500, 4000, 10000];
+// Per-move evaluation passes (selected-piece analysis): a quick shallow
+// pass paints every badge fast, then deeper passes refine the numbers in
+// place. Each pass re-evaluates the root at its own depth so the deltas
+// driving the colors always compare same-depth numbers.
+const _kMoveEvalPassDepths = [8, 12, 18];
+const _kMoveEvalPassCapMs = [1500, 3000, 6000];
+
+// Progressive hint waves — fast shallow result first, then deeper refinement.
+// Each wave also carries a movetime ceiling so a fixed-depth search can't
+// run away on a slow device (the cap rarely bites on real hardware).
+const _kHintWaveDepths = [8, 12, 16, 18];
+const _kHintWaveCapMs = [2500, 5000, 10000, 15000];
+
+// Movetime ceiling for single-position evaluations.
+const _kEvalCapMs = 4000;
+
+// How many extra book moves (outside the engine's top list) to show.
+const _kMaxBookExtras = 2;
 
 
 class OpeningGameNotifier extends Notifier<OpeningGameState> {
@@ -69,33 +87,33 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
     try {
       await _stockfish.initialize();
     } catch (e) {
-      dev.log('OpeningGame: Stockfish init failed: $e');
-      state = state.copyWith(isEngineThinking: false);
-      return;
+      // Don't give up the session — every engine op re-initializes on
+      // demand via _ensureReady, so a transient failure here self-heals.
+      dev.log('OpeningGame: Stockfish init failed (will retry on use): $e');
     }
 
     await _openingBook.load();
 
     try {
-      final eval = await _stockfish.evaluate(_kInitialFEN, movetime: 200);
+      final eval = await _evalCached(_kInitialFEN, depth: 10);
       state = state.copyWith(currentEval: eval);
     } catch (e) {
       dev.log('OpeningGame: initial eval failed: $e');
     }
 
-    _stopEngine();
-
     if (mode == OpeningMode.practice) {
       _hintsFuture = _requestHints();
     } else if (!state.isPlayerTurn) {
       _engineMove();
+    } else {
+      _stopEngine();
     }
   }
 
   /// Start practice from a specific opening position by replaying its moves.
   Future<void> startFromOpening(String pgn) async {
     _hintFen = null;
-    _stockfish.stopSearch();
+    cancelPieceEvals();
 
     _position = Chess.initial;
     final sanMoves = <String>[];
@@ -146,7 +164,7 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
       sanMoves.add(foundSan);
     }
 
-    final openingInfo = _openingBook.getOpening(sanMoves);
+    final openingInfo = _openingBook.getOpeningForPosition(_position);
 
     state = state.copyWith(
       currentFen: _position.fen,
@@ -160,8 +178,8 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
       openingName: () => openingInfo?.name,
       openingEco: () => openingInfo?.eco,
       currentEval: const EvalResult(centipawns: 0),
-      thinkingWave: -1,
-      thinkingTotalWaves: 0,
+      engineDepth: -1,
+      engineTargetDepth: 0,
     );
 
     _hintsFuture = _requestHints();
@@ -175,11 +193,11 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
 
     if (!_position.isLegal(move)) return;
 
-    // Abort any running engine search and cancel in-progress hint waves.
-    // Don't dispose the engine — just stop the search so the new hints
-    // can reuse it immediately without re-initialization delay.
+    // Abort any running engine search, in-progress hint waves and per-move
+    // eval session. Don't dispose the engine — just stop the search so the
+    // new hints can reuse it immediately without re-initialization delay.
     _hintFen = null;
-    _stockfish.stopSearch();
+    cancelPieceEvals();
 
     final (newPosition, san) = _position.makeSan(move);
     _position = newPosition;
@@ -214,7 +232,7 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
         hintsBeforeMove: hintsBeforeMove,
       );
 
-      final openingInfo = _openingBook.getOpening(newSanMoves);
+      final openingInfo = _openingBook.getOpeningForPosition(_position);
 
       state = state.copyWith(
         moveHistory: [...state.moveHistory, record],
@@ -255,7 +273,7 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
     // Challenge mode: separate eval needed for mistake detection
     EvalResult eval;
     try {
-      eval = await _stockfish.evaluate(newFen, movetime: _kEvalTimeMs);
+      eval = await _evalCached(newFen, depth: _kEvalDepth);
     } catch (e) {
       dev.log('OpeningGame: eval after move failed: $e');
       eval = state.currentEval;
@@ -271,7 +289,7 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
       hintsBeforeMove: hintsBeforeMove,
     );
 
-    final openingInfo = _openingBook.getOpening(newSanMoves);
+    final openingInfo = _openingBook.getOpeningForPosition(_position);
 
     state = state.copyWith(
       currentEval: eval,
@@ -356,8 +374,7 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
 
     EvalResult evalAfterEngine;
     try {
-      evalAfterEngine =
-          await _stockfish.evaluate(newFen, movetime: _kEvalTimeMs);
+      evalAfterEngine = await _evalCached(newFen, depth: _kEvalDepth);
     } catch (e) {
       dev.log('OpeningGame: eval after engine move failed: $e');
       evalAfterEngine = state.currentEval;
@@ -372,7 +389,7 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
       move: engineMove,
     );
 
-    final openingInfo = _openingBook.getOpening(newSanMoves);
+    final openingInfo = _openingBook.getOpeningForPosition(_position);
 
     state = state.copyWith(
       currentFen: newFen,
@@ -412,7 +429,7 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
   /// away (e.g. pushing the opening picker).
   Future<void> pauseHints() async {
     _hintFen = null;
-    _stockfish.stopSearch();
+    cancelPieceEvals();
     _stopEngine();
 
     final pending = _hintsFuture;
@@ -426,13 +443,15 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
     }
 
     state = state.copyWith(
-      thinkingWave: -1,
-      thinkingTotalWaves: 0,
+      engineDepth: -1,
+      engineTargetDepth: 0,
     );
   }
 
-  /// Resume hints for the current position.
+  /// Resume hints for the current position (no-op if an analysis for this
+  /// position is already running).
   void resumeHints() {
+    if (_hintFen == _position.fen) return;
     if (!state.isGameOver && state.mode == OpeningMode.practice) {
       _hintsFuture = _requestHints();
     }
@@ -447,8 +466,8 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
     final baselineEvalCp = state.currentEval.centipawns;
     final hintCount = state.mode == OpeningMode.practice ? 5 : 3;
 
-    // Show book moves INSTANTLY before any engine work.
-    // Get all legal moves as SAN, find book continuations.
+    // Get all legal moves as SAN, find book continuations (sorted by
+    // popularity — main lines first, exotic sidelines last).
     final legalMoves = _position.legalMoves;
     final legalSans = <String, NormalMove>{};
     for (final entry in legalMoves.entries) {
@@ -461,37 +480,36 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
       }
     }
 
-    final bookMoves = _openingBook.getBookContinuations(
-      state.sanMoves,
-      legalSans.keys.toList(),
-    );
+    final bookMoves = _openingBook.getBookContinuations(_position, legalSans);
 
-    if (bookMoves.length >= hintCount) {
-      final topBook = bookMoves.take(hintCount).toList();
-      final bookSuggestions = topBook.map((b) {
+    // Show book moves INSTANTLY before any engine work — but never downgrade
+    // already-displayed engine results (e.g. hints resumed after a deselect).
+    if (state.topMoves.isEmpty && bookMoves.isNotEmpty) {
+      final bookSuggestions = bookMoves.take(hintCount).map((b) {
         final move = legalSans[b.san]!;
         return SuggestedMove(
           uci: '${move.from.name}${move.to.name}',
           san: b.san,
-          centipawns: baselineEvalCp,
-          evalDelta: 0,
+          centipawns: 0,
           isBook: true,
+          hasEval: false,
         );
       }).toList();
 
       state = state.copyWith(topMoves: bookSuggestions);
     }
-    final waves = state.mode == OpeningMode.practice
-        ? _kHintWavesMs
-        : [_kHintWavesMs.first];
 
-    for (int i = 0; i < waves.length; i++) {
+    final waveDepths = state.mode == OpeningMode.practice
+        ? _kHintWaveDepths
+        : [_kHintWaveDepths.first];
+
+    for (int i = 0; i < waveDepths.length; i++) {
       if (_hintFen != fen || state.isGameOver) break;
 
       state = state.copyWith(
         isEngineThinking: i == 0 && state.mode != OpeningMode.practice,
-        thinkingWave: i,
-        thinkingTotalWaves: waves.length,
+        engineDepth: i == 0 ? 0 : state.engineDepth,
+        engineTargetDepth: waveDepths.last,
       );
 
       List<ScoredMove> moves;
@@ -499,7 +517,13 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
         moves = await _stockfish.getTopMoves(
           fen,
           count: hintCount,
-          movetime: waves[i],
+          depth: waveDepths[i],
+          movetime: _kHintWaveCapMs[i],
+          onDepth: (d) {
+            if (_hintFen == fen && !state.isGameOver && d > state.engineDepth) {
+              state = state.copyWith(engineDepth: d);
+            }
+          },
         );
       } catch (e) {
         dev.log('OpeningGame: getTopMoves wave $i failed: $e');
@@ -508,13 +532,33 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
 
       if (_hintFen != fen || state.isGameOver) break;
 
-      // Use the best move's score as the position eval AND as the
-      // baseline for deltas. This avoids stale baselines after bad moves.
+      // Use the best move's score as the position eval AND as the baseline
+      // for the color-classification deltas.
       final bestCp =
           moves.isNotEmpty ? moves.first.centipawns : baselineEvalCp;
       final suggested = _buildSuggestions(moves, bestCp);
 
       if (suggested.isNotEmpty) {
+        // Keep the most popular book moves visible even when they fall
+        // outside the engine's top list (main-line transpositions matter
+        // more to a learner than the engine's 5th-best try).
+        final engineUcis = suggested.map((s) => s.uci).toSet();
+        var extras = 0;
+        for (final b in bookMoves) {
+          if (extras >= _kMaxBookExtras) break;
+          final move = legalSans[b.san]!;
+          final uci = '${move.from.name}${move.to.name}';
+          if (engineUcis.contains(uci)) continue;
+          suggested.add(SuggestedMove(
+            uci: uci,
+            san: b.san,
+            centipawns: 0,
+            isBook: true,
+            hasEval: false,
+          ));
+          extras++;
+        }
+
         state = state.copyWith(
           topMoves: suggested,
           currentEval: EvalResult(centipawns: bestCp),
@@ -532,8 +576,12 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
     // All waves done (or bailed) — stop the engine for hot-restart safety
     _stopEngine();
 
-    if (_hintFen == fen) {
-      state = state.copyWith(thinkingWave: -1, thinkingTotalWaves: 0);
+    // Clear the depth readout unless a newer analysis for a different
+    // position already owns it (_hintFen == null means we were cancelled
+    // with nothing else running — e.g. a piece was selected — and the
+    // readout would otherwise stay stuck).
+    if (_hintFen == fen || _hintFen == null) {
+      state = state.copyWith(engineDepth: -1, engineTargetDepth: 0);
     }
   }
 
@@ -551,7 +599,7 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
       if (move != null && _position.isLegal(move)) {
         final (_, san) = _position.makeSan(move);
         final delta = (scored.centipawns - baselineEvalCp) * sideMultiplier;
-        final isBook = _openingBook.isBookMove(state.sanMoves, san);
+        final isBook = _openingBook.isBookMove(_position, move);
         suggested.add(SuggestedMove(
           uci: scored.uci,
           san: san,
@@ -559,47 +607,145 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
           mateIn: scored.mateIn,
           evalDelta: delta,
           isBook: isBook,
+          isBest: scored.multipvIndex == 1,
         ));
       }
     }
     return suggested;
   }
 
-  /// Evaluate specific moves that aren't in the top 5.
-  /// Returns a map of UCI string → eval delta in centipawns.
-  /// Pauses thinking waves so these evaluations run immediately.
-  Future<Map<String, int>> evaluateSpecificMoves(List<NormalMove> moves) async {
-    // Pause the thinking waves and abort any running search
-    // so these evals can use the engine immediately.
-    _hintFen = null;
-    _stockfish.stopSearch();
+  /// Cache of position evals keyed by "fen#depth". Fixed-depth searches are
+  /// stable, so cached values keep repeat views identical (and instant).
+  final Map<String, EvalResult> _evalCache = {};
 
-    // Brief yield to let the wave loop bail
-    await Future.delayed(Duration.zero);
+  Future<EvalResult> _evalCached(
+    String fen, {
+    required int depth,
+    int capMs = _kEvalCapMs,
+  }) async {
+    final key = '$fen#$depth';
+    final cached = _evalCache[key];
+    if (cached != null) return cached;
 
-    final results = <String, int>{};
-    final currentCp = state.currentEval.centipawns;
-    final sideMultiplier = _position.turn == Side.white ? 1 : -1;
-
-    for (final move in moves) {
-      if (!_position.isLegal(move)) continue;
-      try {
-        final newPos = _position.playUnchecked(move);
-        final eval = await _stockfish.evaluate(newPos.fen, movetime: 100);
-        final delta = (eval.centipawns - currentCp) * sideMultiplier;
-        results['${move.from.name}${move.to.name}'] = delta;
-      } catch (e) {
-        dev.log('evaluateSpecificMoves: failed for ${move.from.name}${move.to.name}: $e');
-      }
+    var eval = await _stockfish.evaluate(fen, depth: depth, movetime: capMs);
+    if (eval.depth == 0) {
+      // A bestmove left over from a just-aborted search can complete an
+      // eval before any info line arrives. Retry once. (Partial-depth
+      // results are NOT retried: they mean the movetime cap bit or we were
+      // cancelled — retrying would double the cost for nothing.)
+      eval = await _stockfish.evaluate(fen, depth: depth, movetime: capMs);
     }
-    return results;
+    // Only cache full-depth results — shallow/aborted ones must not stick.
+    if (eval.depth >= depth) {
+      if (_evalCache.length > 1000) _evalCache.clear();
+      _evalCache[key] = eval;
+    }
+    return eval;
+  }
+
+  /// Engine claim refcount: >0 while [evaluateSpecificMoves] sessions run,
+  /// so no code path tears the engine down mid-analysis (see [_stopEngine]).
+  int _pieceEvalSessions = 0;
+
+  /// Bumped to cancel running eval loops (superseded selection, deselect).
+  int _pieceEvalGeneration = 0;
+
+  /// Cancel any running per-move evaluation loop (e.g. the user deselected
+  /// the piece) so a resumed hint search doesn't queue behind stale evals.
+  void cancelPieceEvals() {
+    _pieceEvalGeneration++;
+    _stockfish.stopSearch();
+  }
+
+  /// Evaluate specific moves (selected-piece analysis) at a fixed depth.
+  /// Returns a map of UCI string → [MoveEval] (absolute post-move eval from
+  /// white's perspective + delta vs. this position's eval at the same depth).
+  /// [onResult] fires as each move finishes so the UI can fill in
+  /// progressively. Pauses thinking waves so these evals run immediately.
+  Future<Map<String, MoveEval>> evaluateSpecificMoves(
+    List<NormalMove> moves, {
+    void Function(String uci, MoveEval eval)? onResult,
+  }) async {
+    // Claim the engine BEFORE any await: the cancelled hint pass below ends
+    // by calling _stopEngine, which must see the claim and leave the native
+    // engine alive for our evals. Bumping the generation also cancels any
+    // previous still-running session (selecting piece B while A evaluates).
+    _pieceEvalSessions++;
+    final generation = ++_pieceEvalGeneration;
+
+    try {
+      // Pause the thinking waves and abort any running search
+      // so these evals can use the engine immediately.
+      _hintFen = null;
+      _stockfish.stopSearch();
+      state = state.copyWith(engineDepth: -1, engineTargetDepth: 0);
+
+      final results = <String, MoveEval>{};
+      final rootFen = _position.fen;
+      final sideMultiplier = _position.turn == Side.white ? 1 : -1;
+
+      bool cancelled() =>
+          generation != _pieceEvalGeneration ||
+          _position.fen != rootFen ||
+          state.isGameOver;
+
+      // Progressive passes: shallow first so every badge gets a number
+      // quickly, then deeper passes overwrite each badge via [onResult].
+      // Cached evals make later passes (and re-selections) skip finished
+      // work instantly.
+      for (int pass = 0; pass < _kMoveEvalPassDepths.length; pass++) {
+        if (cancelled()) break;
+        final depth = _kMoveEvalPassDepths[pass];
+        final capMs = _kMoveEvalPassCapMs[pass];
+
+        // Baseline at the SAME depth as this pass's per-move evals —
+        // comparing a deep root eval against shallow child evals is what
+        // made scores disagree between views.
+        int rootCp;
+        try {
+          rootCp =
+              (await _evalCached(rootFen, depth: depth, capMs: capMs))
+                  .centipawns;
+        } catch (e) {
+          dev.log('evaluateSpecificMoves: root eval failed: $e');
+          rootCp = state.currentEval.centipawns;
+        }
+
+        for (final move in moves) {
+          // Bail if the game moved on or this session was superseded.
+          if (cancelled()) break;
+          if (!_position.isLegal(move)) continue;
+          try {
+            final newPos = _position.playUnchecked(move);
+            final eval =
+                await _evalCached(newPos.fen, depth: depth, capMs: capMs);
+            final delta = (eval.centipawns - rootCp) * sideMultiplier;
+            final uci = '${move.from.name}${move.to.name}';
+            final moveEval = MoveEval(
+              centipawns: eval.centipawns,
+              mateIn: eval.mateIn,
+              deltaCp: delta,
+            );
+            results[uci] = moveEval;
+            onResult?.call(uci, moveEval);
+          } catch (e) {
+            dev.log('evaluateSpecificMoves: failed for ${move.from.name}${move.to.name}: $e');
+          }
+        }
+      }
+      return results;
+    } finally {
+      _pieceEvalSessions--;
+      // Engine is idle now unless hints have resumed — safe to tear down.
+      _stopEngine();
+    }
   }
 
   Future<void> undoMove() async {
     if (state.moveHistory.isEmpty || state.isEngineThinking) return;
 
     _hintFen = null;
-    _stockfish.stopSearch();
+    cancelPieceEvals();
 
     final history = List<MoveRecord>.from(state.moveHistory);
     final sans = List<String>.from(state.sanMoves);
@@ -613,7 +759,7 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
 
     if (history.isEmpty) {
       _position = Chess.initial;
-      final openingInfo = _openingBook.getOpening(sans);
+      final openingInfo = _openingBook.getOpeningForPosition(_position);
       state = state.copyWith(
         currentFen: _kInitialFEN,
         moveHistory: history,
@@ -629,7 +775,7 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
     } else {
       final prev = history.last;
       _position = Chess.fromSetup(Setup.parseFen(prev.fen));
-      final openingInfo = _openingBook.getOpening(sans);
+      final openingInfo = _openingBook.getOpeningForPosition(_position);
       state = state.copyWith(
         currentFen: prev.fen,
         moveHistory: history,
@@ -654,7 +800,14 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
   /// Stop the engine so its native isolates don't block hot restart.
   /// Called when the engine is idle (user is thinking, game over).
   /// The next engine call re-initializes automatically via _ensureReady().
+  ///
+  /// If anything is still using the engine — per-move evals, a hint pass
+  /// draining — do nothing: quitting a live engine strands its pending
+  /// operation and the next initialize stalls in 'Multiple instances'
+  /// retries until the old native process exits. Whoever holds the claim
+  /// calls _stopEngine again when it finishes.
   void _stopEngine() {
+    if (_pieceEvalSessions > 0 || _stockfish.isBusy) return;
     _stockfish.dispose();
   }
 

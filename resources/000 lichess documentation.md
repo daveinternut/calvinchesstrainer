@@ -2,7 +2,7 @@
 
 Two packages from the lichess.org team provide everything we need for chess UI and logic. They are designed to work together: **chessground** handles the board widget, and **dartchess** handles all chess rules/logic.
 
-> **Current status**: We are not using either package yet. Our `pubspec.yaml` declares `chess: ^0.8.1` (a different, older package) which is imported nowhere. Our board is a fully custom widget. Both packages below should replace our custom code.
+> **Current status (verified 2026-06-05): the migration is complete.** `chessground ^8.0.1` and `dartchess ^0.12.1` are real dependencies in `pubspec.yaml` and are used throughout the feature screens; the old `chess: ^0.8.1` package has been removed and there is no custom board widget anymore. This file is now a **pure API reference** for the two packages. The "What These Packages Replaced" and "Migration" sections near the bottom are kept as historical context.
 
 ---
 
@@ -583,9 +583,11 @@ class _GameScreenState extends State<GameScreen> {
 
 ---
 
-## What These Packages Replace in Our Codebase
+## What These Packages Replaced (historical)
 
-### Currently manual → Handled by chessground
+> This migration already happened — the tables below document what the lichess packages replaced, for context. None of this is outstanding work.
+
+### Former custom code → now handled by chessground
 
 | Our code | Replaced by |
 |---|---|
@@ -599,7 +601,7 @@ class _GameScreenState extends State<GameScreen> {
 | Board flipping | `orientation: Side.black` |
 | `board_state.dart` models | `HighlightDetails`, `Shape` classes |
 
-### Currently not implemented → Handled by dartchess
+### Former gaps → now handled by dartchess
 
 | Planned feature | dartchess provides |
 |---|---|
@@ -613,7 +615,7 @@ class _GameScreenState extends State<GameScreen> {
 | Game over detection | `pos.isGameOver`, `pos.outcome` |
 | Piece attack calculations | `attacks()`, `knightAttacks()`, etc. |
 
-### Currently not implemented → Handled by chessground
+### Former gaps → now handled by chessground
 
 | Planned feature | chessground provides |
 |---|---|
@@ -630,19 +632,19 @@ class _GameScreenState extends State<GameScreen> {
 
 ## Migration Notes
 
-### What we keep
-- Our custom file/rank/square highlighting system for the trainers (can map onto `squareHighlights` + `onTouchedSquare`)
+### What we kept
+- Our file/rank/square highlighting system for the trainers (mapped onto `squareHighlights` + `onTouchedSquare` via `lib/core/board_utils.dart`)
 - Our Riverpod state management pattern
 - Our audio system
 - Our feature-based architecture
 
-### What changes
-1. Replace `chess: ^0.8.1` with `chessground: ^8.0.1` in pubspec.yaml (dartchess comes transitively)
-2. Add `fast_immutable_collections` as explicit dependency (used pervasively by both packages)
-3. Replace our `ChessBoard` widget with `Chessboard.fixed` for trainers, `Chessboard` for game modes
-4. Replace our `board_state.dart` models with chessground's `HighlightDetails`
-5. Remove `assets/images/pieces/` — chessground bundles all piece sets
-6. Remove `flutter_svg` dependency (no longer needed for pieces)
+### What changed (all completed)
+1. ✅ Replaced `chess: ^0.8.1` with `chessground: ^8.0.1` in pubspec.yaml (dartchess comes transitively)
+2. ✅ Added `fast_immutable_collections` as an explicit dependency (used pervasively by both packages)
+3. ✅ Replaced the custom `ChessBoard` widget with `Chessboard.fixed` (static trainers) and `Chessboard` (interactive move/opening trainers)
+4. ✅ Replaced the custom `board_state.dart` models with chessground's `SquareHighlight` / `HighlightDetails` / `Shape`
+5. ✅ Removed the custom piece images — chessground bundles all 28 piece sets
+6. ✅ Removed `flutter_svg` (no longer needed for pieces)
 
 ### License consideration
 Both packages are GPL-3.0. This means our app must also be GPL-3.0 licensed if we distribute it. For a kids' training app this is likely fine, but worth noting.

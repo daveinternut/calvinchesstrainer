@@ -160,5 +160,23 @@
   "whichSideWins": "Which Side Wins?",
   "whichSideWinsDesc": "Compare groups of pieces — tap the side worth more!",
   "tapTheSideWorthMore": "Tap the side worth more",
-  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!"
+  "whichSideWinsPracticeDesc": "Build your streak — difficulty increases as you go!",
+
+  "letters": "文字",
+  "king": "キング",
+  "pawn": "ポーン",
+  "hardModeBlackPieces": "黒の駒で出題！",
+  "tapPieceToLearnLetter": "駒をタップして文字を覚えよう！",
+  "whichPieceForLetter": "この文字はどの駒？",
+  "whichLetterForPiece": "この駒の文字はどれ？",
+  "tapPieceNoLetter": "文字のない駒をタップ！",
+  "noLetter": "文字なし",
+  "letterEquals": "{letter} = {piece}！",
+  "pawnNoLetterFact": "ポーンに文字はいらない！",
+  "mnemonicKing": "KはKing — キングの頭文字！",
+  "mnemonicQueen": "QはQueen — クイーンの頭文字！",
+  "mnemonicRook": "RはRook — ルークの頭文字！",
+  "mnemonicBishop": "BはBishop — ビショップの頭文字！",
+  "mnemonicKnight": "NはkNightのN — Kはキングのものだから！",
+  "mnemonicPawn": "ポーンは文字がなくても大活躍！"
 }

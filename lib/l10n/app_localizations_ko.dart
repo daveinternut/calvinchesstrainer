@@ -522,4 +522,57 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get whichSideWinsPracticeDesc =>
       'Build your streak — difficulty increases as you go!';
+
+  @override
+  String get letters => '글자';
+
+  @override
+  String get king => '킹';
+
+  @override
+  String get pawn => '폰';
+
+  @override
+  String get hardModeBlackPieces => '검은 기물로 출제됩니다!';
+
+  @override
+  String get tapPieceToLearnLetter => '기물을 탭하여 글자를 배우세요!';
+
+  @override
+  String get whichPieceForLetter => '이 글자는 어떤 기물일까요?';
+
+  @override
+  String get whichLetterForPiece => '이 기물의 글자는 무엇일까요?';
+
+  @override
+  String get tapPieceNoLetter => '글자가 없는 기물을 탭하세요!';
+
+  @override
+  String get noLetter => '글자 없음';
+
+  @override
+  String letterEquals(String letter, String piece) {
+    return '$letter = $piece!';
+  }
+
+  @override
+  String get pawnNoLetterFact => '폰은 글자가 필요 없어요!';
+
+  @override
+  String get mnemonicKing => 'K는 King — 킹의 첫 글자!';
+
+  @override
+  String get mnemonicQueen => 'Q는 Queen — 퀸의 첫 글자!';
+
+  @override
+  String get mnemonicRook => 'R은 Rook — 룩의 첫 글자!';
+
+  @override
+  String get mnemonicBishop => 'B는 Bishop — 비숍의 첫 글자!';
+
+  @override
+  String get mnemonicKnight => 'N은 kNight의 N — K는 킹이 쓰니까요!';
+
+  @override
+  String get mnemonicPawn => '폰은 글자가 없어도 용감해요!';
 }

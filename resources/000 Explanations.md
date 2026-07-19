@@ -33,7 +33,7 @@ We use lichess's `chessground` package for all board rendering. No custom board 
 
 **Static board** (file/rank/square trainers): `Chessboard.fixed` renders a non-interactive board from a FEN string. We pass `onTouchedSquare` for tap handling and `squareHighlights` for file/rank/square coloring.
 
-**Interactive board** (move trainer): `Chessboard` with a `GameData` object provides drag-and-drop piece movement, legal move destination dots, promotion UI, check highlighting, last-move highlighting, and piece animation — all built in. Used by the move trainer for puzzle-based move execution.
+**Interactive board** (move trainer, opening trainer, and the Chess Vision *Knight Flight* + *Pawn Attack* drills): `Chessboard` with a `GameData` object provides drag-and-drop piece movement, legal move destination dots, promotion UI, check highlighting, last-move highlighting, and piece animation — all built in. The two vision drills additionally keep `onTouchedSquare` for 1-tap-to-destination (see the Chess Vision → Board interaction section).
 
 ### How We Wire It
 
@@ -64,11 +64,12 @@ Chessboard(
   fen: displayFen,                      // puzzle position FEN (or updated after correct move)
   lastMove: setupMove,                  // highlight opponent's last move
   settings: ChessboardSettings(
-    enableCoordinates: !isHardMode,
+    enableCoordinates: false,           // coordinates ALWAYS hidden (not tied to hard mode)
     colorScheme: ChessboardColorScheme.green,
     pieceAssets: PieceSet.cburnett.assets,
     animationDuration: Duration(milliseconds: 250),
     showValidMoves: true,               // destination dots
+    showLastMove: true,                 // highlight the from/to of the last move
     autoQueenPromotion: true,           // skip promotion dialog
   ),
   game: GameData(
@@ -95,7 +96,7 @@ chessground highlights individual squares via `squareHighlights: IMap<Square, Sq
 - `highlightRank(rankIndex, color)` → generates 8 square entries for the row
 - `highlightSquare(fileIndex, rankIndex, color)` → generates 1 square entry
 
-The `FileRankGameState.allHighlights` getter merges feedback highlights (correct/incorrect) and reverse-mode highlights (yellow target) into a single `IMap` for the board.
+The `FileRankGameState.allHighlights` getter produces the feedback highlights (green for the correct file/rank/square, red for a wrong tap) as a single `IMap` for the board.
 
 ### Available Piece Sets
 
@@ -119,15 +120,20 @@ chessground renders coordinates inside the edge squares (lichess-style), not as 
 
 **Sound effects**: macOS system sounds (Glass.aiff → correct.m4a, Basso.aiff → incorrect.m4a) converted to M4A via afconvert.
 
-**API methods**:
-- `speakFile(String file)` — plays file letter clip + haptic
-- `speakRank(String rank)` — plays rank number clip + haptic
+**API methods** (all fire a haptic unless noted):
+- `speakFile(String file)` — plays file letter clip
+- `speakRank(String rank)` — plays rank number clip
 - `speakSquare(String file, String rank)` — plays file then rank with await sequencing
-- `speakPiece(String pieceName)` — plays piece name clip (pawn/rook/bishop/knight/queen/king) + haptic
-- `speakMove(String pieceName, String file, String rank)` — chains piece → file → rank clips with await sequencing. Example: "Queen b6" = piece_queen.mp3 → file_b.mp3 → rank_6.mp3
-- `playCorrect()` / `playIncorrect()` — SFX + haptic
+- `speakPiece(String pieceName)` — plays piece name clip (pawn/rook/bishop/knight/queen/king)
+- `speakMove(String pieceName, String file, String rank, {bool isCapture = false, bool isCheck = false, bool isCheckmate = false})` — chains piece → (optional `move_takes.mp3`) → file → rank → (optional `move_checkmate.mp3` / `move_check.mp3`). Example: "Queen takes b6 check" = piece_queen → move_takes → file_b → rank_6 → move_check.
+- `playCorrect()` / `playIncorrect()` — SFX (`correct.m4a` / `incorrect.m4a`)
 - `playNewRecord()` — "New record!" clip
-- `speak(String text)` — flutter_tts fallback for dynamic text (used for castling prompts: "castle kingside")
+- `playGameOver()` — **haptic only, plays no sound** (called at every game-over). Despite the name, there is no game-over audio clip.
+- `speak(String text)` — flutter_tts fallback for dynamic text (no haptic; used for castling prompts: "castle kingside")
+
+`AudioService` owns all haptics in the app. It builds asset paths from strings (`file_$file.mp3`, etc.) and **swallows playback errors** (logs to `dev.log`) — a missing or renamed clip fails silently, with no compile-time check.
+
+**Milestone audio is currently unwired.** The four `streak_*.mp3` clips ship in `assets/sounds/` but no code plays them — `AudioService` has no milestone method, and `MilestoneBanner` fires only a haptic. Streak milestones are visual + haptic only. To add sound, give `AudioService` a `playStreak/playMilestone` method and call it from `milestone_banner.dart` (or delete the unused assets).
 
 **Adding new audio**: Place MP3/M4A files in `assets/sounds/`, add a method to AudioService. No pubspec changes needed (the directory is already declared).
 
@@ -139,45 +145,48 @@ Then extract segments with `ffmpeg -ss START -to END`.
 
 ## File & Rank Trainer
 
+The trainer covers four **subjects** — `files`, `ranks`, `squares`, `moves` — selected as chips on the menu. Files/ranks/squares run in this feature; the **`moves` chip routes away to the move trainer** (`/move-trainer/game`) and is never handled by `FileRankGameNotifier`. There is **no "reverse" mode, no answer buttons, and no "both" subject** — all input is by tapping the board.
+
 ### Game Modes
 
-**Explore**: Free tap, no scoring. Tap any file/rank → hear its name, see it highlight green. No correct/incorrect concept. Purpose: build familiarity.
+**Explore**: Free tap, no scoring. Tap any file/rank/square → hear its name, see it highlight green. No correct/incorrect concept. Purpose: build familiarity. Explore never advances prompts or sets `isWaitingForNext`; a tap just speaks and clears after 800ms.
 
-**Practice**: App prompts a random file/rank via audio + text. User taps the board (forward mode) or picks from A-H / 1-8 buttons (reverse mode). Streak-based scoring — tracks consecutive correct answers. Milestones at 5/10/15/20 with celebration audio. No timer, no end condition.
+**Practice**: App prompts a random file/rank/square via audio + text; the user taps the board. Streak-based scoring tracks consecutive correct answers, with a milestone celebration (visual banner + haptic) at every multiple of 5. No timer, no end condition — so practice **never logs a completion event and never updates a personal best**.
 
-**Speed Round**: Same as Practice but with a 30-second countdown. Shorter feedback delays (200ms correct, 600ms incorrect vs 400ms/1200ms in practice). Results card overlay at game end showing total correct, accuracy %, best streak, and new record badge if applicable.
+**Speed Round**: Same as Practice but with a 30-second countdown (hardcoded in the provider). Results card overlay at game end showing total correct, accuracy %, best streak, and a new-record badge if applicable.
 
-### Reverse Mode
+**Feedback delays** (correct / incorrect, in ms):
 
-Inverts the interaction direction:
-- **Forward** (default): Audio says a letter/number → user taps the board
-- **Reverse**: Board highlights a random file/rank in yellow → user picks the name from answer buttons below the board
+| Subject | Practice | Speed |
+|---|---|---|
+| files, ranks | 400 / 1200 | 200 / 600 |
+| squares | **700** / 1200 | 200 / 600 |
 
-Only available in Practice and Speed modes (not Explore).
+The squares practice-correct delay is longer (700ms) so the `SquareNameOverlay` label has time to be read. Explore always uses 800ms.
 
 ### State Machine
 
-`FileRankGameState` is immutable with a `copyWith` pattern. Key fields:
-- `currentPrompt` / `currentTargetIndex` / `currentPromptIsFile` — the active question
+`FileRankGameState` is immutable with a `copyWith` pattern (nullable fields use the `T? Function()?` thunk idiom — pass `() => null` to clear). Key fields:
+- `currentPrompt` / `currentTargetIndex` / `currentTargetRankIndex` / `currentPromptIsFile` — the active question (the rank index is used for squares)
 - `streak` / `bestStreak` — consecutive correct answers
-- `lastFeedback` — AnswerFeedback with result, tapped index, correct index, isFile. Used to compute board highlights.
-- `isWaitingForNext` — true during the feedback delay before the next prompt. Blocks input.
-- `isGameOver` — true when speed timer hits 0. Shows results overlay.
+- `lastFeedback` — `AnswerFeedback` (result, tapped/correct file index, isFile, and tapped/correct rank index for squares). Used to compute board highlights.
+- `isWaitingForNext` — true during the feedback delay before the next prompt. Blocks input (`handleBoardTap` early-returns).
+- `isGameOver` — true when the speed timer hits 0. Shows the results overlay.
 - `timeRemainingSeconds` — countdown for speed mode only.
 
-Board highlights are computed by the `allHighlights` getter on the state object (not stored separately). It merges feedback highlights (correct green / incorrect red for the tapped and correct file/rank/square) with reverse-mode highlights (yellow for the target). The getter uses `highlightFile()`, `highlightRank()`, and `highlightSquare()` from `board_utils.dart` to convert our 0-based indices into chessground's `IMap<Square, SquareHighlight>` format.
+Board highlights are computed by the `allHighlights` getter on the state object (not stored separately). It branches squares-vs-files/ranks and colors the correct target green and (on a wrong answer) the tapped target red — all at alpha 0.6 — via `highlightFile()` / `highlightRank()` / `highlightSquare()` from `board_utils.dart`, which convert our 0-based indices into chessground's `IMap<Square, SquareHighlight>`. There is no yellow-target highlight.
 
 ### Provider Logic
 
 `FileRankGameNotifier` manages:
-- **Prompt generation**: Random file (0-7) or rank (0-7), avoids repeating same one twice. For "both" subject, randomly alternates between file and rank.
-- **Answer evaluation**: Compares tapped index to target. Updates streak, plays audio, schedules auto-advance via `Timer`.
-- **Timer**: `Timer.periodic` for speed mode countdown. Separate `Timer` for feedback-to-next-prompt delay.
-- **Personal bests**: In-memory `Map<String, int>` keyed by `"{subject}_{mode}_{isReverse}"`. Checked at game over for speed mode.
+- **Prompt generation**: Random file/rank/square, avoids immediate repeats (squares require both file *and* rank to differ from the previous prompt).
+- **Answer evaluation**: Compares the tapped square to the target. Updates streak, plays audio, schedules auto-advance via a feedback `Timer`.
+- **Timer**: `Timer.periodic(1s)` for the speed countdown; a separate one-shot `Timer` for the feedback-to-next-prompt delay. Both are cancelled on `startGame`, game-over, and dispose.
+- **Personal bests**: In-memory `Map<String, int>` keyed by `"{subject}_{mode}_{isHardMode}"` — e.g. `"squares_speed_true"`. Updated only at game-over (speed mode). Not persisted: bests reset on app restart.
 
 ## iOS Signing & Deployment
 
-**Current state**: Signed under "DAVID GATES MARKLE (Personal Team)" via `dave@internut.education` Apple ID. Bundle ID temporarily set to `education.internut.calvinchesstrainer.dev` due to a conflict with a free personal team that accidentally registered the original ID. Revert to `education.internut.calvinchesstrainer` once the conflict expires or paid enrollment is fully active.
+**Current state**: Signed under "DAVID GATES MARKLE (Personal Team)" via `dave@internut.education` Apple ID. As of the 2026-06-05 audit the bundle IDs in the project files are **iOS `education.internut.chesstrainer`** (`ios/Runner.xcodeproj/project.pbxproj`) and **Android `education.internut.calvinchesstrainer`** (`android/app/build.gradle`). ⚠️ Note these two **do not match** (the iOS ID dropped both the `.dev` suffix and the "calvin" prefix). Reconcile them before store submission — pick one canonical ID across platforms (and update `flutterfire configure` / Firebase app registrations to match).
 
 **Building for device**:
 ```bash
@@ -218,7 +227,7 @@ The `Moves` field is space-separated UCI: `moves[0]` is the opponent's setup mov
 
 ### Game Modes
 
-**Practice**: Unlimited puzzles, no timer. Correct = 400ms delay, incorrect = 1200ms delay (shows green arrow to correct destination). Streak tracking with milestones.
+**Practice**: Unlimited puzzles, no timer. Correct = 700ms delay, incorrect = 1200ms delay (shows green arrow to correct destination). Streak tracking with milestones. Like the file/rank trainer, practice never logs completion or updates a personal best (no end condition).
 
 **Speed Round**: 30-second countdown. Correct = 200ms delay, incorrect = 600ms delay. Results card with score, accuracy, best streak, new record badge. Personal best tracking (keyed by mode+hardMode).
 
@@ -250,10 +259,98 @@ This is the first feature using chessground's interactive `Chessboard` with `Gam
 - `squareHighlights` getter — returns green from/to highlights for correct feedback
 - Standard scoring fields: streak, bestStreak, totalCorrect, totalAttempts, timeRemainingSeconds, isGameOver, isWaitingForNext
 
-## Planned Features (Not Yet Built)
+## Chess Vision
 
-- **Tactics Trainer**: Show positions with forks/pins/skewers, user identifies them. Will use Lichess puzzle database (same CC0 source as move trainer, different filtering). Interactive board via `Chessboard` + `GameData`.
-- **Firebase**: Auth + Firestore for user profiles, progress persistence, leaderboards. Packages installed but not configured. Needs `flutterfire configure` with the Internut Education Firebase project.
+The most algorithm-heavy feature. **Four drills run through one state class, one notifier, and one screen**, each branching on `VisionDrillType { forksAndSkewers, knightSight, knightFlight, pawnAttack }`. `ChessVisionState` carries every drill's fields (most are null/empty for any given drill), and `boardFen`, `allHighlights`, tap-routing, and config-generation each `switch` on the drill type. Adding a fifth drill means touching every switch — there is no per-drill polymorphism.
+
+### The four drills
+
+- **Forks & Skewers**: a black king (fixed on **d5**) and a target piece sit on the board; tap every square where placing the chosen white piece wins the target by fork or skewer. A **None** button handles positions with no solution. Modes: practice / speed / concentric.
+- **Knight Sight**: tap all squares a lone knight attacks. Configs alternate between central and edge knight squares.
+- **Knight Flight**: move a knight to a target square in the fewest hops. Arriving on a non-optimal path offers **retry / skip**.
+- **Pawn Attack**: navigate a piece to capture all black pawns without landing on a pawn-attacked square. Difficulty climbs **3 → 8** pawns. Modes: practice (endless cycle) / timed.
+
+### Board interaction
+
+Two drills move a single piece — **Knight Flight** and **Pawn Attack** — and both use the interactive `Chessboard` + `GameData` wired for **three input styles at once**:
+
+- **1-tap** — tap a destination square directly (via `onTouchedSquare`), including the very first move. The original drill feel and the fastest input.
+- **tap-to-select, then tap a destination**, and
+- **drag-and-drop** — both via `GameData` with a `validMoves` map (`KnightEngine.knightMoves` for the knight; `PawnAttackEngine.validMoves` for the pawn-attack piece).
+
+Because both `onTouchedSquare` and `GameData` react to a tap, a select/drag move can call the move handler twice (once via `onMove`, once via `onTouchedSquare`). The handlers absorb this: **tapping the piece's own square is a no-op** — knight flight's `_handleKnightFlightTap` early-returns on `square == currentPos`, and pawn attack's `_handlePawnAttackTap` already early-returns on `square == from` — and after a move the piece *is* on that square, so the duplicate callback no-ops. Wrong-square taps still register as errors (that's the drill). Knight Flight shows legal-hop dots (`showValidMoves: true`); Pawn Attack hides them so the player still has to judge which squares are safe (threats are already shown in red), which also makes drag effectively *guided* — chessground won't let you drop on a threatened square (you can only err by tapping).
+
+Forks & Skewers and Knight Sight mark arbitrary squares (no piece to move), so they keep the non-interactive `Chessboard.fixed` + `onTouchedSquare`. `_buildBoard` in `chess_vision_game_screen.dart` picks the board per drill; every input path funnels through the same `handleBoardTap(square)` entry point.
+
+The Knight Flight destination is drawn as an **amber goal ring** (a chessground `Circle`, `scale: 1.0` — the max; the constructor asserts `0 < scale <= 1.0`) plus a soft `AppColors.goalAmber` landing-pad tint — deliberately *not* a knight, so the board only ever shows the single knight the player controls (it used to render a translucent ghost knight there, which players mistook for a second movable piece).
+
+### The three engines (`services/`)
+
+These are the high-value, high-risk files — pure functions, no Riverpod.
+
+- **`fork_skewer_engine.dart`** — the crown jewel. `computeValidSquares(...)` brute-forces all 64 candidate squares. For each, it parks the white king in a safe corner, builds a 4-piece position in dartchess (white piece, white king, black king on d5, target), then enumerates **every** black legal reply and confirms the white piece captures the target uncapturable on every line (including a king recapture). It genuinely simulates and validates all escape lines — so it is correct but expensive: O(squares × legalMoves × 2 plies). Concentric mode pre-runs it 64 more times to filter the spiral path. Start here for any perf work (e.g. memoize per piece/target).
+- **`knight_engine.dart`** — `knightMoves`, `isKnightMove`, and `shortestPath` (plain BFS; returns hop count, −1 if unreachable). The "max 6 hops" is an emergent fact about an 8×8 board, not a coded cap.
+- **`pawn_attack_engine.dart`** — `pawnThreats` (black pawns attack their two *downward* diagonals), `validMoves` (knight L-moves + ray-cast sliders; a pawn blocks a ray but can be captured; a threatened empty square is an unsafe landing but does not stop the ray), and `generatePawns` (places pawns on ranks 2–7, dark-squares-only for the bishop, never threatening the piece's **a1** start).
+
+### Gotchas
+
+- **Fixed geometry**: black king is always d5, the white king is auto-parked in a corner, and the pawn-attack piece always starts on a1. The fork engine assumes this minimal world; `_isAttackedByPiece` ignores blockers (safe only because the boards are near-empty). Don't move these assumptions.
+- **Mode is silently coerced** in `startGame`: knight drills are forced to practice; pawn-attack is forced to speed/practice (concentric is unavailable for pawns). The menu hides the unavailable options, and the provider re-coerces defensively.
+- **Forks keeps ~25% of empty-solution positions** (`nextDouble() > 0.25`) so the None button gets exercised.
+- **Personal-best metric flips**: pawn-attack-speed and concentric rank by *lowest elapsed time*; other speed drills rank by *highest configurations completed*. Bests are in-memory only.
+
+## Opening Trainer
+
+The only feature where you play real moves against an engine. `OpeningGameNotifier` (`opening_game_provider.dart`) is the sole consumer of `StockfishService` and `OpeningBookService` for live play.
+
+> ⚠️ **What is actually wired today.** The live route `/opening-trainer` hard-codes `OpeningGameScreen(mode: practice, difficulty: easy, playerColor: white)` and parses **no** query params. `OpeningMenuScreen` (color/difficulty/mode selection) is **not registered in the router**, and the `LivesDisplay`, `MedalProgress`, and `PrincipleCard` widgets — plus any game-over/medal overlay — are **built but never mounted** in the game screen. So challenge mode, lives, and medals are currently unreachable even though the state/provider logic for them exists. Finishing this feature is mostly a wiring job, not new logic.
+
+### Difficulty tuning
+
+`OpeningDifficulty` carries the engine knobs (note: **move-time**, not search depth):
+
+| Difficulty | skillLevel | moveTimeMs | mistakeThresholdCp | lives |
+|---|---|---|---|---|
+| easy | 3 | 200 | 150 | 3 |
+| medium | 10 | 350 | 100 | 2 |
+| hard | 18 | 500 | 50 | 1 |
+
+In challenge mode, a player move whose centipawn drop exceeds `mistakeThresholdCp` costs a life; at 0 lives the game ends. Practice mode runs with 99 lives (effectively unlimited). Medals (`medalForMoves`) are bronze ≥3, silver ≥6, gold ≥10 user moves.
+
+### Hints, eval, and move classification
+
+- **Progressive hint search**: `_requestHints` runs `getTopMoves` in waves at fixed **depths `[8, 12, 16, 18]`** (depth-based searches are deterministic, so scores don't drift between views), refining the arrows as the engine deepens. **Practice requests 5 moves across 4 waves; challenge requests 3 across 1 wave.** The current depth streams into `engineDepth` and renders as a live "d12/18" readout (`thinking_indicator.dart`). `_hintFen` is the cancellation token — every wave bails if the position changed mid-search, and the depth readout is always cleared on exit.
+- **Book moves**: shown instantly (before any engine work, `hasEval: false` → 📖 badge), and up to 2 popular book moves are merged in beside the engine's list so main-line theory stays visible even when the engine prefers other tries. Book detection is **position-based and transposition-aware** (see Opening Book below); continuations are ranked by how many ECO lines pass through the resulting position, so main lines outrank exotic sidelines.
+- **What the badges show**: the **absolute post-move eval from white's perspective** (same convention as the eval bar), positioned on each arrow's shaft (collision-nudged so converging moves like Qf3/Nf3 both stay visible). The **loss vs. the best move** (`evalDelta`) drives only the *colors* — and a shade: arrows darken the further a move falls behind the best (`shadeForDelta`). The engine's #1 move gets the thick arrow and a 👑.
+- **Eval bar** (`eval_bar.dart`): maps centipawns through a sigmoid `1/(1+e^(-cp/400))`.
+- **Move classification** (`MoveClassification` in the state): `best` = the engine's #1 move (by rank), `book` = opening-theory membership; the rest via `classifyDelta` on loss vs. best — deliberately forgiving (good ≥ −0.4, inaccuracy ≥ −1.0, mistake ≥ −2.0, else blunder), since being 0.3 behind the engine's top choice is not an error. This grade drives every arrow and overlay color (`colorForClassification` in `eval_delta_overlay.dart`).
+- **Per-piece analysis**: tapping a piece classifies all of its legal destinations (backed by `evaluateSpecificMoves`), pausing the hint waves. Evaluation is **progressive**: passes at depths **8 → 12 → 18**, each evaluating every move *and the position itself at the same depth* (so deltas are apples-to-apples) — shallow numbers appear within a second, then each badge refines in place. Squares still awaiting their first number show an **animated bouncing-dots badge** (one shared ticker in `_PieceAnalysisOverlay`). Results are memoized in an eval cache (`fen#depth`), so re-selecting a piece replays finished passes instantly. Deselecting cancels the session (`cancelPieceEvals`, generation token) and resumes the hint analysis; moves/undo/picker cancel it too.
+
+### Opening Book (transposition-aware)
+
+`OpeningBookService.load()` replays every line of `assets/data/eco_openings.json` (~3640 named ECO lines) with dartchess `parseSan` and indexes **positions**, not move strings:
+
+- `_bookPositions` — every position reachable along any line; `isBookMove(position, move)` checks whether the move's *resulting position* is in the set. This makes book detection transposition-aware: 1.e4 c6 2.Nc3 d5 **3.d4** is book because the same position arises from the canonical 1.e4 c6 2.d4 d5 3.Nc3 order.
+- Position keys are **pieces + side + castling** — the en-passant FEN field is deliberately dropped because transposed move orders produce different phantom ep squares (that's precisely the 3.d4 case).
+- `_lineCount` — how many dataset lines pass through each position; `getBookContinuations` sorts by it, so main lines (big subtrees) outrank one-off exotic sidelines (e.g. the "St. Patrick's Attack" 3.h3).
+- `getOpeningForPosition` names the position when a dataset line *ends* there (first entry wins); the provider keeps the previous name when leaving book.
+
+### Engine lifecycle (important)
+
+`StockfishService` wraps a single **process-wide native engine** (static state). Key facts about the `stockfish` package that shape this design: `Stockfish.dispose()` only *sends `'quit'`* — the package's static instance is cleared when the native process actually exits, and until then `Stockfish()` throws `'Multiple instances are not supported'` (which `_createWithRetry` handles with backoff).
+
+- **All engine operations are serialized** through an internal queue (`_serialized` in the service; `isBusy` exposes it). UCI has no request ids, so an op's stdout listener would otherwise parse info/bestmove lines from another op's search — this also protects the fen-keyed eval cache from cross-position poisoning.
+- **Never dispose a busy engine.** `StockfishService.dispose()` no-ops (just aborts the search) while ops are pending, and the provider's `_stopEngine()` additionally checks a `_pieceEvalSessions` claim. Quitting a live engine strands the pending op's completer (→ unhandled "StockfishService disposed") and forces the next initialize into multi-second 'Multiple instances' retry storms — this was the cause of the 20-30s "…" stalls in per-piece analysis.
+- The provider calls `stopSearch()` (not dispose) when the user moves, so the engine is reused immediately; it disposes only when **truly idle** (hint pass finished, per-move evals finished, game over), so a lingering native isolate doesn't block Flutter hot-restart (`stockfishCleanupForRestart()` in `main()` is the companion to this).
+- Fixed-depth searches carry a **movetime ceiling** (`go depth D movetime M`, per-wave caps + `_kEvalCapMs`) so a slow device can't run one away.
+- `pauseHints()` must be awaited before navigating away (e.g. opening the opening picker), or a stale wave will mutate state.
+
+## Planned / Unfinished Features
+
+- **Tactics Trainer**: Show positions with forks/pins/skewers, user identifies them. Will use the Lichess puzzle database (same CC0 source as the move trainer, different filtering). Interactive board via `Chessboard` + `GameData`. Currently a placeholder screen routed at `/tactics-trainer` with no in-app navigation linking to it.
+- **Opening Trainer wiring**: the engine, eval, hints, and review all work, but challenge mode is unreachable — `OpeningMenuScreen` is not routed and the lives/medal/principle UI is not mounted (see the Opening Trainer section above). Finishing it = registering the menu route (+ a `/opening-trainer/game` route) and mounting the existing widgets.
+- **Progress persistence**: every trainer keeps personal bests in an in-memory `Map<String,int>` (speed mode only) — nothing survives an app restart. `cloud_firestore` and `firebase_auth` are already dependencies, and `lib/features/auth/` + `lib/models/` are scaffolded (empty) for this. Firebase itself is configured and **Analytics is live** (screen views + per-drill events); only Auth/Firestore are unused.
+- **Milestone audio**: `streak_*.mp3` assets ship but are never played (see the Audio System section).
 
 ## Project Info
 

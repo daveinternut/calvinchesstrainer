@@ -528,4 +528,59 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get whichSideWinsPracticeDesc =>
       'Build your streak — difficulty increases as you go!';
+
+  @override
+  String get letters => 'Lettere';
+
+  @override
+  String get king => 'Re';
+
+  @override
+  String get pawn => 'Pedone';
+
+  @override
+  String get hardModeBlackPieces => 'Si mostrano i pezzi neri!';
+
+  @override
+  String get tapPieceToLearnLetter =>
+      'Tocca un pezzo per imparare la sua lettera!';
+
+  @override
+  String get whichPieceForLetter => 'Quale pezzo usa questa lettera?';
+
+  @override
+  String get whichLetterForPiece => 'Qual è la lettera di questo pezzo?';
+
+  @override
+  String get tapPieceNoLetter => 'Tocca il pezzo SENZA lettera!';
+
+  @override
+  String get noLetter => 'Senza lettera';
+
+  @override
+  String letterEquals(String letter, String piece) {
+    return '$letter = $piece!';
+  }
+
+  @override
+  String get pawnNoLetterFact => 'I pedoni non hanno bisogno di una lettera!';
+
+  @override
+  String get mnemonicKing => 'K come King — il Re in inglese!';
+
+  @override
+  String get mnemonicQueen => 'Q come Queen — la Donna in inglese!';
+
+  @override
+  String get mnemonicRook => 'R come Rook — la Torre in inglese!';
+
+  @override
+  String get mnemonicBishop => 'B come Bishop — l\'Alfiere in inglese!';
+
+  @override
+  String get mnemonicKnight => 'N come kNight — il Cavallo! La K è già del Re.';
+
+  @override
+  String get mnemonicPawn =>
+      'I pedoni sono così coraggiosi che non hanno una lettera!';
 }
