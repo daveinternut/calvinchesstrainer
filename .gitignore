@@ -115,3 +115,5 @@ app.*.map.json
 
 # Lichess puzzle DB (local download for scripts/curate_*.py, never committed)
 lichess_db_puzzle.csv*
+
+podfile.lock
