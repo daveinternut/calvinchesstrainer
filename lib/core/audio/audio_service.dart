@@ -68,6 +68,18 @@ class AudioService {
     await _playAsset(_sfxPlayer, 'assets/sounds/incorrect.m4a');
   }
 
+  /// "Check!" — layered on the voice player over the correct-tap SFX when a
+  /// check square is found in the Find Checks drill. No haptic here: the
+  /// paired playCorrect() already fires one.
+  Future<void> playCheckCall() async {
+    await _playAsset(_voicePlayer, 'assets/sounds/move_check.mp3');
+  }
+
+  /// "Checkmate!" — the Mate in 1 drill's crown moment.
+  Future<void> playCheckmateCall() async {
+    await _playAsset(_voicePlayer, 'assets/sounds/move_checkmate.mp3');
+  }
+
   Future<void> playNewRecord() async {
     HapticFeedback.heavyImpact();
     await _playAsset(_voicePlayer, 'assets/sounds/new_record.mp3');

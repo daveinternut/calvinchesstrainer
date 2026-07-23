@@ -89,6 +89,38 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _buildDrillChip(
+                          VisionDrillType.findChecks,
+                          l10n.scanDrillChecks,
+                          Icons.bolt_rounded,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildDrillChip(
+                          VisionDrillType.findCaptures,
+                          l10n.scanDrillCaptures,
+                          Icons.gps_fixed_rounded,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _buildDrillChip(
+                          VisionDrillType.hangingPieces,
+                          l10n.scanDrillHanging,
+                          Icons.radar_rounded,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildDrillChip(
+                          VisionDrillType.mateInOne,
+                          l10n.scanDrillMate,
+                          Icons.flag_rounded,
+                        ),
+                      ],
+                    ),
                     if (_drill == VisionDrillType.forksAndSkewers) ...[
                       const SizedBox(height: 24),
                       Text(
@@ -217,6 +249,45 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                         VisionMode.speed,
                         l10n.timed,
                         l10n.timedPawnAttackDesc,
+                        Icons.timer_rounded,
+                        const Color(0xFFE65100),
+                      ),
+                    ],
+                    if (_drill.isScanDrill) ...[
+                      const SizedBox(height: 16),
+                      // The prompt doubles as the drill explainer.
+                      Text(
+                        _scanDescription(l10n),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        l10n.chooseAMode,
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildModeCard(
+                        VisionMode.practice,
+                        l10n.practice,
+                        l10n.scanPracticeDesc,
+                        Icons.school_rounded,
+                        const Color(0xFF1565C0),
+                      ),
+                      const SizedBox(height: 10),
+                      _buildModeCard(
+                        VisionMode.speed,
+                        _drill == VisionDrillType.mateInOne
+                            ? l10n.blitz
+                            : l10n.speedRound,
+                        _drill == VisionDrillType.mateInOne
+                            ? l10n.scanBlitzDesc
+                            : l10n.speedRound60Desc,
                         Icons.timer_rounded,
                         const Color(0xFFE65100),
                       ),
@@ -395,11 +466,21 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
     );
   }
 
+  String _scanDescription(AppLocalizations l10n) => switch (_drill) {
+        VisionDrillType.findChecks => l10n.scanPromptChecks,
+        VisionDrillType.findCaptures => l10n.scanPromptCaptures,
+        VisionDrillType.hangingPieces => l10n.scanPromptHanging,
+        VisionDrillType.mateInOne => l10n.scanPromptMate,
+        _ => '',
+      };
+
   void _startGame() {
     final effectiveMode = (_drill == VisionDrillType.knightSight ||
             _drill == VisionDrillType.knightFlight)
         ? VisionMode.practice
-        : _mode;
+        : (_drill.isScanDrill && _mode == VisionMode.concentric)
+            ? VisionMode.speed
+            : _mode;
     context.push(
       '/chess-vision/game'
       '?drill=${_drill.name}'

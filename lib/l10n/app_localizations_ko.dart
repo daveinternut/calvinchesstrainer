@@ -33,6 +33,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get seeTheBoard => '체스판을 보세요!';
 
   @override
+  String get startHere => '여기서 시작!';
+
+  @override
   String get comingSoon => '출시 예정';
 
   @override
@@ -64,6 +67,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get moves => '수';
+
+  @override
+  String get pieceValue => '기물 가치';
 
   @override
   String get explore => '탐색';
@@ -575,4 +581,43 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get mnemonicPawn => '폰은 글자가 없어도 용감해요!';
+
+  @override
+  String get scanDrillChecks => '체크 찾기';
+
+  @override
+  String get scanDrillCaptures => '캡처 찾기';
+
+  @override
+  String get scanDrillHanging => '무방비 기물';
+
+  @override
+  String get scanDrillMate => '1수 메이트';
+
+  @override
+  String get scanPromptChecks => '체크할 수 있는 칸을 모두 탭하세요!';
+
+  @override
+  String get scanPromptCaptures => '잡을 수 있는 상대 기물을 모두 탭하세요!';
+
+  @override
+  String get scanPromptHanging => '지켜지지 않는 상대 기물을 모두 탭하세요!';
+
+  @override
+  String get scanPromptMate => '한 수 만에 체크메이트를 찾으세요!';
+
+  @override
+  String get scanPracticeDesc => '타이머 없음 — 모두 찾아보세요!';
+
+  @override
+  String get blitz => '블리츠';
+
+  @override
+  String get scanBlitzDesc => '60초 — 메이트를 몇 개나 찾을 수 있나요?';
+
+  @override
+  String get whiteToPlay => '백 차례';
+
+  @override
+  String get blackToPlay => '흑 차례';
 }

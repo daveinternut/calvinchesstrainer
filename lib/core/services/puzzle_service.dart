@@ -9,6 +9,13 @@ final puzzleServiceProvider = Provider<PuzzleService>((ref) {
   return PuzzleService();
 });
 
+/// Mate-in-one puzzles for the Chess Vision "Mate in 1" scanning drill.
+/// Same {fen, moves} schema as the move-trainer set, curated by
+/// scripts/curate_scanning_positions.py from Lichess `mateIn1`-themed puzzles.
+final mateInOnePuzzleServiceProvider = Provider<PuzzleService>((ref) {
+  return PuzzleService(assetPath: 'assets/puzzles/mate_in_one_puzzles.json');
+});
+
 class ParsedPuzzle {
   final Chess position;
   final NormalMove expectedMove;
@@ -44,13 +51,16 @@ class ParsedPuzzle {
 }
 
 class PuzzleService {
+  PuzzleService({this.assetPath = 'assets/puzzles/moves_puzzles.json'});
+
+  final String assetPath;
   List<ParsedPuzzle>? _puzzles;
   final _random = Random();
 
   Future<void> loadPuzzles() async {
     if (_puzzles != null) return;
 
-    final jsonStr = await rootBundle.loadString('assets/puzzles/moves_puzzles.json');
+    final jsonStr = await rootBundle.loadString(assetPath);
     final List<dynamic> raw = json.decode(jsonStr);
 
     final parsed = <ParsedPuzzle>[];

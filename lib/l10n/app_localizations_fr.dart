@@ -33,6 +33,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get seeTheBoard => 'Vois l\'échiquier !';
 
   @override
+  String get startHere => 'COMMENCE ICI';
+
+  @override
   String get comingSoon => 'BIENTÔT DISPONIBLE';
 
   @override
@@ -64,6 +67,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get moves => 'Coups';
+
+  @override
+  String get pieceValue => 'Valeur pièces';
 
   @override
   String get explore => 'Explorer';
@@ -583,4 +589,46 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get mnemonicPawn =>
       'Les pions sont si courageux qu\'ils n\'ont pas de lettre !';
+
+  @override
+  String get scanDrillChecks => 'Trouve les échecs';
+
+  @override
+  String get scanDrillCaptures => 'Trouve les prises';
+
+  @override
+  String get scanDrillHanging => 'Pièces non défendues';
+
+  @override
+  String get scanDrillMate => 'Mat en 1';
+
+  @override
+  String get scanPromptChecks =>
+      'Touche chaque case d\'où tu peux faire échec !';
+
+  @override
+  String get scanPromptCaptures =>
+      'Touche chaque pièce ennemie que tu peux capturer !';
+
+  @override
+  String get scanPromptHanging =>
+      'Touche chaque pièce ennemie qui n\'est pas défendue !';
+
+  @override
+  String get scanPromptMate => 'Trouve l\'échec et mat en un coup !';
+
+  @override
+  String get scanPracticeDesc => 'Sans chrono — trouve-les toutes !';
+
+  @override
+  String get blitz => 'Blitz';
+
+  @override
+  String get scanBlitzDesc => '60 secondes — combien de mats peux-tu trouver ?';
+
+  @override
+  String get whiteToPlay => 'Trait aux Blancs';
+
+  @override
+  String get blackToPlay => 'Trait aux Noirs';
 }

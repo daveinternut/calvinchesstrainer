@@ -33,6 +33,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get seeTheBoard => 'Смотри на доску!';
 
   @override
+  String get startHere => 'НАЧНИ ЗДЕСЬ';
+
+  @override
   String get comingSoon => 'СКОРО';
 
   @override
@@ -64,6 +67,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get moves => 'Ходы';
+
+  @override
+  String get pieceValue => 'Ценность фигур';
 
   @override
   String get explore => 'Изучение';
@@ -580,4 +586,46 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get mnemonicPawn => 'Пешки такие храбрые, что им и буква не нужна!';
+
+  @override
+  String get scanDrillChecks => 'Найди шахи';
+
+  @override
+  String get scanDrillCaptures => 'Найди взятия';
+
+  @override
+  String get scanDrillHanging => 'Висячие фигуры';
+
+  @override
+  String get scanDrillMate => 'Мат в 1 ход';
+
+  @override
+  String get scanPromptChecks =>
+      'Нажми на каждое поле, с которого можно дать шах!';
+
+  @override
+  String get scanPromptCaptures =>
+      'Нажми на каждую фигуру соперника, которую можно взять!';
+
+  @override
+  String get scanPromptHanging =>
+      'Нажми на каждую незащищённую фигуру соперника!';
+
+  @override
+  String get scanPromptMate => 'Найди мат в один ход!';
+
+  @override
+  String get scanPracticeDesc => 'Без таймера — найди их все!';
+
+  @override
+  String get blitz => 'Блиц';
+
+  @override
+  String get scanBlitzDesc => '60 секунд — сколько матов ты найдёшь?';
+
+  @override
+  String get whiteToPlay => 'Ход белых';
+
+  @override
+  String get blackToPlay => 'Ход чёрных';
 }

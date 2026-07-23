@@ -41,7 +41,7 @@ class MoveRecord {
   final NormalMove move;
 
   /// The hint arrows that were visible when this move was made.
-  /// Stored so undo can restore the exact same hints without recomputing.
+  /// Stored so scrubbing back can restore them without recomputing.
   final List<SuggestedMove> hintsBeforeMove;
 
   const MoveRecord({
@@ -53,6 +53,50 @@ class MoveRecord {
     required this.move,
     this.hintsBeforeMove = const [],
   });
+
+  MoveRecord withEval(double newEval) => MoveRecord(
+        fen: fen,
+        san: san,
+        uci: uci,
+        eval: newEval,
+        isUserMove: isUserMove,
+        move: move,
+        hintsBeforeMove: hintsBeforeMove,
+      );
+}
+
+/// One line of play: the complete move sequence from the game start.
+/// Variations share their prefix `MoveRecord`s with the line they branched
+/// from; only the moves from [branchPly] onward belong to (and are displayed
+/// by) this line.
+class GameLine {
+  final List<MoveRecord> moves;
+
+  /// Ply index of the first move owned by this line — 0 for the main line,
+  /// the divergence point for variations.
+  final int branchPly;
+
+  /// Index (into the lines list) of the line this one branched from;
+  /// -1 for the main line.
+  final int parentIndex;
+
+  const GameLine({
+    required this.moves,
+    this.branchPly = 0,
+    this.parentIndex = -1,
+  });
+
+  GameLine extended(MoveRecord record) => GameLine(
+        moves: [...moves, record],
+        branchPly: branchPly,
+        parentIndex: parentIndex,
+      );
+
+  GameLine withMoveReplaced(int ply, MoveRecord record) => GameLine(
+        moves: [...moves]..[ply] = record,
+        branchPly: branchPly,
+        parentIndex: parentIndex,
+      );
 }
 
 /// Move classification. `best` is assigned by rank (the engine's #1 move),
@@ -104,13 +148,31 @@ class MoveEval {
   /// from the mover's perspective (negative = worsens their position).
   final int deltaCp;
 
+  /// Search depth this eval was reported at (0 = unknown).
+  final int depth;
+
+  /// False while deeper refinement passes for this move are still coming.
+  final bool isFinal;
+
   const MoveEval({
     required this.centipawns,
     this.mateIn,
     required this.deltaCp,
+    this.depth = 0,
+    this.isFinal = false,
   });
 
   double get deltaPawns => deltaCp / 100.0;
+
+  /// Same eval, marked as not going to change again — used when an
+  /// evaluation session ends before reaching its last pass.
+  MoveEval asFinal() => MoveEval(
+        centipawns: centipawns,
+        mateIn: mateIn,
+        deltaCp: deltaCp,
+        depth: depth,
+        isFinal: true,
+      );
 }
 
 class SuggestedMove {
@@ -163,8 +225,19 @@ class OpeningGameState {
   final Side playerColor;
 
   final String currentFen;
-  final List<MoveRecord> moveHistory;
-  final List<String> sanMoves;
+
+  /// All lines of play: index 0 is the main line, later entries are
+  /// variations in creation order (displayed underneath).
+  final List<GameLine> lines;
+
+  /// The line the user is currently navigating (highlighted, owns the
+  /// back/forward buttons).
+  final int activeLineIndex;
+
+  /// Ply of the position on the board within the active line
+  /// (-1 = starting position).
+  final int cursorPly;
+
   final int userMoveCount;
 
   final EvalResult currentEval;
@@ -185,9 +258,6 @@ class OpeningGameState {
   final bool showPrincipleCard;
   final String? principleText;
 
-  final bool isReviewing;
-  final int reviewIndex;
-
   final NormalMove? lastEngineMove;
 
   /// Depth the engine has reached in the current analysis (-1 = idle).
@@ -200,8 +270,9 @@ class OpeningGameState {
     required this.difficulty,
     required this.playerColor,
     this.currentFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-    this.moveHistory = const [],
-    this.sanMoves = const [],
+    this.lines = const [],
+    this.activeLineIndex = 0,
+    this.cursorPly = -1,
     this.userMoveCount = 0,
     this.currentEval = const EvalResult(centipawns: 0),
     this.previousEval,
@@ -216,14 +287,23 @@ class OpeningGameState {
     this.isGameOver = false,
     this.showPrincipleCard = false,
     this.principleText,
-    this.isReviewing = false,
-    this.reviewIndex = -1,
     this.lastEngineMove,
     this.engineDepth = -1,
     this.engineTargetDepth = 0,
   });
 
   MedalLevel get currentMedal => medalForMoves(userMoveCount);
+
+  GameLine? get activeLine =>
+      (activeLineIndex >= 0 && activeLineIndex < lines.length)
+          ? lines[activeLineIndex]
+          : null;
+
+  /// Whether the board shows the last position of the active line.
+  bool get cursorAtTip {
+    final line = activeLine;
+    return line == null || cursorPly >= line.moves.length - 1;
+  }
 
   double get evalForPlayer {
     final cp = currentEval.centipawns.toDouble();
@@ -235,8 +315,9 @@ class OpeningGameState {
     OpeningDifficulty? difficulty,
     Side? playerColor,
     String? currentFen,
-    List<MoveRecord>? moveHistory,
-    List<String>? sanMoves,
+    List<GameLine>? lines,
+    int? activeLineIndex,
+    int? cursorPly,
     int? userMoveCount,
     EvalResult? currentEval,
     EvalResult? Function()? previousEval,
@@ -251,8 +332,6 @@ class OpeningGameState {
     bool? isGameOver,
     bool? showPrincipleCard,
     String? Function()? principleText,
-    bool? isReviewing,
-    int? reviewIndex,
     NormalMove? Function()? lastEngineMove,
     int? engineDepth,
     int? engineTargetDepth,
@@ -262,8 +341,9 @@ class OpeningGameState {
       difficulty: difficulty ?? this.difficulty,
       playerColor: playerColor ?? this.playerColor,
       currentFen: currentFen ?? this.currentFen,
-      moveHistory: moveHistory ?? this.moveHistory,
-      sanMoves: sanMoves ?? this.sanMoves,
+      lines: lines ?? this.lines,
+      activeLineIndex: activeLineIndex ?? this.activeLineIndex,
+      cursorPly: cursorPly ?? this.cursorPly,
       userMoveCount: userMoveCount ?? this.userMoveCount,
       currentEval: currentEval ?? this.currentEval,
       previousEval: previousEval != null ? previousEval() : this.previousEval,
@@ -278,8 +358,6 @@ class OpeningGameState {
       isGameOver: isGameOver ?? this.isGameOver,
       showPrincipleCard: showPrincipleCard ?? this.showPrincipleCard,
       principleText: principleText != null ? principleText() : this.principleText,
-      isReviewing: isReviewing ?? this.isReviewing,
-      reviewIndex: reviewIndex ?? this.reviewIndex,
       lastEngineMove: lastEngineMove != null ? lastEngineMove() : this.lastEngineMove,
       engineDepth: engineDepth ?? this.engineDepth,
       engineTargetDepth: engineTargetDepth ?? this.engineTargetDepth,

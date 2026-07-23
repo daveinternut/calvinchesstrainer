@@ -4,11 +4,13 @@ import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:chessground/chessground.dart';
-import 'package:dartchess/dartchess.dart' show NormalMove, Piece, Side, Square;
+import 'package:dartchess/dartchess.dart'
+    show NormalMove, Piece, Side, Square, makeLegalMoves;
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
 import '../../../core/audio/audio_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/square_name_overlay.dart';
 import '../../file_rank_trainer/widgets/milestone_banner.dart';
 import '../../file_rank_trainer/widgets/streak_counter.dart';
 import '../../file_rank_trainer/widgets/timer_bar.dart';
@@ -125,6 +127,10 @@ class _ChessVisionGameScreenState
                     const SizedBox(height: 12),
                     _buildNoneButton(gameState, l10n),
                   ],
+                  if (widget.drill.isTapScanDrill) ...[
+                    const SizedBox(height: 12),
+                    _buildScanSkipButton(gameState, l10n),
+                  ],
                   if (_showFlightRetryButtons(gameState)) ...[
                     const SizedBox(height: 12),
                     _buildFlightRetryButtons(l10n),
@@ -229,7 +235,144 @@ class _ChessVisionGameScreenState
         return _buildFlightProgress(gameState, l10n);
       case VisionDrillType.pawnAttack:
         return _buildPawnAttackProgress(gameState, l10n);
+      case VisionDrillType.findChecks:
+      case VisionDrillType.findCaptures:
+      case VisionDrillType.hangingPieces:
+        // The three tap drills render visually identical real positions —
+        // only this prompt tells the kid which question is being asked.
+        return Column(
+          children: [
+            _buildSideToPlayBadge(gameState, l10n),
+            const SizedBox(height: 4),
+            _buildScanPrompt(l10n),
+            const SizedBox(height: 4),
+            if (gameState.isRoundComplete)
+              SizedBox(
+                height: 36,
+                child: Center(
+                  child: Text(
+                    l10n.allClear,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.correctGreen,
+                    ),
+                  ),
+                ),
+              )
+            else
+              FoundProgressIndicator(
+                totalCorrect: gameState.totalCorrect,
+                totalFound: gameState.totalFound,
+                l10n: l10n,
+              ),
+          ],
+        );
+      case VisionDrillType.mateInOne:
+        return Column(
+          children: [
+            _buildSideToPlayBadge(gameState, l10n),
+            const SizedBox(height: 4),
+            _buildScanPrompt(l10n),
+          ],
+        );
     }
+  }
+
+  /// "White to play" / "Black to play" pill — real positions come with
+  /// either side to move (and the board flips to match), so the mover must
+  /// be unmistakable the moment the position loads.
+  Widget _buildSideToPlayBadge(
+      ChessVisionState gameState, AppLocalizations l10n) {
+    // Fixed height so the layout doesn't jump when the position arrives.
+    if (gameState.isLoading || gameState.scanDisplayFen == null) {
+      return const SizedBox(height: 26);
+    }
+    final isWhite = gameState.scanSideToMove == Side.white;
+    return Container(
+      height: 26,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: isWhite ? Colors.white : Colors.grey.shade900,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: Colors.grey.shade400),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: isWhite ? Colors.white : Colors.black,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.grey.shade600),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            isWhite ? l10n.whiteToPlay : l10n.blackToPlay,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: isWhite ? AppColors.textPrimary : Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScanPrompt(AppLocalizations l10n) {
+    final prompt = switch (widget.drill) {
+      VisionDrillType.findChecks => l10n.scanPromptChecks,
+      VisionDrillType.findCaptures => l10n.scanPromptCaptures,
+      VisionDrillType.hangingPieces => l10n.scanPromptHanging,
+      VisionDrillType.mateInOne => l10n.scanPromptMate,
+      _ => '',
+    };
+    return Text(
+      prompt,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textSecondary,
+      ),
+    );
+  }
+
+  Widget _buildScanSkipButton(
+      ChessVisionState gameState, AppLocalizations l10n) {
+    final enabled = !gameState.isGameOver &&
+        !gameState.isRoundComplete &&
+        !gameState.showingRevealedAnswer &&
+        !gameState.isLoading;
+
+    return SizedBox(
+      height: 48,
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: enabled
+            ? () => ref.read(chessVisionProvider.notifier).skipScanPosition()
+            : null,
+        icon: const Icon(Icons.skip_next_rounded, size: 20),
+        label: Text(l10n.skip),
+        style: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          side: BorderSide(
+            color: enabled ? AppColors.textSecondary : Colors.grey.shade300,
+          ),
+          foregroundColor: AppColors.textPrimary,
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildFlightProgress(
@@ -327,6 +470,21 @@ class _ChessVisionGameScreenState
     void onTap(Square square) =>
         ref.read(chessVisionProvider.notifier).handleBoardTap(square);
 
+    // Mate in 1 plays a real move on an interactive board (move-trainer
+    // machinery); the three tap scanning drills fall through to the fixed
+    // board below with a loading guard.
+    if (drill == VisionDrillType.mateInOne) {
+      return _buildMateBoard(gameState, boardSize, pieceAssets);
+    }
+    if (drill.isTapScanDrill &&
+        (gameState.isLoading || gameState.scanDisplayFen == null)) {
+      return SizedBox(
+        width: boardSize,
+        height: boardSize,
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     // Knight Flight and Pawn Attack move a single piece, so they use the
     // INTERACTIVE board wired for THREE input styles at once:
     //   • 1-tap — tap a destination square directly (onTouchedSquare), even on
@@ -399,7 +557,7 @@ class _ChessVisionGameScreenState
 
     return Chessboard.fixed(
       size: boardSize,
-      orientation: Side.white,
+      orientation: gameState.boardOrientation,
       fen: gameState.boardFen,
       settings: ChessboardSettings(
         enableCoordinates: true,
@@ -413,6 +571,110 @@ class _ChessVisionGameScreenState
     );
   }
 
+  Widget _buildMateBoard(
+      ChessVisionState gameState, double boardSize, PieceAssets pieceAssets) {
+    final puzzle = gameState.currentMatePuzzle;
+    final fen = gameState.scanDisplayFen;
+
+    if (gameState.isLoading || puzzle == null || fen == null) {
+      return SizedBox(
+        width: boardSize,
+        height: boardSize,
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final orientation = gameState.boardOrientation;
+    final isInteractive =
+        !gameState.isRoundComplete && !gameState.isGameOver;
+
+    final validMoves = isInteractive
+        ? makeLegalMoves(puzzle.position)
+        : const IMapConst<Square, ISet<Square>>({});
+
+    final board = Chessboard(
+      size: boardSize,
+      orientation: orientation,
+      fen: fen,
+      lastMove: gameState.mateFeedback == null ? puzzle.setupMove : null,
+      settings: ChessboardSettings(
+        enableCoordinates: true,
+        colorScheme: ChessboardColorScheme.green,
+        pieceAssets: pieceAssets,
+        animationDuration: const Duration(milliseconds: 250),
+        showValidMoves: isInteractive,
+        showLastMove: true,
+        autoQueenPromotion: true,
+      ),
+      game: GameData(
+        playerSide: orientation == Side.white
+            ? PlayerSide.white
+            : PlayerSide.black,
+        sideToMove: gameState.scanSideToMove,
+        validMoves: validMoves,
+        isCheck: puzzle.position.isCheck,
+        promotionMove: null,
+        onMove: (move, {bool? viaDragAndDrop}) {
+          if (move is NormalMove) {
+            ref.read(chessVisionProvider.notifier).handleMateMove(move);
+          }
+        },
+        onPromotionSelection: (_) {},
+      ),
+      shapes: gameState.mateFeedbackShapes,
+      squareHighlights: gameState.allHighlights,
+    );
+
+    final labels = _buildMateLabels(gameState);
+    if (labels.isEmpty) return board;
+    return Stack(
+      children: [
+        board,
+        SquareNameOverlay(
+          boardSize: boardSize,
+          orientation: orientation,
+          labels: labels,
+        ),
+      ],
+    );
+  }
+
+  List<SquareLabel> _buildMateLabels(ChessVisionState gameState) {
+    final feedback = gameState.mateFeedback;
+    if (feedback == null) return const [];
+
+    final labels = <SquareLabel>[];
+    final attempted = feedback.attemptedMove;
+
+    if (feedback.isCorrect) {
+      if (attempted != null) {
+        labels.add(SquareLabel(
+          file: attempted.to.file,
+          rank: attempted.to.rank,
+          name: attempted.to.name,
+          color: AppColors.correctGreen.withValues(alpha: 0.85),
+        ));
+      }
+    } else {
+      if (attempted != null && attempted.to != feedback.solutionMove.to) {
+        labels.add(SquareLabel(
+          file: attempted.to.file,
+          rank: attempted.to.rank,
+          name: attempted.to.name,
+          color: AppColors.incorrectRed.withValues(alpha: 0.85),
+        ));
+      }
+      labels.add(SquareLabel(
+        file: feedback.solutionMove.to.file,
+        rank: feedback.solutionMove.to.rank,
+        name: feedback.solutionMove.to.name,
+        color: AppColors.correctGreen.withValues(alpha: 0.85),
+      ));
+    }
+
+    return labels;
+  }
+
   ISet<Shape> _buildShapes(ChessVisionState gameState, PieceAssets pieceAssets) {
     switch (widget.drill) {
       case VisionDrillType.forksAndSkewers:
@@ -423,7 +685,51 @@ class _ChessVisionGameScreenState
         return _buildKnightFlightShapes(gameState, pieceAssets);
       case VisionDrillType.pawnAttack:
         return const ISetConst({});
+      case VisionDrillType.findChecks:
+        return _buildCheckGhostShapes(gameState, pieceAssets);
+      case VisionDrillType.findCaptures:
+      case VisionDrillType.hangingPieces:
+        // The found piece itself is the target — the green highlight carries
+        // the feedback; a ghost on top of a real piece would just be noise.
+        return const ISetConst({});
+      case VisionDrillType.mateInOne:
+        // Unreachable (the mate board renders its own shapes), but the switch
+        // stays exhaustive.
+        return gameState.mateFeedbackShapes;
     }
+  }
+
+  /// Find Checks: a faded ghost of the checking piece on each found square —
+  /// the same delight moment as the forks drill.
+  ISet<Shape> _buildCheckGhostShapes(
+      ChessVisionState gameState, PieceAssets pieceAssets) {
+    final shapes = <Shape>{};
+    for (final sq in gameState.foundSquares) {
+      final piece = gameState.checkGhosts[sq];
+      if (piece == null) continue;
+      shapes.add(PieceShape(
+        piece: piece,
+        orig: sq,
+        pieceAssets: pieceAssets,
+        opacity: 0.45,
+        scale: 0.9,
+      ));
+    }
+    if (gameState.showingRevealedAnswer) {
+      for (final sq in gameState.correctSquares) {
+        if (gameState.foundSquares.contains(sq)) continue;
+        final piece = gameState.checkGhosts[sq];
+        if (piece == null) continue;
+        shapes.add(PieceShape(
+          piece: piece,
+          orig: sq,
+          pieceAssets: pieceAssets,
+          opacity: 0.35,
+          scale: 0.9,
+        ));
+      }
+    }
+    return ISet(shapes);
   }
 
   ISet<Shape> _buildForkShapes(
@@ -885,6 +1191,14 @@ class _ChessVisionGameScreenState
         final modeName =
             widget.mode == VisionMode.speed ? l10n.timed : l10n.practice;
         return l10n.titlePawnAttack(pieceName, modeName);
+      case VisionDrillType.findChecks:
+        return l10n.scanDrillChecks;
+      case VisionDrillType.findCaptures:
+        return l10n.scanDrillCaptures;
+      case VisionDrillType.hangingPieces:
+        return l10n.scanDrillHanging;
+      case VisionDrillType.mateInOne:
+        return l10n.scanDrillMate;
     }
   }
 

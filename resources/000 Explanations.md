@@ -145,7 +145,13 @@ Then extract segments with `ffmpeg -ss START -to END`.
 
 ## File & Rank Trainer
 
-The trainer covers four **subjects** — `files`, `ranks`, `squares`, `moves` — selected as chips on the menu. Files/ranks/squares run in this feature; the **`moves` chip routes away to the move trainer** (`/move-trainer/game`) and is never handled by `FileRankGameNotifier`. There is **no "reverse" mode, no answer buttons, and no "both" subject** — all input is by tapping the board.
+The menu covers six **subjects** — `files`, `ranks`, `squares`, `letters`, `moves`, `pieceValue` — selected as chips. Only files/ranks/squares run in this feature; the other three chips route away and are **never handled by `FileRankGameNotifier`**: `letters` → `/letter-trainer/game`, `moves` → `/move-trainer/game`, `pieceValue` → `/the-pieces/which-side-wins`. There is **no "reverse" mode, no answer buttons, and no "both" subject** — all input is by tapping the board.
+
+### Why Piece Value lives here
+
+Piece value ("Which Side Wins?") used to be its own home-screen card, **The Pieces**, with its own menu screen. It was a single drill sitting next to features that each hold four or more, so it was pulled in here as a subject chip and the home screen was re-ranked around Chess Vision. The `lib/features/pieces/` folder is untouched — only its entry point moved. `PiecesMenuScreen` and the `/the-pieces` route were deleted, since the notation menu's mode cards now do that job.
+
+Piece Value is a **quiz-only** subject, like `moves`: `_subjectHasExplore()` hides Explore mode (there is nothing to tap around and discover), and it also hides the Hard Mode toggle, because Which Side Wins has no hard variant. Its `TrainerMode` is mapped down to `WhichSideWinsMode` on the way out — `speed` → `speed`, anything else → `practice`. Selecting the chip also swaps the Practice blurb for the piece-value one and shows a "Which Side Wins?" banner, so the handoff to a differently-shaped drill isn't a surprise.
 
 ### Game Modes
 
@@ -217,6 +223,8 @@ The `Moves` field is space-separated UCI: `moves[0]` is the opponent's setup mov
 - Outputs ~500 puzzles as compact JSON to `assets/puzzles/moves_puzzles.json`
 - Re-run to refresh the puzzle set: `python3 scripts/curate_puzzles.py lichess_db_puzzle.csv`
 
+A second script, `scripts/curate_scanning_positions.py`, mines the **same CSV** for the Chess Vision scanning drills (see [Chess Vision → The scanning drills](#the-scanning-drills--curated-real-positions)). Unlike `curate_puzzles.py` it is **seeded and deterministic**, uses real python-chess move generation, and self-validates every entry before writing.
+
 **Runtime parsing** (PuzzleService):
 1. Loads JSON from assets
 2. Parses each FEN via `Chess.fromSetup(Setup.parseFen(fen))`
@@ -261,14 +269,18 @@ This is the first feature using chessground's interactive `Chessboard` with `Gam
 
 ## Chess Vision
 
-The most algorithm-heavy feature. **Four drills run through one state class, one notifier, and one screen**, each branching on `VisionDrillType { forksAndSkewers, knightSight, knightFlight, pawnAttack }`. `ChessVisionState` carries every drill's fields (most are null/empty for any given drill), and `boardFen`, `allHighlights`, tap-routing, and config-generation each `switch` on the drill type. Adding a fifth drill means touching every switch — there is no per-drill polymorphism.
+The most algorithm-heavy feature. **Eight drills run through one state class, one notifier, and one screen**, each branching on `VisionDrillType { forksAndSkewers, knightSight, knightFlight, pawnAttack, findChecks, findCaptures, hangingPieces, mateInOne }` (the last four are the *scanning drills*; the enum exposes `isScanDrill`/`isTapScanDrill` helpers). `ChessVisionState` carries every drill's fields (most are null/empty for any given drill), and `boardFen`, `allHighlights`, tap-routing, and config-generation each `switch` on the drill type. Adding a ninth drill means touching every switch — there is no per-drill polymorphism.
 
-### The four drills
+### The eight drills
 
 - **Forks & Skewers**: a black king (fixed on **d5**) and a target piece sit on the board; tap every square where placing the chosen white piece wins the target by fork or skewer. A **None** button handles positions with no solution. Modes: practice / speed / concentric.
 - **Knight Sight**: tap all squares a lone knight attacks. Configs alternate between central and edge knight squares.
 - **Knight Flight**: move a knight to a target square in the fewest hops. Arriving on a non-optimal path offers **retry / skip**.
 - **Pawn Attack**: navigate a piece to capture all black pawns without landing on a pawn-attacked square. Difficulty climbs **3 → 8** pawns. Modes: practice (endless cycle) / timed.
+- **Find Checks** *(scanning)*: real position; tap every square where the side to move can deliver check. Found squares show a faded ghost of the checking piece and play the "Check!" voice clip.
+- **Find Captures** *(scanning)*: tap every enemy piece that can be legally captured (pins already respected — an "attacked" piece guarded by a pin is not capturable).
+- **Hanging Pieces** *(scanning)*: tap every **undefended** enemy piece (N/B/R/Q with zero defenders — whether you can capture it right now is deliberately irrelevant; the skill is spotting *loose* pieces, LPDO). Curation guarantees no undefended enemy *pawn* exists in these positions, so a kid tapping a genuinely loose pawn can never be marked wrong.
+- **Mate in 1** *(scanning)*: interactive board; play any legal move that checkmates — judged **by result**, so alternate mates (and queen-promotion mates) count. Wrong tries snap back and reveal the solution with a green arrow. Speed mode is labeled **Blitz**.
 
 ### Board interaction
 
@@ -284,18 +296,34 @@ Forks & Skewers and Knight Sight mark arbitrary squares (no piece to move), so t
 
 The Knight Flight destination is drawn as an **amber goal ring** (a chessground `Circle`, `scale: 1.0` — the max; the constructor asserts `0 < scale <= 1.0`) plus a soft `AppColors.goalAmber` landing-pad tint — deliberately *not* a knight, so the board only ever shows the single knight the player controls (it used to render a translucent ghost knight there, which players mistook for a second movable piece).
 
-### The three engines (`services/`)
+### The four engines (`services/`)
 
 These are the high-value, high-risk files — pure functions, no Riverpod.
 
 - **`fork_skewer_engine.dart`** — the crown jewel. `computeValidSquares(...)` brute-forces all 64 candidate squares. For each, it parks the white king in a safe corner, builds a 4-piece position in dartchess (white piece, white king, black king on d5, target), then enumerates **every** black legal reply and confirms the white piece captures the target uncapturable on every line (including a king recapture). It genuinely simulates and validates all escape lines — so it is correct but expensive: O(squares × legalMoves × 2 plies). Concentric mode pre-runs it 64 more times to filter the spiral path. Start here for any perf work (e.g. memoize per piece/target).
 - **`knight_engine.dart`** — `knightMoves`, `isKnightMove`, and `shortestPath` (plain BFS; returns hop count, −1 if unreachable). The "max 6 hops" is an emergent fact about an 8×8 board, not a coded cap.
 - **`pawn_attack_engine.dart`** — `pawnThreats` (black pawns attack their two *downward* diagonals), `validMoves` (knight L-moves + ray-cast sliders; a pawn blocks a ray but can be captured; a threatened empty square is an unsafe landing but does not stop the ray), and `generatePawns` (places pawns on ranks 2–7, dark-squares-only for the bishop, never threatening the piece's **a1** start).
+- **`scan_engine.dart`** — ground truth for the scanning drills, straight dartchess: `checkTargets`/`checkTargetDetails`, `captureTargets`, `hangingTargets`, `matingMoves`/`isMatingMove`. See the next section for the contract that keeps it honest.
+
+### The scanning drills — curated real positions
+
+The scanning drills are built on one principle: **the engine is the truth, curation is the taste.** Positions ship as bare FENs (`assets/puzzles/scan_{checks,captures,hanging}.json`, `{fen, n}`) mined from the Lichess puzzle DB by `scripts/curate_scanning_positions.py`; at runtime `ScanEngine` recomputes the target squares from the FEN, so there is no stored answer key that can go stale. The script *selects* positions using **byte-equivalent python-chess predicates** — the same fixtures are asserted in `test/scan_engine_test.dart` and the script's `--self-test`, and the script re-validates every selected entry before writing (plus the provider debug-asserts engine targets == curated `n`). If the two implementations ever drift, something fails loudly.
+
+What curation guarantees (so runtime can stay simple):
+- **Real positions**: post-setup Lichess puzzle positions ("opponent just moved"), quality-gated (NbPlays ≥ 500, popularity ≥ 50, rating 600–1500, ≤ 24 pieces), never in check for the tap drills, 50/50 white/black to move, deduped against each other **and** the move-trainer set.
+- **Unambiguous taps**: no two checking moves from different origins share a destination square (also what makes the per-square ghost piece well-defined); no en-passant in the captures set (the ep victim's square is never a move's destination — untappable); positions where *castling* gives check are rejected outright, because python-chess and dartchess encode castling differently, so `ScanEngine` skips castling and stays exactly in sync.
+- **The honest-pawn rule**: hanging = **undefended** (zero defenders — capturability not required), and targets are pieces only (N/B/R/Q), so the curation additionally rejects any position containing an undefended enemy pawn — a kid who taps a genuinely loose pawn must never be told "wrong". Every shipped hanging position also contains a *defended* enemy piece as a distractor: the "defended ≠ loose" discrimination is the drill's whole point.
+- **Determinism**: seeded RNG; same CSV + seed ⇒ byte-identical assets. Regeneration: download `lichess_db_puzzle.csv.zst` (see the script docstring), `pip install 'chess>=1.10,<2'`, run the script (~2 min), done.
+
+Mate in 1 reuses the existing puzzle plumbing instead: `mate_in_one_puzzles.json` is byte-compatible with `moves_puzzles.json` (`{fen, moves}` — Lichess `mateIn1` theme, python-verified mates, rating 600–1200), loaded by a second `PuzzleService` instance (`mateInOnePuzzleServiceProvider` — the asset path is a constructor param). The drill judges **by result** (`ScanEngine.isMatingMove`: normalize → legal? → `playUnchecked(...).isCheckmate`), so the 17 puzzles with multiple mates accept any of them, and a queen-promotion mate delivered via `autoQueenPromotion` counts.
+
+UI-wise the tap drills are the forks find-all machinery on real boards (green found-squares, 400 ms red flash on a miss, "All Clear!" beat, a **Skip** that reveals unfound targets for 1.5 s at the cost of the streak and counts nothing), and Mate in 1 is the move trainer's interactive board (setup-move highlight, snap-back + green solution arrow + square labels on a miss). One deliberate novelty: the board **orients to the side to move** — half the positions train the flipped-board view kids otherwise never practice — and a **side-to-play pill badge** ("White to play" / "Black to play") sits above the prompt on all four drills so the mover is unmistakable the moment a position loads.
 
 ### Gotchas
 
 - **Fixed geometry**: black king is always d5, the white king is auto-parked in a corner, and the pawn-attack piece always starts on a1. The fork engine assumes this minimal world; `_isAttackedByPiece` ignores blockers (safe only because the boards are near-empty). Don't move these assumptions.
-- **Mode is silently coerced** in `startGame`: knight drills are forced to practice; pawn-attack is forced to speed/practice (concentric is unavailable for pawns). The menu hides the unavailable options, and the provider re-coerces defensively.
+- **Mode is silently coerced** in `startGame`: knight drills are forced to practice; pawn-attack and the scanning drills are forced to speed/practice (concentric is forks-only). The menu hides the unavailable options, and the provider re-coerces defensively. "Blitz" (Mate in 1) is just `VisionMode.speed` with a different l10n label.
+- **`startGame` is async** (scanning assets load lazily); a `_gameGeneration` token discards a load that a quick restart superseded, and the speed countdown starts only after the load.
 - **Forks keeps ~25% of empty-solution positions** (`nextDouble() > 0.25`) so the None button gets exercised.
 - **Personal-best metric flips**: pawn-attack-speed and concentric rank by *lowest elapsed time*; other speed drills rank by *highest configurations completed*. Bests are in-memory only.
 
@@ -324,7 +352,8 @@ In challenge mode, a player move whose centipawn drop exceeds `mistakeThresholdC
 - **What the badges show**: the **absolute post-move eval from white's perspective** (same convention as the eval bar), positioned on each arrow's shaft (collision-nudged so converging moves like Qf3/Nf3 both stay visible). The **loss vs. the best move** (`evalDelta`) drives only the *colors* — and a shade: arrows darken the further a move falls behind the best (`shadeForDelta`). The engine's #1 move gets the thick arrow and a 👑.
 - **Eval bar** (`eval_bar.dart`): maps centipawns through a sigmoid `1/(1+e^(-cp/400))`.
 - **Move classification** (`MoveClassification` in the state): `best` = the engine's #1 move (by rank), `book` = opening-theory membership; the rest via `classifyDelta` on loss vs. best — deliberately forgiving (good ≥ −0.4, inaccuracy ≥ −1.0, mistake ≥ −2.0, else blunder), since being 0.3 behind the engine's top choice is not an error. This grade drives every arrow and overlay color (`colorForClassification` in `eval_delta_overlay.dart`).
-- **Per-piece analysis**: tapping a piece classifies all of its legal destinations (backed by `evaluateSpecificMoves`), pausing the hint waves. Evaluation is **progressive**: passes at depths **8 → 12 → 18**, each evaluating every move *and the position itself at the same depth* (so deltas are apples-to-apples) — shallow numbers appear within a second, then each badge refines in place. Squares still awaiting their first number show an **animated bouncing-dots badge** (one shared ticker in `_PieceAnalysisOverlay`). Results are memoized in an eval cache (`fen#depth`), so re-selecting a piece replays finished passes instantly. Deselecting cancels the session (`cancelPieceEvals`, generation token) and resumes the hint analysis; moves/undo/picker cancel it too.
+- **Lines & variations (practice)**: the move list is a set of `GameLine`s — main line plus variations, shown as rows in depth-first tree order (each variation directly beneath its parent line), every row displaying its complete sequence from move 1 with a shared left gutter so chips align across rows. Navigation is **non-destructive**: tapping any chip or the active row's back/forward buttons moves a cursor (`activeLineIndex`/`cursorPly`) without discarding moves; arrows/eval for revisited positions come from the `_hintsByFen` cache or the next record's `hintsBeforeMove`. Playing a move at the tip extends the active line; mid-line, a differing move branches a new variation underneath (which becomes active); a move that matches an existing continuation just navigates into it (`_findContinuation` — no duplicate lines). Only the active row is highlighted and has nav buttons; each row ends with an eval tag for its final position. **Eval tags are stamped by the analysis itself, keyed by FEN** (`_linesWithEvalForFen`): every completed hint wave writes its eval onto all records for the analyzed position, so a tag can never be misdirected by navigating mid-analysis, and picker-seeded records (which start at 0.0) self-correct the first time their position is analyzed.
+- **Per-piece analysis**: tapping a piece classifies all of its legal destinations (backed by `evaluateSpecificMoves`), pausing the hint waves. Evaluation is **progressive**: passes at depths **8 → 12 → 18**, each evaluating every move *and the position itself at the same depth* (so deltas are apples-to-apples) — shallow numbers appear within a second, then each badge refines in place. Two per-square progress signals make this legible: squares awaiting their first number show an **animated bouncing-dots badge**, and (with scores on) each square carries a **depth chip — "d12" plus a rotating spinner while a deeper pass is still coming**, so a score that changes under the user is visibly provisional rather than mysterious. Both are driven by one shared ticker in `_PieceAnalysisOverlay`, which stops once nothing is pending or refining. The chip reports the depth the engine *actually reached* (a movetime cap can land it at d15 rather than d18). Results are memoized in an eval cache (`fen#depth`), so re-selecting a piece replays finished passes instantly. Deselecting cancels the session (`cancelPieceEvals`, generation token) and resumes the hint analysis; moves/undo/picker cancel it too.
 
 ### Opening Book (transposition-aware)
 
@@ -348,7 +377,7 @@ In challenge mode, a player move whose centipawn drop exceeds `mistakeThresholdC
 ## Planned / Unfinished Features
 
 - **Tactics Trainer**: Show positions with forks/pins/skewers, user identifies them. Will use the Lichess puzzle database (same CC0 source as the move trainer, different filtering). Interactive board via `Chessboard` + `GameData`. Currently a placeholder screen routed at `/tactics-trainer` with no in-app navigation linking to it.
-- **Opening Trainer wiring**: the engine, eval, hints, and review all work, but challenge mode is unreachable — `OpeningMenuScreen` is not routed and the lives/medal/principle UI is not mounted (see the Opening Trainer section above). Finishing it = registering the menu route (+ a `/opening-trainer/game` route) and mounting the existing widgets.
+- **Opening Trainer wiring**: the engine, eval, hints, and line navigation all work, but challenge mode is unreachable — `OpeningMenuScreen` is not routed and the lives/medal/principle UI is not mounted (see the Opening Trainer section above). Finishing it = registering the menu route (+ a `/opening-trainer/game` route) and mounting the existing widgets. (The old review-mode code was removed — non-destructive scrubbing replaced it.)
 - **Progress persistence**: every trainer keeps personal bests in an in-memory `Map<String,int>` (speed mode only) — nothing survives an app restart. `cloud_firestore` and `firebase_auth` are already dependencies, and `lib/features/auth/` + `lib/models/` are scaffolded (empty) for this. Firebase itself is configured and **Analytics is live** (screen views + per-drill events); only Auth/Firestore are unused.
 - **Milestone audio**: `streak_*.mp3` assets ship but are never played (see the Audio System section).
 

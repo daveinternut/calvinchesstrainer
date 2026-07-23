@@ -162,6 +162,12 @@ abstract class AppLocalizations {
   /// **'See the board!'**
   String get seeTheBoard;
 
+  /// No description provided for @startHere.
+  ///
+  /// In en, this message translates to:
+  /// **'START HERE'**
+  String get startHere;
+
   /// No description provided for @comingSoon.
   ///
   /// In en, this message translates to:
@@ -227,6 +233,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Moves'**
   String get moves;
+
+  /// No description provided for @pieceValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Piece Value'**
+  String get pieceValue;
 
   /// No description provided for @explore.
   ///
@@ -1157,6 +1169,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pawns are so brave they don\'t need a letter!'**
   String get mnemonicPawn;
+
+  /// No description provided for @scanDrillChecks.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Checks'**
+  String get scanDrillChecks;
+
+  /// No description provided for @scanDrillCaptures.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Captures'**
+  String get scanDrillCaptures;
+
+  /// No description provided for @scanDrillHanging.
+  ///
+  /// In en, this message translates to:
+  /// **'Hanging Pieces'**
+  String get scanDrillHanging;
+
+  /// No description provided for @scanDrillMate.
+  ///
+  /// In en, this message translates to:
+  /// **'Mate in 1'**
+  String get scanDrillMate;
+
+  /// No description provided for @scanPromptChecks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap every square where you can give check!'**
+  String get scanPromptChecks;
+
+  /// No description provided for @scanPromptCaptures.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap every enemy piece you can capture!'**
+  String get scanPromptCaptures;
+
+  /// No description provided for @scanPromptHanging.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap every enemy piece that has no defender!'**
+  String get scanPromptHanging;
+
+  /// No description provided for @scanPromptMate.
+  ///
+  /// In en, this message translates to:
+  /// **'Find the checkmate in one move!'**
+  String get scanPromptMate;
+
+  /// No description provided for @scanPracticeDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'No timer — find them all!'**
+  String get scanPracticeDesc;
+
+  /// No description provided for @blitz.
+  ///
+  /// In en, this message translates to:
+  /// **'Blitz'**
+  String get blitz;
+
+  /// No description provided for @scanBlitzDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'60 seconds — how many mates can you find?'**
+  String get scanBlitzDesc;
+
+  /// No description provided for @whiteToPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'White to play'**
+  String get whiteToPlay;
+
+  /// No description provided for @blackToPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Black to play'**
+  String get blackToPlay;
 }
 
 class _AppLocalizationsDelegate

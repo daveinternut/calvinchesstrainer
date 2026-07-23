@@ -33,6 +33,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get seeTheBoard => '盤面を見よう！';
 
   @override
+  String get startHere => 'ここから！';
+
+  @override
   String get comingSoon => '近日公開';
 
   @override
@@ -64,6 +67,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get moves => '手';
+
+  @override
+  String get pieceValue => '駒の価値';
 
   @override
   String get explore => '探索';
@@ -575,4 +581,43 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mnemonicPawn => 'ポーンは文字がなくても大活躍！';
+
+  @override
+  String get scanDrillChecks => 'チェックを探せ';
+
+  @override
+  String get scanDrillCaptures => '駒取りを探せ';
+
+  @override
+  String get scanDrillHanging => '無防備の駒';
+
+  @override
+  String get scanDrillMate => '1手でメイト';
+
+  @override
+  String get scanPromptChecks => 'チェックできるマスをすべてタップしよう！';
+
+  @override
+  String get scanPromptCaptures => '取れる相手の駒をすべてタップしよう！';
+
+  @override
+  String get scanPromptHanging => '守られていない相手の駒をすべてタップしよう！';
+
+  @override
+  String get scanPromptMate => '1手でメイトできる手を見つけよう！';
+
+  @override
+  String get scanPracticeDesc => 'タイマーなし — 全部見つけよう！';
+
+  @override
+  String get blitz => 'ブリッツ';
+
+  @override
+  String get scanBlitzDesc => '60秒でいくつメイトを見つけられるかな？';
+
+  @override
+  String get whiteToPlay => '白の番';
+
+  @override
+  String get blackToPlay => '黒の番';
 }

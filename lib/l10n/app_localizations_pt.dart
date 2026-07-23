@@ -33,6 +33,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get seeTheBoard => 'Veja o tabuleiro!';
 
   @override
+  String get startHere => 'COMECE AQUI';
+
+  @override
   String get comingSoon => 'EM BREVE';
 
   @override
@@ -64,6 +67,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get moves => 'Lances';
+
+  @override
+  String get pieceValue => 'Valor das peças';
 
   @override
   String get explore => 'Explorar';
@@ -581,4 +587,47 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get mnemonicPawn =>
       'Os peões são tão corajosos que não precisam de letra!';
+
+  @override
+  String get scanDrillChecks => 'Encontre os xeques';
+
+  @override
+  String get scanDrillCaptures => 'Encontre as capturas';
+
+  @override
+  String get scanDrillHanging => 'Peças penduradas';
+
+  @override
+  String get scanDrillMate => 'Mate em 1';
+
+  @override
+  String get scanPromptChecks =>
+      'Toque em cada casa de onde você pode dar xeque!';
+
+  @override
+  String get scanPromptCaptures =>
+      'Toque em cada peça inimiga que você pode capturar!';
+
+  @override
+  String get scanPromptHanging =>
+      'Toque em cada peça inimiga que não está defendida!';
+
+  @override
+  String get scanPromptMate => 'Encontre o xeque-mate em um lance!';
+
+  @override
+  String get scanPracticeDesc => 'Sem cronômetro — encontre todas!';
+
+  @override
+  String get blitz => 'Blitz';
+
+  @override
+  String get scanBlitzDesc =>
+      '60 segundos — quantos mates você consegue encontrar?';
+
+  @override
+  String get whiteToPlay => 'Brancas jogam';
+
+  @override
+  String get blackToPlay => 'Pretas jogam';
 }

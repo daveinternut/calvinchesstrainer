@@ -25,6 +25,7 @@ class PromptDisplay extends StatelessWidget {
       TrainerSubject.squares => l10n.tapSquareToHear,
       TrainerSubject.moves => '',
       TrainerSubject.letters => '',
+      TrainerSubject.pieceValue => '',
     };
 
     return Text(

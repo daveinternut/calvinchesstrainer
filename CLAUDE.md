@@ -4,7 +4,7 @@ The always-loaded control panel for this repo. Read this in full; it's built to 
 
 ## What this is
 
-**Calvin Chess Trainer** — a Flutter chess-training app for kids. Five trainers: **The Pieces** (piece values), **Chess Notation** (file/rank/square + move-from-notation), **Chess Vision** (forks/skewers, knight sight/flight, pawn attack), **Opening Fundamentals** (play vs Stockfish), and a Tactics placeholder.
+**Calvin Chess Trainer** — a Flutter chess-training app for kids. Three trainers on the home screen: **Chess Vision** (forks/skewers, knight sight/flight, pawn attack, plus four scanning drills on curated real positions: find checks, find captures, hanging pieces, mate-in-1 — the hero card), **Chess Notation** (file/rank/square, letters, move-from-notation, piece value), and **Opening Fundamentals** (play vs Stockfish). Plus a Tactics placeholder that nothing links to.
 
 Stack: Flutter/Dart · **Riverpod** (`Notifier`) · **GoRouter** · **chessground + dartchess** (lichess, GPL-3.0) · **stockfish** (FFI) · Firebase (Analytics live; Auth/Firestore unused) · just_audio/flutter_tts · gen-l10n (10 locales).
 
@@ -41,10 +41,10 @@ lib/
     board_utils.dart               file/rank/square index → chessground highlight map
     theme/  constants/  widgets/   AppTheme.light (no dark), constants, SquareNameOverlay
   features/<trainer>/    models/ · providers/ · screens/ · widgets/   (+ services/ for vision & pieces)
-    pieces/              "which side wins?"               → /the-pieces
-    file_rank_trainer/   files/ranks/squares + Moves chip → /file-rank-trainer   (hosts the shared widget kit)
-    move_trainer/        move from notation (puzzles)     → /move-trainer/game    (entered via the Moves chip)
-    chess_vision/        4 drills; 3 pure engines         → /chess-vision
+    chess_vision/        8 drills; 4 pure engines         → /chess-vision          (home-screen hero)
+    file_rank_trainer/   files/ranks/squares + the chips  → /file-rank-trainer     (hosts the shared widget kit)
+    move_trainer/        move from notation (puzzles)     → /move-trainer/game     (entered via the Moves chip)
+    pieces/              "which side wins?"               → /the-pieces/which-side-wins (via the Piece Value chip)
     opening_trainer/     play vs Stockfish                → /opening-trainer       (partly wired — see Gotchas)
     home/  about/  tactics_trainer/(placeholder)
   l10n/                  10 locales via gen-l10n; edit app_*.arb (template app_en.arb) then `flutter gen-l10n`
@@ -59,6 +59,8 @@ lib/
 | Change board rendering / feedback colors | that trainer's `screens/*_screen.dart` + the highlight getters in its `models/*_state.dart` |
 | Change a feedback delay or speed-round length | the trainer's `*_provider.dart` (hardcoded; values listed in Index → Quick reference) |
 | Fix fork/skewer, knight, or pawn logic | `features/chess_vision/services/{fork_skewer,knight,pawn_attack}_engine.dart` |
+| Fix check/capture/hanging/mate-in-1 detection | `features/chess_vision/services/scan_engine.dart` (must mirror `scripts/curate_scanning_positions.py`; shared fixtures in `test/scan_engine_test.dart`) |
+| Regenerate scanning/mate-in-1 position sets | `scripts/curate_scanning_positions.py` → `assets/puzzles/{scan_*,mate_in_one_puzzles}.json`; loaded by `core/services/scan_position_service.dart` + `mateInOnePuzzleServiceProvider` |
 | Touch the engine / eval bar / hint arrows | `core/services/stockfish_service.dart` + `features/opening_trainer/providers/opening_game_provider.dart` |
 | Puzzle loading / regenerate puzzle set | `core/services/puzzle_service.dart`, `assets/puzzles/`, `scripts/curate_puzzles.py` |
 | Opening names / book moves | `core/services/opening_book_service.dart`, `assets/data/eco_openings.json` |
@@ -91,7 +93,7 @@ lib/
 
 ```bash
 flutter pub get
-flutter run                  # device / emulator / Chrome — the main way to verify (test coverage is thin)
+flutter run                  # device / emulator — the main way to verify. NOT Chrome: the web build fails (stockfish is FFI-only)
 flutter analyze              # lint/type check before declaring done
 flutter test                 # unit/widget tests under test/
 flutter gen-l10n             # after editing lib/l10n/*.arb (also runs on build)

@@ -135,10 +135,12 @@ class AnalyticsService {
 
   // --- Chess Vision ---
 
+  // `piece`/`target` are null for the scanning drills (findChecks,
+  // findCaptures, hangingPieces, mateInOne), which have no piece selection.
   void logVisionDrillStarted({
     required String drill,
     required String mode,
-    required String piece,
+    String? piece,
     String? target,
   }) {
     _analytics.logEvent(
@@ -146,7 +148,7 @@ class AnalyticsService {
       parameters: {
         'drill': drill,
         'mode': mode,
-        'piece': piece,
+        if (piece != null) 'piece': piece,
         if (target != null) 'target': target,
       },
     );
@@ -228,7 +230,7 @@ class AnalyticsService {
   void logVisionDrillCompleted({
     required String drill,
     required String mode,
-    required String piece,
+    String? piece,
     String? target,
     required int configurationsCompleted,
     required int totalErrors,
@@ -241,7 +243,7 @@ class AnalyticsService {
       parameters: {
         'drill': drill,
         'mode': mode,
-        'piece': piece,
+        if (piece != null) 'piece': piece,
         if (target != null) 'target': target,
         'configs_completed': configurationsCompleted,
         'total_errors': totalErrors,

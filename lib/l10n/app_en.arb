@@ -9,6 +9,7 @@
   "learnTheBoard": "Learn the board!",
   "chessVision": "Chess Vision",
   "seeTheBoard": "See the board!",
+  "startHere": "START HERE",
   "comingSoon": "COMING SOON",
   "start": "Start",
   "menu": "Menu",
@@ -21,6 +22,7 @@
   "ranks": "Ranks",
   "squares": "Squares",
   "moves": "Moves",
+  "pieceValue": "Piece Value",
 
   "explore": "Explore",
   "exploreDesc": "Tap to learn — no pressure, no scoring",
@@ -216,5 +218,18 @@
   "mnemonicRook": "R is for Rook — the castle tower!",
   "mnemonicBishop": "B is for Bishop — the diagonal expert!",
   "mnemonicKnight": "N is for kNight — the King already took K!",
-  "mnemonicPawn": "Pawns are so brave they don't need a letter!"
+  "mnemonicPawn": "Pawns are so brave they don't need a letter!",
+  "scanDrillChecks": "Find Checks",
+  "scanDrillCaptures": "Find Captures",
+  "scanDrillHanging": "Hanging Pieces",
+  "scanDrillMate": "Mate in 1",
+  "scanPromptChecks": "Tap every square where you can give check!",
+  "scanPromptCaptures": "Tap every enemy piece you can capture!",
+  "scanPromptHanging": "Tap every enemy piece that has no defender!",
+  "scanPromptMate": "Find the checkmate in one move!",
+  "scanPracticeDesc": "No timer — find them all!",
+  "blitz": "Blitz",
+  "scanBlitzDesc": "60 seconds — how many mates can you find?",
+  "whiteToPlay": "White to play",
+  "blackToPlay": "Black to play"
 }

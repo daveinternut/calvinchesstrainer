@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../pieces/models/which_side_wins_state.dart';
 import '../models/file_rank_game_state.dart';
 
 
@@ -72,8 +73,14 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                     Row(
                       children: [
                         _buildSubjectChip(TrainerSubject.moves, l10n.moves, Icons.swap_horiz_rounded),
+                        const SizedBox(width: 8),
+                        _buildSubjectChip(TrainerSubject.pieceValue, l10n.pieceValue, Icons.balance_rounded),
                       ],
                     ),
+                    if (_subject == TrainerSubject.pieceValue) ...[
+                      const SizedBox(height: 16),
+                      _buildPieceValueBanner(l10n),
+                    ],
                     const SizedBox(height: 28),
                     Text(
                       l10n.chooseAMode,
@@ -82,7 +89,7 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                           ),
                     ),
                     const SizedBox(height: 12),
-                    if (_subject != TrainerSubject.moves) ...[
+                    if (_subjectHasExplore(_subject)) ...[
                       _buildModeCard(
                         TrainerMode.explore,
                         l10n.explore,
@@ -95,7 +102,9 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                     _buildModeCard(
                       TrainerMode.practice,
                       l10n.practice,
-                      l10n.practiceDesc,
+                      _subject == TrainerSubject.pieceValue
+                          ? l10n.whichSideWinsPracticeDesc
+                          : l10n.practiceDesc,
                       Icons.school_rounded,
                       const Color(0xFF1565C0),
                     ),
@@ -108,7 +117,8 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
                       const Color(0xFFE65100),
                     ),
                     const SizedBox(height: 28),
-                    if (_mode != TrainerMode.explore) ...[
+                    if (_mode != TrainerMode.explore &&
+                        _subject != TrainerSubject.pieceValue) ...[
                       GestureDetector(
                         onTap: () => setState(() => _isHardMode = !_isHardMode),
                         child: AnimatedContainer(
@@ -202,6 +212,64 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
     );
   }
 
+  /// Moves and Piece Value are quiz-only drills — there is nothing to tap
+  /// around and discover, so they skip Explore mode.
+  static bool _subjectHasExplore(TrainerSubject subject) =>
+      subject != TrainerSubject.moves && subject != TrainerSubject.pieceValue;
+
+  /// Piece Value plays out on its own screen (Which Side Wins), so introduce
+  /// it here the way its old standalone menu used to.
+  Widget _buildPieceValueBanner(AppLocalizations l10n) {
+    const accent = Color(0xFF0277BD);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [accent, accent.withValues(alpha: 0.85)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.balance_rounded, size: 36, color: Colors.white),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.whichSideWins,
+                  style: const TextStyle(
+                    fontFamily: 'BradBunR',
+                    fontSize: 26,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  l10n.whichSideWinsDesc,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSubjectChip(TrainerSubject subject, String label, IconData icon) {
     final selected = _subject == subject;
     return Expanded(
@@ -211,14 +279,17 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
           children: [
             Icon(icon, size: 18, color: selected ? Colors.white : AppColors.textSecondary),
             const SizedBox(width: 6),
-            Text(label),
+            // Some locales spell these out at length ("Ценность фигур") —
+            // let the label give way rather than overflow the chip.
+            Flexible(
+              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
           ],
         ),
         selected: selected,
         onSelected: (_) => setState(() {
           _subject = subject;
-          if (subject == TrainerSubject.moves &&
-              _mode == TrainerMode.explore) {
+          if (!_subjectHasExplore(subject) && _mode == TrainerMode.explore) {
             _mode = TrainerMode.practice;
           }
         }),
@@ -312,6 +383,12 @@ class _FileRankMenuScreenState extends State<FileRankMenuScreen> {
         '?mode=${_mode.name}'
         '&hardMode=$_isHardMode',
       );
+    } else if (_subject == TrainerSubject.pieceValue) {
+      // Which Side Wins has only practice/speed; explore is unreachable here.
+      final mode = _mode == TrainerMode.speed
+          ? WhichSideWinsMode.speed
+          : WhichSideWinsMode.practice;
+      context.push('/the-pieces/which-side-wins?mode=${mode.name}');
     } else {
       context.push(
         '/file-rank-trainer/game'

@@ -112,3 +112,6 @@ app.*.map.json
 !**/ios/**/default.mode2v3
 !**/ios/**/default.pbxuser
 !**/ios/**/default.perspectivev3
+
+# Lichess puzzle DB (local download for scripts/curate_*.py, never committed)
+lichess_db_puzzle.csv*

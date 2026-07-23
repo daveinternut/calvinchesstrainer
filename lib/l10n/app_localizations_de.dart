@@ -33,6 +33,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get seeTheBoard => 'Sieh das Brett!';
 
   @override
+  String get startHere => 'HIER STARTEN';
+
+  @override
   String get comingSoon => 'DEMNÄCHST';
 
   @override
@@ -64,6 +67,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get moves => 'Züge';
+
+  @override
+  String get pieceValue => 'Figurenwert';
 
   @override
   String get explore => 'Erkunden';
@@ -583,4 +589,46 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get mnemonicPawn =>
       'Bauern sind so tapfer, sie brauchen keinen Buchstaben!';
+
+  @override
+  String get scanDrillChecks => 'Schachs finden';
+
+  @override
+  String get scanDrillCaptures => 'Schlagzüge finden';
+
+  @override
+  String get scanDrillHanging => 'Hängende Figuren';
+
+  @override
+  String get scanDrillMate => 'Matt in 1';
+
+  @override
+  String get scanPromptChecks =>
+      'Tippe auf jedes Feld, von dem aus du Schach geben kannst!';
+
+  @override
+  String get scanPromptCaptures =>
+      'Tippe auf jede gegnerische Figur, die du schlagen kannst!';
+
+  @override
+  String get scanPromptHanging =>
+      'Tippe auf jede gegnerische Figur, die nicht verteidigt ist!';
+
+  @override
+  String get scanPromptMate => 'Finde das Matt in einem Zug!';
+
+  @override
+  String get scanPracticeDesc => 'Kein Timer — finde sie alle!';
+
+  @override
+  String get blitz => 'Blitz';
+
+  @override
+  String get scanBlitzDesc => '60 Sekunden — wie viele Matts findest du?';
+
+  @override
+  String get whiteToPlay => 'Weiß am Zug';
+
+  @override
+  String get blackToPlay => 'Schwarz am Zug';
 }

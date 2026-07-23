@@ -33,6 +33,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get seeTheBoard => 'See the board!';
 
   @override
+  String get startHere => 'START HERE';
+
+  @override
   String get comingSoon => 'COMING SOON';
 
   @override
@@ -64,6 +67,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get moves => 'Moves';
+
+  @override
+  String get pieceValue => 'Piece Value';
 
   @override
   String get explore => 'Explore';
@@ -576,4 +582,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mnemonicPawn => 'Pawns are so brave they don\'t need a letter!';
+
+  @override
+  String get scanDrillChecks => 'Find Checks';
+
+  @override
+  String get scanDrillCaptures => 'Find Captures';
+
+  @override
+  String get scanDrillHanging => 'Hanging Pieces';
+
+  @override
+  String get scanDrillMate => 'Mate in 1';
+
+  @override
+  String get scanPromptChecks => 'Tap every square where you can give check!';
+
+  @override
+  String get scanPromptCaptures => 'Tap every enemy piece you can capture!';
+
+  @override
+  String get scanPromptHanging => 'Tap every enemy piece that has no defender!';
+
+  @override
+  String get scanPromptMate => 'Find the checkmate in one move!';
+
+  @override
+  String get scanPracticeDesc => 'No timer — find them all!';
+
+  @override
+  String get blitz => 'Blitz';
+
+  @override
+  String get scanBlitzDesc => '60 seconds — how many mates can you find?';
+
+  @override
+  String get whiteToPlay => 'White to play';
+
+  @override
+  String get blackToPlay => 'Black to play';
 }

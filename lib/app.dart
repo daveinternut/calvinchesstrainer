@@ -21,7 +21,6 @@ import 'features/chess_vision/models/chess_vision_state.dart';
 import 'package:dartchess/dartchess.dart' show Side;
 import 'features/opening_trainer/screens/opening_game_screen.dart';
 import 'features/opening_trainer/models/opening_game_state.dart';
-import 'features/pieces/screens/pieces_menu_screen.dart';
 import 'features/pieces/screens/which_side_wins_screen.dart';
 import 'features/pieces/models/which_side_wins_state.dart';
 
@@ -230,21 +229,6 @@ final _router = GoRouter(
         difficulty: OpeningDifficulty.easy,
         playerColor: Side.white,
       ),
-    ),
-    GoRoute(
-      path: '/the-pieces',
-      name: 'pieces_menu',
-      builder: (context, state) {
-        final modeParam = state.uri.queryParameters['mode'];
-        return PiecesMenuScreen(
-          initialMode: modeParam != null
-              ? WhichSideWinsMode.values.firstWhere(
-                  (m) => m.name == modeParam,
-                  orElse: () => WhichSideWinsMode.practice,
-                )
-              : WhichSideWinsMode.practice,
-        );
-      },
     ),
     GoRoute(
       path: '/the-pieces/which-side-wins',

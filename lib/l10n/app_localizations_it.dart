@@ -33,6 +33,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get seeTheBoard => 'Vedi la scacchiera!';
 
   @override
+  String get startHere => 'INIZIA QUI';
+
+  @override
   String get comingSoon => 'PROSSIMAMENTE';
 
   @override
@@ -64,6 +67,9 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get moves => 'Mosse';
+
+  @override
+  String get pieceValue => 'Valore pezzi';
 
   @override
   String get explore => 'Esplora';
@@ -583,4 +589,44 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get mnemonicPawn =>
       'I pedoni sono così coraggiosi che non hanno una lettera!';
+
+  @override
+  String get scanDrillChecks => 'Trova gli scacchi';
+
+  @override
+  String get scanDrillCaptures => 'Trova le catture';
+
+  @override
+  String get scanDrillHanging => 'Pezzi indifesi';
+
+  @override
+  String get scanDrillMate => 'Matto in 1';
+
+  @override
+  String get scanPromptChecks => 'Tocca ogni casa da cui puoi dare scacco!';
+
+  @override
+  String get scanPromptCaptures =>
+      'Tocca ogni pezzo nemico che puoi catturare!';
+
+  @override
+  String get scanPromptHanging => 'Tocca ogni pezzo nemico che non è difeso!';
+
+  @override
+  String get scanPromptMate => 'Trova lo scacco matto in una mossa!';
+
+  @override
+  String get scanPracticeDesc => 'Senza timer — trovali tutti!';
+
+  @override
+  String get blitz => 'Blitz';
+
+  @override
+  String get scanBlitzDesc => '60 secondi — quanti matti riesci a trovare?';
+
+  @override
+  String get whiteToPlay => 'Muove il Bianco';
+
+  @override
+  String get blackToPlay => 'Muove il Nero';
 }

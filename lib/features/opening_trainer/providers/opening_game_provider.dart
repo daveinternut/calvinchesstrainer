@@ -1,5 +1,4 @@
 import 'dart:developer' as dev;
-import 'dart:math';
 
 import 'package:dartchess/dartchess.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -72,6 +71,7 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
       difficulty: difficulty,
       playerColor: playerColor,
       currentFen: _kInitialFEN,
+      lines: [GameLine(moves: const [])],
       livesRemaining: mode == OpeningMode.challenge ? difficulty.lives : 99,
       maxLives: mode == OpeningMode.challenge ? difficulty.lives : 99,
       isPlayerTurn: mode == OpeningMode.practice ? true : playerColor == Side.white,
@@ -116,7 +116,6 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
     cancelPieceEvals();
 
     _position = Chess.initial;
-    final sanMoves = <String>[];
     final history = <MoveRecord>[];
 
     final moveTokens = pgn
@@ -161,16 +160,16 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
         isUserMove: true,
         move: foundMove,
       ));
-      sanMoves.add(foundSan);
     }
 
     final openingInfo = _openingBook.getOpeningForPosition(_position);
 
     state = state.copyWith(
       currentFen: _position.fen,
-      moveHistory: history,
-      sanMoves: sanMoves,
-      userMoveCount: sanMoves.length,
+      lines: [GameLine(moves: history)],
+      activeLineIndex: 0,
+      cursorPly: history.length - 1,
+      userMoveCount: history.length,
       isPlayerTurn: true,
       isEngineThinking: false,
       isGameOver: false,
@@ -193,24 +192,37 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
 
     if (!_position.isLegal(move)) return;
 
+    final isPractice = state.mode == OpeningMode.practice;
+    final uciStr = '${move.from.name}${move.to.name}';
+
+    // If this move already exists as a continuation of the current position
+    // in some line (the next move of the active line, or the branch move of
+    // an existing variation), don't record anything — just navigate there.
+    if (isPractice) {
+      final existing = _findContinuation(uciStr);
+      if (existing != null) {
+        await _goTo(existing.$1, existing.$2);
+        return;
+      }
+    }
+
     // Abort any running engine search, in-progress hint waves and per-move
     // eval session. Don't dispose the engine — just stop the search so the
     // new hints can reuse it immediately without re-initialization delay.
     _hintFen = null;
     cancelPieceEvals();
 
+    final cursorBefore = state.cursorPly;
+    final wasAtTip = state.cursorAtTip;
+
     final (newPosition, san) = _position.makeSan(move);
     _position = newPosition;
     final newFen = _position.fen;
 
-    final newSanMoves = [...state.sanMoves, san];
     final hintsBeforeMove = List<SuggestedMove>.from(state.topMoves);
-
-    final isPractice = state.mode == OpeningMode.practice;
 
     state = state.copyWith(
       currentFen: newFen,
-      sanMoves: newSanMoves,
       userMoveCount: state.userMoveCount + 1,
       isPlayerTurn: isPractice,
       isEngineThinking: !isPractice,
@@ -225,20 +237,45 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
       final record = MoveRecord(
         fen: newFen,
         san: san,
-        uci: '${move.from.name}${move.to.name}',
+        uci: uciStr,
         eval: state.currentEval.pawns,
         isUserMove: true,
         move: move,
         hintsBeforeMove: hintsBeforeMove,
       );
 
+      // At the tip: extend the active line. Mid-line with a move the line
+      // doesn't contain: branch a new variation off the active line.
+      final List<GameLine> lines;
+      final int lineIndex;
+      final active = state.activeLine ?? const GameLine(moves: []);
+      if (wasAtTip) {
+        lineIndex = state.lines.isEmpty ? 0 : state.activeLineIndex;
+        final extendedLine = active.extended(record);
+        lines = state.lines.isEmpty
+            ? [extendedLine]
+            : ([...state.lines]..[lineIndex] = extendedLine);
+      } else {
+        final variation = GameLine(
+          moves: [...active.moves.sublist(0, cursorBefore + 1), record],
+          branchPly: cursorBefore + 1,
+          parentIndex: state.activeLineIndex,
+        );
+        lines = [...state.lines, variation];
+        lineIndex = lines.length - 1;
+      }
+      final ply = lines[lineIndex].moves.length - 1;
+
       final openingInfo = _openingBook.getOpeningForPosition(_position);
 
       state = state.copyWith(
-        moveHistory: [...state.moveHistory, record],
+        lines: lines,
+        activeLineIndex: lineIndex,
+        cursorPly: ply,
         isPlayerTurn: true,
         openingName: () => openingInfo?.name ?? state.openingName,
         openingEco: () => openingInfo?.eco ?? state.openingEco,
+        lastEngineMove: () => null,
       );
 
       if (_position.isGameOver) {
@@ -249,24 +286,11 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
       // Yield to let any aborted engine search finish unwinding
       await Future.delayed(Duration.zero);
 
+      // The record's eval starts as the pre-move eval; the hint analysis
+      // corrects it (keyed by FEN, so navigation can't misdirect the patch
+      // — see _linesWithEvalForFen).
       _hintsFuture = _requestHints();
       await _hintsFuture;
-
-      // Update the move record's eval now that hints set the real eval
-      if (state.moveHistory.isNotEmpty) {
-        final updatedHistory = List<MoveRecord>.from(state.moveHistory);
-        final last = updatedHistory.last;
-        updatedHistory[updatedHistory.length - 1] = MoveRecord(
-          fen: last.fen,
-          san: last.san,
-          uci: last.uci,
-          eval: state.currentEval.pawns,
-          isUserMove: last.isUserMove,
-          move: last.move,
-          hintsBeforeMove: last.hintsBeforeMove,
-        );
-        state = state.copyWith(moveHistory: updatedHistory);
-      }
       return;
     }
 
@@ -282,7 +306,7 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
     final record = MoveRecord(
       fen: newFen,
       san: san,
-      uci: '${move.from.name}${move.to.name}',
+      uci: uciStr,
       eval: eval.pawns,
       isUserMove: true,
       move: move,
@@ -293,7 +317,8 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
 
     state = state.copyWith(
       currentEval: eval,
-      moveHistory: [...state.moveHistory, record],
+      lines: _linesWithTipAppended(record),
+      cursorPly: state.cursorPly + 1,
       openingName: () => openingInfo?.name ?? state.openingName,
       openingEco: () => openingInfo?.eco ?? state.openingEco,
     );
@@ -370,7 +395,6 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
     final (newPosition, san) = _position.makeSan(engineMove);
     _position = newPosition;
     final newFen = _position.fen;
-    final newSanMoves = [...state.sanMoves, san];
 
     EvalResult evalAfterEngine;
     try {
@@ -394,8 +418,8 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
     state = state.copyWith(
       currentFen: newFen,
       currentEval: evalAfterEngine,
-      moveHistory: [...state.moveHistory, record],
-      sanMoves: newSanMoves,
+      lines: _linesWithTipAppended(record),
+      cursorPly: state.cursorPly + 1,
       isPlayerTurn: true,
       isEngineThinking: false,
       lastEngineMove: () => engineMove,
@@ -420,6 +444,10 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
   /// Track which FEN the current hint computation is for.
   /// If the position changes (user moves) mid-wave, later waves bail out.
   String? _hintFen;
+
+  /// Latest computed hint arrows per position, so scrubbing back to an
+  /// already-analyzed position restores its arrows (and eval) instantly.
+  final Map<String, List<SuggestedMove>> _hintsByFen = {};
 
   /// The in-flight [_requestHints] future, so [pauseHints] can await it.
   Future<void>? _hintsFuture;
@@ -559,9 +587,13 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
           extras++;
         }
 
+        if (_hintsByFen.length > 200) _hintsByFen.clear();
+        _hintsByFen[fen] = suggested;
+
         state = state.copyWith(
           topMoves: suggested,
           currentEval: EvalResult(centipawns: bestCp),
+          lines: _linesWithEvalForFen(fen, bestCp / 100.0),
           isEngineThinking: false,
         );
       } else {
@@ -697,6 +729,7 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
         if (cancelled()) break;
         final depth = _kMoveEvalPassDepths[pass];
         final capMs = _kMoveEvalPassCapMs[pass];
+        final isLastPass = pass == _kMoveEvalPassDepths.length - 1;
 
         // Baseline at the SAME depth as this pass's per-move evals —
         // comparing a deep root eval against shallow child evals is what
@@ -725,6 +758,11 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
               centipawns: eval.centipawns,
               mateIn: eval.mateIn,
               deltaCp: delta,
+              // Report the depth actually reached — a movetime cap can cut
+              // a pass short, and showing the real depth is more honest
+              // than the one we asked for.
+              depth: eval.depth > 0 ? eval.depth : depth,
+              isFinal: isLastPass,
             );
             results[uci] = moveEval;
             onResult?.call(uci, moveEval);
@@ -741,56 +779,124 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
     }
   }
 
-  Future<void> undoMove() async {
-    if (state.moveHistory.isEmpty || state.isEngineThinking) return;
+  /// All lines with every record for position [fen] stamped with [evalPawns].
+  /// Keyed by FEN so an analysis result can only ever land on the position
+  /// it belongs to — this is what keeps the per-line eval tags honest
+  /// (records created by the opening picker start at 0.0, and a post-move
+  /// patch could otherwise race with navigation).
+  List<GameLine> _linesWithEvalForFen(String fen, double evalPawns) {
+    List<GameLine>? patched;
+    for (int li = 0; li < state.lines.length; li++) {
+      var line = state.lines[li];
+      for (int ply = 0; ply < line.moves.length; ply++) {
+        final record = line.moves[ply];
+        if (record.fen == fen && record.eval != evalPawns) {
+          line = line.withMoveReplaced(ply, record.withEval(evalPawns));
+          patched ??= [...state.lines];
+          patched[li] = line;
+        }
+      }
+    }
+    return patched ?? state.lines;
+  }
+
+  /// The active line with [record] appended at its tip (challenge/engine
+  /// path — the cursor is always at the tip there).
+  List<GameLine> _linesWithTipAppended(MoveRecord record) {
+    if (state.lines.isEmpty) {
+      return [
+        GameLine(moves: [record])
+      ];
+    }
+    final index = state.activeLineIndex;
+    return [...state.lines]..[index] = state.lines[index].extended(record);
+  }
+
+  /// If playing [uci] from the current cursor position re-enters a move
+  /// that's already recorded — the next move of the active line, or the
+  /// branch move of an existing variation — return (lineIndex, ply) to
+  /// navigate to instead of recording a duplicate.
+  (int, int)? _findContinuation(String uci) {
+    final active = state.activeLine;
+    if (active == null) return null;
+    final cursor = state.cursorPly;
+    final cursorFen =
+        cursor >= 0 ? active.moves[cursor].fen : _kInitialFEN;
+
+    for (int li = 0; li < state.lines.length; li++) {
+      final line = state.lines[li];
+      if (line.moves.length <= cursor + 1) continue;
+      final prevFen = cursor >= 0
+          ? (cursor < line.moves.length ? line.moves[cursor].fen : null)
+          : _kInitialFEN;
+      if (prevFen != cursorFen) continue;
+      if (line.moves[cursor + 1].uci == uci) return (li, cursor + 1);
+    }
+    return null;
+  }
+
+  /// Step one ply back along the active line (non-destructive).
+  Future<void> scrubBack() async {
+    if (state.cursorPly < 0) return;
+    await _goTo(state.activeLineIndex, state.cursorPly - 1);
+  }
+
+  /// Step one ply forward along the active line.
+  Future<void> scrubForward() async {
+    final line = state.activeLine;
+    if (line == null || state.cursorPly >= line.moves.length - 1) return;
+    await _goTo(state.activeLineIndex, state.cursorPly + 1);
+  }
+
+  /// Activate line [lineIndex] and show the position after its move at
+  /// [ply] (-1 = starting position). Never discards moves.
+  Future<void> goTo(int lineIndex, int ply) => _goTo(lineIndex, ply);
+
+  Future<void> _goTo(int lineIndex, int ply) async {
+    if (state.mode != OpeningMode.practice) return;
+    if (lineIndex < 0 || lineIndex >= state.lines.length) return;
+    final line = state.lines[lineIndex];
+    if (ply < -1 || ply >= line.moves.length) return;
 
     _hintFen = null;
     cancelPieceEvals();
 
-    final history = List<MoveRecord>.from(state.moveHistory);
-    final sans = List<String>.from(state.sanMoves);
+    final record = ply >= 0 ? line.moves[ply] : null;
+    final fen = record?.fen ?? _kInitialFEN;
+    _position =
+        record != null ? Chess.fromSetup(Setup.parseFen(fen)) : Chess.initial;
+    final openingInfo = _openingBook.getOpeningForPosition(_position);
 
-    final undone = history.removeLast();
-    sans.removeLast();
-
-    // Restore the cached hints from the undone move — these are the
-    // exact arrows the user saw before making that move.
-    final cachedHints = undone.hintsBeforeMove;
-
-    if (history.isEmpty) {
-      _position = Chess.initial;
-      final openingInfo = _openingBook.getOpeningForPosition(_position);
-      state = state.copyWith(
-        currentFen: _kInitialFEN,
-        moveHistory: history,
-        sanMoves: sans,
-        userMoveCount: max(0, state.userMoveCount - 1),
-        currentEval: const EvalResult(centipawns: 0),
-        topMoves: cachedHints,
-        isPlayerTurn: true,
-        openingName: () => openingInfo?.name,
-        openingEco: () => openingInfo?.eco,
-        lastEngineMove: () => null,
-      );
-    } else {
-      final prev = history.last;
-      _position = Chess.fromSetup(Setup.parseFen(prev.fen));
-      final openingInfo = _openingBook.getOpeningForPosition(_position);
-      state = state.copyWith(
-        currentFen: prev.fen,
-        moveHistory: history,
-        sanMoves: sans,
-        userMoveCount: max(0, state.userMoveCount - 1),
-        currentEval: EvalResult(centipawns: (prev.eval * 100).round()),
-        topMoves: cachedHints,
-        isPlayerTurn: true,
-        openingName: () => openingInfo?.name ?? state.openingName,
-        openingEco: () => openingInfo?.eco ?? state.openingEco,
-        lastEngineMove: () => null,
-      );
+    // Best available arrows for this position: results of a previous live
+    // analysis, else the arrows recorded when the next move was played here.
+    var cachedHints = _hintsByFen[fen] ?? const <SuggestedMove>[];
+    if (cachedHints.isEmpty && ply + 1 < line.moves.length) {
+      cachedHints = line.moves[ply + 1].hintsBeforeMove;
     }
 
-    // If no cached hints (e.g. initial position), recompute
+    // Prefer the eval carried by the cached analysis (deepest known);
+    // fall back to the eval stored on the move record.
+    final cachedBest =
+        cachedHints.where((m) => m.isBest && m.hasEval).toList();
+    final evalCp = cachedBest.isNotEmpty
+        ? cachedBest.first.centipawns
+        : ((record?.eval ?? 0) * 100).round();
+
+    state = state.copyWith(
+      currentFen: fen,
+      activeLineIndex: lineIndex,
+      cursorPly: ply,
+      currentEval: EvalResult(centipawns: evalCp),
+      topMoves: cachedHints,
+      isPlayerTurn: true,
+      isEngineThinking: false,
+      // Navigating away from a finished line puts play back in progress.
+      isGameOver: false,
+      openingName: () => openingInfo?.name ?? state.openingName,
+      openingEco: () => openingInfo?.eco ?? state.openingEco,
+      lastEngineMove: () => null,
+    );
+
     if (cachedHints.isEmpty && state.mode == OpeningMode.practice) {
       _hintsFuture = _requestHints();
       await _hintsFuture;
@@ -828,78 +934,6 @@ class OpeningGameNotifier extends Notifier<OpeningGameState> {
       userMoves: state.userMoveCount,
       medal: state.currentMedal.name,
       livesUsed: state.maxLives - state.livesRemaining,
-    );
-  }
-
-  void startReview() {
-    if (state.moveHistory.isEmpty) return;
-    _position = Chess.initial;
-
-    state = state.copyWith(
-      isReviewing: true,
-      reviewIndex: -1,
-      currentFen: _kInitialFEN,
-      currentEval: const EvalResult(centipawns: 0),
-      lastEngineMove: () => null,
-    );
-  }
-
-  void reviewForward() {
-    if (!state.isReviewing) return;
-    final nextIndex = state.reviewIndex + 1;
-    if (nextIndex >= state.moveHistory.length) return;
-
-    final record = state.moveHistory[nextIndex];
-
-    _position = Chess.fromSetup(Setup.parseFen(record.fen));
-
-    state = state.copyWith(
-      reviewIndex: nextIndex,
-      currentFen: record.fen,
-      currentEval: EvalResult(centipawns: (record.eval * 100).round()),
-      lastEngineMove: () =>
-          !record.isUserMove ? record.move : state.lastEngineMove,
-    );
-  }
-
-  void reviewBack() {
-    if (!state.isReviewing) return;
-    final prevIndex = state.reviewIndex - 1;
-
-    if (prevIndex < 0) {
-      _position = Chess.initial;
-      state = state.copyWith(
-        reviewIndex: -1,
-        currentFen: _kInitialFEN,
-        currentEval: const EvalResult(centipawns: 0),
-        lastEngineMove: () => null,
-      );
-      return;
-    }
-
-    final record = state.moveHistory[prevIndex];
-    _position = Chess.fromSetup(Setup.parseFen(record.fen));
-
-    state = state.copyWith(
-      reviewIndex: prevIndex,
-      currentFen: record.fen,
-      currentEval: EvalResult(centipawns: (record.eval * 100).round()),
-      lastEngineMove: () =>
-          !record.isUserMove ? record.move : null,
-    );
-  }
-
-  void exitReview() {
-    if (state.moveHistory.isNotEmpty) {
-      final lastRecord = state.moveHistory.last;
-      _position = Chess.fromSetup(Setup.parseFen(lastRecord.fen));
-    }
-    state = state.copyWith(
-      isReviewing: false,
-      reviewIndex: -1,
-      currentFen: state.moveHistory.isNotEmpty
-          ? state.moveHistory.last.fen
-          : _kInitialFEN,
     );
   }
 

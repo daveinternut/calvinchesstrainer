@@ -33,6 +33,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get seeTheBoard => '看清棋盘！';
 
   @override
+  String get startHere => '从这里开始';
+
+  @override
   String get comingSoon => '即将推出';
 
   @override
@@ -64,6 +67,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get moves => '着法';
+
+  @override
+  String get pieceValue => '棋子价值';
 
   @override
   String get explore => '探索';
@@ -574,4 +580,43 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get mnemonicPawn => '兵很勇敢，不需要字母！';
+
+  @override
+  String get scanDrillChecks => '找将军';
+
+  @override
+  String get scanDrillCaptures => '找吃子';
+
+  @override
+  String get scanDrillHanging => '无保护棋子';
+
+  @override
+  String get scanDrillMate => '一步杀';
+
+  @override
+  String get scanPromptChecks => '点出所有能将军的格子！';
+
+  @override
+  String get scanPromptCaptures => '点出所有能吃掉的对方棋子！';
+
+  @override
+  String get scanPromptHanging => '点出所有没有保护的对方棋子！';
+
+  @override
+  String get scanPromptMate => '找出一步将杀！';
+
+  @override
+  String get scanPracticeDesc => '不限时——全部找出来！';
+
+  @override
+  String get blitz => '闪电挑战';
+
+  @override
+  String get scanBlitzDesc => '60秒——你能找到几个将杀？';
+
+  @override
+  String get whiteToPlay => '白方走棋';
+
+  @override
+  String get blackToPlay => '黑方走棋';
 }

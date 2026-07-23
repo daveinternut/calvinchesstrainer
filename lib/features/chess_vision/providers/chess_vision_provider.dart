@@ -6,10 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/audio/audio_service.dart';
 import '../../../core/services/analytics_service.dart';
+import '../../../core/services/puzzle_service.dart';
+import '../../../core/services/scan_position_service.dart';
 import '../models/chess_vision_state.dart';
 import '../services/fork_skewer_engine.dart';
 import '../services/knight_engine.dart';
 import '../services/pawn_attack_engine.dart';
+import '../services/scan_engine.dart';
 
 final chessVisionProvider =
     NotifierProvider<ChessVisionNotifier, ChessVisionState>(
@@ -24,9 +27,17 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
   Timer? _stopwatchTimer;
   final Map<String, int> _personalBests = {};
   List<Square> _filteredConcentricPath = [];
+  ScanPosition? _currentScanPosition;
+
+  // Bumped by every startGame; async asset loads bail out when a newer game
+  // superseded them mid-await.
+  int _gameGeneration = 0;
 
   AudioService get _audio => ref.read(audioServiceProvider);
   AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
+  ScanPositionService get _scanPositions =>
+      ref.read(scanPositionServiceProvider);
+  PuzzleService get _matePuzzles => ref.read(mateInOnePuzzleServiceProvider);
 
   String get _bestKey {
     final drill = state.drillType.name;
@@ -51,14 +62,17 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     );
   }
 
-  void startGame(VisionDrillType drillType, VisionMode mode, WhitePiece piece,
-      {TargetPiece targetPiece = TargetPiece.rook}) {
+  Future<void> startGame(
+      VisionDrillType drillType, VisionMode mode, WhitePiece piece,
+      {TargetPiece targetPiece = TargetPiece.rook}) async {
     _cancelTimers();
+    final generation = ++_gameGeneration;
 
     final effectiveMode = (drillType == VisionDrillType.knightSight ||
             drillType == VisionDrillType.knightFlight)
         ? VisionMode.practice
-        : (drillType == VisionDrillType.pawnAttack &&
+        : ((drillType == VisionDrillType.pawnAttack ||
+                    drillType.isScanDrill) &&
                 mode != VisionMode.practice)
             ? VisionMode.speed
             : mode;
@@ -82,12 +96,13 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
       whitePiece: piece,
       targetPiece: targetPiece,
       timeRemainingSeconds: effectiveMode == VisionMode.speed ? 60 : null,
+      isLoading: drillType.isScanDrill,
     );
 
     _analytics.logVisionDrillStarted(
       drill: drillType.name,
       mode: effectiveMode.name,
-      piece: piece.name,
+      piece: drillType.isScanDrill ? null : piece.name,
       target: drillType == VisionDrillType.forksAndSkewers
           ? targetPiece.name
           : null,
@@ -102,6 +117,18 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
         _generateKnightFlightConfig();
       case VisionDrillType.pawnAttack:
         _generatePawnAttackConfig();
+      case VisionDrillType.findChecks:
+      case VisionDrillType.findCaptures:
+      case VisionDrillType.hangingPieces:
+        await _scanPositions.load(_scanKindFor(drillType));
+        if (generation != _gameGeneration) return;
+        state = state.copyWith(isLoading: false);
+        _loadNextScanPosition();
+      case VisionDrillType.mateInOne:
+        await _matePuzzles.loadPuzzles();
+        if (generation != _gameGeneration) return;
+        state = state.copyWith(isLoading: false);
+        _loadNextMatePuzzle();
     }
 
     if (drillType == VisionDrillType.pawnAttack &&
@@ -117,7 +144,7 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
   // --- Tap routing ---
 
   void handleBoardTap(Square square) {
-    if (state.isGameOver || state.isRoundComplete) return;
+    if (state.isGameOver || state.isRoundComplete || state.isLoading) return;
     if (state.showingRevealedAnswer) return;
 
     switch (state.drillType) {
@@ -129,6 +156,12 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
         _handleKnightFlightTap(square);
       case VisionDrillType.pawnAttack:
         _handlePawnAttackTap(square);
+      case VisionDrillType.findChecks:
+      case VisionDrillType.findCaptures:
+      case VisionDrillType.hangingPieces:
+        _handleScanTap(square);
+      case VisionDrillType.mateInOne:
+        break; // moves arrive via handleMateMove, not square taps
     }
   }
 
@@ -402,6 +435,156 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     );
   }
 
+  // --- Scanning drills (findChecks / findCaptures / hangingPieces / mateInOne) ---
+
+  static ScanSetKind _scanKindFor(VisionDrillType drill) => switch (drill) {
+        VisionDrillType.findChecks => ScanSetKind.checks,
+        VisionDrillType.findCaptures => ScanSetKind.captures,
+        VisionDrillType.hangingPieces => ScanSetKind.hanging,
+        _ => throw ArgumentError('not a tap scanning drill: $drill'),
+      };
+
+  void _loadNextScanPosition() {
+    final drill = state.drillType;
+    final entry = _scanPositions.getRandom(
+      _scanKindFor(drill),
+      exclude: _currentScanPosition,
+    );
+    _currentScanPosition = entry;
+    final position = entry.position;
+
+    final targets = switch (drill) {
+      VisionDrillType.findChecks => ScanEngine.checkTargets(position),
+      VisionDrillType.findCaptures => ScanEngine.captureTargets(position),
+      VisionDrillType.hangingPieces => ScanEngine.hangingTargets(position),
+      _ => <Square>{},
+    };
+    // Curation computed the same predicate in python-chess; a mismatch means
+    // the pipeline and ScanEngine have drifted apart.
+    assert(
+      targets.length == entry.targetCount,
+      'ScanEngine disagrees with curated n for ${entry.fen}: '
+      'engine ${targets.length} vs curated ${entry.targetCount}',
+    );
+
+    state = state.copyWith(
+      scanPosition: () => position,
+      scanDisplayFen: () => entry.fen,
+      scanSideToMove: position.turn,
+      checkGhosts: drill == VisionDrillType.findChecks
+          ? ScanEngine.checkTargetDetails(position)
+          : const {},
+      correctSquares: targets,
+      foundSquares: const {},
+      incorrectFlashSquare: () => null,
+      showingRevealedAnswer: false,
+      hadErrorThisRound: false,
+      isRoundComplete: false,
+    );
+  }
+
+  void _loadNextMatePuzzle() {
+    final puzzle = _matePuzzles.getRandomPuzzle(exclude: state.currentMatePuzzle);
+    state = state.copyWith(
+      currentMatePuzzle: () => puzzle,
+      scanPosition: () => puzzle.position,
+      scanDisplayFen: () => puzzle.position.fen,
+      scanSideToMove: puzzle.sideToMove,
+      mateFeedback: () => null,
+      correctSquares: const {},
+      foundSquares: const {},
+      incorrectFlashSquare: () => null,
+      showingRevealedAnswer: false,
+      hadErrorThisRound: false,
+      isRoundComplete: false,
+    );
+  }
+
+  void _handleScanTap(Square square) {
+    if (state.foundSquares.contains(square)) return;
+
+    if (state.correctSquares.contains(square)) {
+      if (state.drillType == VisionDrillType.findChecks) {
+        _audio.playCheckCall(); // "Check!" layered over the correct SFX
+      }
+      _handleCorrectTap(square);
+    } else {
+      _handleIncorrectTap(square);
+    }
+  }
+
+  /// Reveal-and-move-on escape hatch for the tap scanning drills: costs an
+  /// error and the streak, counts nothing, shows the unfound targets for
+  /// 1.5 s (the forks "None"-wrong reveal mechanism reused).
+  void skipScanPosition() {
+    if (!state.drillType.isTapScanDrill) return;
+    if (state.isGameOver || state.isRoundComplete || state.isLoading) return;
+    if (state.showingRevealedAnswer) return;
+
+    _audio.playIncorrect();
+    state = state.copyWith(
+      showingRevealedAnswer: true,
+      streak: 0,
+      totalErrors: state.totalErrors + 1,
+    );
+    _advanceTimer?.cancel();
+    _advanceTimer = Timer(const Duration(milliseconds: 1500), () {
+      _advanceToNextConfiguration(madeError: true, countCompleted: false);
+    });
+  }
+
+  /// Mate in 1 verdict — judged by RESULT (any legal move that mates counts,
+  /// not just the dataset answer).
+  void handleMateMove(NormalMove move) {
+    if (state.isGameOver || state.isRoundComplete || state.isLoading) return;
+    final puzzle = state.currentMatePuzzle;
+    if (puzzle == null) return;
+
+    final isSpeed = state.mode == VisionMode.speed;
+    final isMate = ScanEngine.isMatingMove(puzzle.position, move);
+
+    if (isMate) {
+      // Play the normalized form (handles either castling encoding); keep the
+      // original move for feedback so the highlight shows the square the kid
+      // actually chose.
+      final played = puzzle.position.normalizeMove(move);
+      _audio.playCorrect();
+      _audio.playCheckmateCall();
+      state = state.copyWith(
+        scanDisplayFen: () => puzzle.position.playUnchecked(played).fen,
+        mateFeedback: () => ScanMateFeedback(
+          isCorrect: true,
+          attemptedMove: move,
+          solutionMove: puzzle.expectedMove,
+        ),
+        isRoundComplete: true,
+      );
+    } else {
+      // Board FEN stays untouched, so the tried piece snaps back; the green
+      // solution arrow renders via mateFeedbackShapes.
+      _audio.playIncorrect();
+      state = state.copyWith(
+        mateFeedback: () => ScanMateFeedback(
+          isCorrect: false,
+          attemptedMove: move,
+          solutionMove: puzzle.expectedMove,
+        ),
+        streak: 0,
+        totalErrors: state.totalErrors + 1,
+        hadErrorThisRound: true,
+        isRoundComplete: true,
+      );
+    }
+
+    // Longer beats than the tap drills: there is something to absorb (a mated
+    // board + "Checkmate!", or a solution arrow to comprehend).
+    final delayMs = isMate ? (isSpeed ? 500 : 900) : (isSpeed ? 800 : 1500);
+    _advanceTimer?.cancel();
+    _advanceTimer = Timer(Duration(milliseconds: delayMs), () {
+      _advanceToNextConfiguration(madeError: !isMate, countCompleted: isMate);
+    });
+  }
+
   // --- Shared helpers ---
 
   void _handleCorrectTap(Square square) {
@@ -442,7 +625,8 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     });
   }
 
-  void _advanceToNextConfiguration({required bool madeError}) {
+  void _advanceToNextConfiguration(
+      {required bool madeError, bool countCompleted = true}) {
     if (state.isGameOver) return;
 
     final newStreak = madeError ? 0 : state.streak + 1;
@@ -465,7 +649,8 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     state = state.copyWith(
       streak: newStreak,
       bestStreak: newBestStreak,
-      configurationsCompleted: state.configurationsCompleted + 1,
+      configurationsCompleted:
+          state.configurationsCompleted + (countCompleted ? 1 : 0),
     );
 
     switch (state.drillType) {
@@ -477,6 +662,12 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
         _generateKnightFlightConfig();
       case VisionDrillType.pawnAttack:
         _generatePawnAttackConfig();
+      case VisionDrillType.findChecks:
+      case VisionDrillType.findCaptures:
+      case VisionDrillType.hangingPieces:
+        _loadNextScanPosition();
+      case VisionDrillType.mateInOne:
+        _loadNextMatePuzzle();
     }
   }
 
@@ -608,7 +799,7 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     _analytics.logVisionDrillCompleted(
       drill: state.drillType.name,
       mode: state.mode.name,
-      piece: state.whitePiece.name,
+      piece: state.drillType.isScanDrill ? null : state.whitePiece.name,
       target: state.drillType == VisionDrillType.forksAndSkewers
           ? state.targetPiece.name
           : null,

@@ -4,7 +4,13 @@
     {
       "name": "calvin-web",
       "runtimeExecutable": "flutter",
-      "runtimeArgs": ["run", "-d", "web-server", "--web-port", "5317"],
+      "runtimeArgs": [
+        "run",
+        "-d",
+        "web-server",
+        "--web-port",
+        "5317"
+      ],
       "port": 5317
     }
   ]

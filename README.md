@@ -41,13 +41,16 @@ A chess learning app that teaches fundamentals through interactive drills and ti
 
 ## Development Setup
 
+**Setting up a new machine? Follow [SETUP.md](SETUP.md)** — step-by-step from a clean Mac through iOS simulators, Android emulator, device signing, and pinned tool versions.
+
 ### Prerequisites
 
-- Flutter SDK (stable channel)
-- Xcode (for iOS builds)
-- Android Studio (for Android builds)
-- Chrome (for web builds)
-- Firebase CLI + FlutterFire CLI
+- Flutter **3.35.7** (stable) / Dart 3.9.2 — pin this version
+- Xcode 16+ with an iOS simulator runtime, CocoaPods 1.16+ (iOS builds)
+- Android Studio with SDK Platform 36, Build-Tools 35.0.1, **NDK 27.0.12077973** (Android builds)
+- Chrome (web builds)
+
+Firebase config files are committed — do **not** run `flutterfire configure`.
 
 ### Getting Started
 

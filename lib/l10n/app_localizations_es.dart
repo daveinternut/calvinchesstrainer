@@ -33,6 +33,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get seeTheBoard => '¡Ve el tablero!';
 
   @override
+  String get startHere => 'EMPIEZA AQUÍ';
+
+  @override
   String get comingSoon => 'PRÓXIMAMENTE';
 
   @override
@@ -64,6 +67,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get moves => 'Jugadas';
+
+  @override
+  String get pieceValue => 'Valor de piezas';
 
   @override
   String get explore => 'Explorar';
@@ -584,4 +590,46 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get mnemonicPawn =>
       '¡Los peones son tan valientes que no llevan letra!';
+
+  @override
+  String get scanDrillChecks => 'Encuentra los jaques';
+
+  @override
+  String get scanDrillCaptures => 'Encuentra las capturas';
+
+  @override
+  String get scanDrillHanging => 'Piezas colgadas';
+
+  @override
+  String get scanDrillMate => 'Mate en 1';
+
+  @override
+  String get scanPromptChecks =>
+      '¡Toca cada casilla desde la que puedas dar jaque!';
+
+  @override
+  String get scanPromptCaptures =>
+      '¡Toca cada pieza enemiga que puedas capturar!';
+
+  @override
+  String get scanPromptHanging =>
+      '¡Toca cada pieza enemiga que no esté defendida!';
+
+  @override
+  String get scanPromptMate => '¡Encuentra el jaque mate en una jugada!';
+
+  @override
+  String get scanPracticeDesc => 'Sin temporizador: ¡encuéntralas todas!';
+
+  @override
+  String get blitz => 'Blitz';
+
+  @override
+  String get scanBlitzDesc => '60 segundos: ¿cuántos mates puedes encontrar?';
+
+  @override
+  String get whiteToPlay => 'Juegan blancas';
+
+  @override
+  String get blackToPlay => 'Juegan negras';
 }

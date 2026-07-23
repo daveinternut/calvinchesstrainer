@@ -44,6 +44,20 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
   /// progressively as the engine finishes each move. Key = UCI string.
   Map<String, MoveEval> _extraMoveEvals = {};
 
+  /// Identifies the current evaluation session, so a superseded session's
+  /// late callbacks can't overwrite newer results.
+  int _evalSession = 0;
+
+  /// The board position is about to change — drop the selected piece and
+  /// its now-stale evaluations.
+  void _clearAnalysisSelection() {
+    setState(() {
+      _selectedPieceSquare = null;
+      _extraMoveEvals = {};
+      _evalSession++;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -88,6 +102,7 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
       setState(() {
         _selectedPieceSquare = null;
         _extraMoveEvals = {};
+        _evalSession++;
       });
       notifier.startFromOpening(selectedPgn);
     } else {
@@ -180,34 +195,27 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      if (gameState.moveHistory.isNotEmpty &&
-                          !gameState.isEngineThinking)
-                        IconButton(
-                          onPressed: () {
-                            ref
-                                .read(openingGameProvider.notifier)
-                                .undoMove();
-                          },
-                          icon: const Icon(Icons.undo_rounded),
-                          tooltip: 'Undo',
-                          iconSize: 20,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      Expanded(
-                        child: MoveHistoryPanel(
-                          moveHistory: gameState.moveHistory,
-                          isReviewing: gameState.isReviewing,
-                          reviewIndex: gameState.reviewIndex,
-                        ),
-                      ),
-                    ],
+                  MoveHistoryPanel(
+                    lines: gameState.lines,
+                    activeLineIndex: gameState.activeLineIndex,
+                    cursorPly: gameState.cursorPly,
+                    enabled: gameState.mode == OpeningMode.practice &&
+                        !gameState.isEngineThinking,
+                    onTapMove: (lineIndex, ply) {
+                      _clearAnalysisSelection();
+                      ref
+                          .read(openingGameProvider.notifier)
+                          .goTo(lineIndex, ply);
+                    },
+                    onBack: () {
+                      _clearAnalysisSelection();
+                      ref.read(openingGameProvider.notifier).scrubBack();
+                    },
+                    onForward: () {
+                      _clearAnalysisSelection();
+                      ref.read(openingGameProvider.notifier).scrubForward();
+                    },
                   ),
-                  if (gameState.isReviewing) ...[
-                    const SizedBox(height: 8),
-                    _buildReviewControls(),
-                  ],
                   const SizedBox(height: 12),
                 ],
               ),
@@ -226,7 +234,6 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
 
     final isInteractive = !gameState.isGameOver &&
         !gameState.isEngineThinking &&
-        !gameState.isReviewing &&
         (isPractice || gameState.isPlayerTurn);
 
     final validMoves = isInteractive
@@ -281,6 +288,7 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
           setState(() {
             _selectedPieceSquare = null;
             _extraMoveEvals = {};
+            _evalSession++;
           });
           if (move is NormalMove) {
             ref.read(openingGameProvider.notifier).handlePlayerMove(move);
@@ -353,6 +361,7 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
       setState(() {
         _selectedPieceSquare = newSelection;
         _extraMoveEvals = {};
+        _evalSession++;
       });
       if (newSelection != null) {
         _evaluateMissingMoves(newSelection, position);
@@ -387,12 +396,14 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
       movesToEval.add(NormalMove(from: fromSquare, to: dest));
     }
 
+    final session = ++_evalSession;
+
     ref
         .read(openingGameProvider.notifier)
         .evaluateSpecificMoves(
           movesToEval,
           onResult: (uci, eval) {
-            if (mounted && _selectedPieceSquare == fromSquare) {
+            if (mounted && session == _evalSession) {
               setState(() {
                 _extraMoveEvals = {..._extraMoveEvals, uci: eval};
               });
@@ -402,9 +413,21 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
         // This future is fire-and-forget (results stream via onResult) — an
         // error here must never surface as an unhandled async exception.
         .catchError((Object e) {
-      debugPrint('evaluateSpecificMoves failed: $e');
-      return <String, MoveEval>{};
-    });
+          debugPrint('evaluateSpecificMoves failed: $e');
+          return <String, MoveEval>{};
+        })
+        .whenComplete(() {
+          // Nothing more will arrive for this session — whether it ran to
+          // the last pass, errored, or was cancelled. Clear any lingering
+          // "still refining" spinners so none can spin forever.
+          if (!mounted || session != _evalSession) return;
+          setState(() {
+            _extraMoveEvals = {
+              for (final entry in _extraMoveEvals.entries)
+                entry.key: entry.value.asFinal(),
+            };
+          });
+        });
   }
 
   _PieceAnalysisResult? _analyzePieceMoves(
@@ -436,6 +459,8 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
 
       MoveClassification? classification;
       String? scoreText;
+      String? depthText;
+      var isRefining = false;
 
       // Prefer the dedicated per-move evaluation (same fixed depth as the
       // baseline, so scores match the arrow view); fall back to top-5 data.
@@ -443,9 +468,14 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
       if (extra != null) {
         classification = classifyDelta(extra.deltaPawns);
         scoreText = formatEval(extra.centipawns, extra.mateIn);
+        depthText = extra.depth > 0 ? 'd${extra.depth}' : null;
+        isRefining = !extra.isFinal;
       } else if (topMove != null && topMove.hasEval) {
         classification = topMove.classification;
         scoreText = formatEval(topMove.centipawns, topMove.mateIn);
+        // Borrowed from the arrow search — this move's own evaluation is
+        // still queued, so it will change.
+        isRefining = true;
       }
 
       // Book membership wins the color; the engine's #1 move gets `best`.
@@ -479,7 +509,9 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
         color: color,
         icon: icon,
         scoreText: scoreText,
+        depthText: depthText,
         isPending: isPending,
+        isRefining: isRefining,
       ));
     }
 
@@ -518,30 +550,6 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
     return ISet(shapes);
   }
 
-  Widget _buildReviewControls() {
-    final notifier = ref.read(openingGameProvider.notifier);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          onPressed: () => notifier.reviewBack(),
-          icon: const Icon(Icons.skip_previous_rounded),
-          tooltip: 'Previous move',
-        ),
-        IconButton(
-          onPressed: () => notifier.reviewForward(),
-          icon: const Icon(Icons.skip_next_rounded),
-          tooltip: 'Next move',
-        ),
-        const SizedBox(width: 16),
-        TextButton(
-          onPressed: () => notifier.exitReview(),
-          child: const Text('Done'),
-        ),
-      ],
-    );
-  }
-
   NormalMove? _parseUciMove(String uci) {
     if (uci.length < 4) return null;
     try {
@@ -571,8 +579,14 @@ class _PieceAnalysisEntry {
   final String icon;
   final String? scoreText;
 
+  /// Search depth behind [scoreText], e.g. "d12" (null = not yet known).
+  final String? depthText;
+
   /// True while this move's evaluation hasn't arrived yet.
   final bool isPending;
+
+  /// True while a deeper pass will still update this move's score.
+  final bool isRefining;
 
   const _PieceAnalysisEntry({
     required this.square,
@@ -580,7 +594,9 @@ class _PieceAnalysisEntry {
     required this.color,
     required this.icon,
     this.scoreText,
+    this.depthText,
     this.isPending = false,
+    this.isRefining = false,
   });
 }
 
@@ -632,10 +648,14 @@ class _PieceAnalysisOverlayState extends State<_PieceAnalysisOverlay>
   }
 
   void _syncAnimation() {
-    final hasPending = widget.analysisEntries.any((e) => e.isPending);
-    if (hasPending && !_pulse.isAnimating) {
+    // Runs while any square is waiting for its first score (bouncing dots)
+    // or is still being refined by a deeper pass (spinner on the depth chip).
+    final isActive = widget.analysisEntries.any(
+      (e) => e.isPending || (e.isRefining && widget.showScores),
+    );
+    if (isActive && !_pulse.isAnimating) {
       _pulse.repeat();
-    } else if (!hasPending && _pulse.isAnimating) {
+    } else if (!isActive && _pulse.isAnimating) {
       _pulse.stop();
     }
   }
@@ -763,23 +783,112 @@ class _PieceAnalysisOverlayState extends State<_PieceAnalysisOverlay>
       width: _squareSize,
       height: _squareSize,
       child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-          decoration: BoxDecoration(
-            color: entry.color.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            entry.scoreText!,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: fontSize,
-              fontWeight: FontWeight.bold,
-              height: 1.1,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: entry.color.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                entry.scoreText!,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.bold,
+                  height: 1.1,
+                ),
+              ),
             ),
-          ),
+            if (entry.depthText != null || entry.isRefining) ...[
+              SizedBox(height: _squareSize * 0.03),
+              _buildDepthChip(entry),
+            ],
+          ],
         ),
       ),
     );
   }
+
+  /// "d12" with a spinner while a deeper pass is still coming — tells the
+  /// user this square's score is provisional and will keep improving.
+  Widget _buildDepthChip(_PieceAnalysisEntry entry) {
+    final fontSize = (_squareSize * 0.16).clamp(7.0, 10.0);
+    final spinnerSize = fontSize * 1.1;
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: fontSize * 0.35, vertical: 1),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (entry.isRefining) ...[
+            AnimatedBuilder(
+              animation: _pulse,
+              builder: (context, _) => Transform.rotate(
+                angle: _pulse.value * 2 * math.pi,
+                child: CustomPaint(
+                  size: Size.square(spinnerSize),
+                  painter: _SpinnerArcPainter(
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+              ),
+            ),
+            if (entry.depthText != null) SizedBox(width: fontSize * 0.3),
+          ],
+          if (entry.depthText != null)
+            Text(
+              entry.depthText!,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.95),
+                fontSize: fontSize,
+                fontWeight: FontWeight.w700,
+                height: 1.1,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A three-quarter ring — rotated by the caller to read as a spinner.
+class _SpinnerArcPainter extends CustomPainter {
+  final Color color;
+
+  const _SpinnerArcPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final stroke = size.width * 0.2;
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(
+      Rect.fromLTWH(
+        stroke / 2,
+        stroke / 2,
+        size.width - stroke,
+        size.height - stroke,
+      ),
+      0,
+      math.pi * 1.45,
+      false,
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _SpinnerArcPainter oldDelegate) =>
+      oldDelegate.color != color;
 }

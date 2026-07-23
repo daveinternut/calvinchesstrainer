@@ -1,11 +1,28 @@
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
-import 'package:chessground/chessground.dart' show SquareHighlight;
+import 'package:chessground/chessground.dart' show SquareHighlight, Shape, Arrow;
 import 'package:dartchess/dartchess.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import '../../../core/board_utils.dart';
+import '../../../core/services/puzzle_service.dart';
 import '../../../core/theme/app_theme.dart';
 
-enum VisionDrillType { forksAndSkewers, knightSight, knightFlight, pawnAttack }
+enum VisionDrillType {
+  forksAndSkewers,
+  knightSight,
+  knightFlight,
+  pawnAttack,
+  findChecks,
+  findCaptures,
+  hangingPieces,
+  mateInOne;
+
+  /// The four scanning drills (curated real positions).
+  bool get isScanDrill => isTapScanDrill || this == mateInOne;
+
+  /// Scanning drills played by tapping target squares on a fixed board.
+  bool get isTapScanDrill =>
+      this == findChecks || this == findCaptures || this == hangingPieces;
+}
 
 enum VisionMode { practice, speed, concentric }
 
@@ -47,6 +64,19 @@ enum TargetPiece {
       };
 }
 
+/// Outcome of a Mate in 1 attempt (mirrors the move trainer's feedback).
+class ScanMateFeedback {
+  final bool isCorrect;
+  final NormalMove? attemptedMove;
+  final NormalMove solutionMove;
+
+  const ScanMateFeedback({
+    required this.isCorrect,
+    required this.attemptedMove,
+    required this.solutionMove,
+  });
+}
+
 class ChessVisionState {
   final VisionDrillType drillType;
   final VisionMode mode;
@@ -82,6 +112,18 @@ class ChessVisionState {
   final int pawnAttackDifficulty;
   final int pawnAttackMoves;
 
+  // Scanning drill fields (findChecks / findCaptures / hangingPieces /
+  // mateInOne). Curated real positions: `scanPosition` is the ground truth,
+  // `scanDisplayFen` is what the board renders (differs only after a correct
+  // mate, where the played move stays on the board).
+  final Chess? scanPosition;
+  final String? scanDisplayFen;
+  final Side scanSideToMove;
+  final Map<Square, Piece> checkGhosts;
+  final ParsedPuzzle? currentMatePuzzle;
+  final ScanMateFeedback? mateFeedback;
+  final bool isLoading;
+
   static const Square blackKingSquare = Square.d5;
 
   const ChessVisionState({
@@ -114,6 +156,13 @@ class ChessVisionState {
     this.pawnThreatSquares = const {},
     this.pawnAttackDifficulty = 3,
     this.pawnAttackMoves = 0,
+    this.scanPosition,
+    this.scanDisplayFen,
+    this.scanSideToMove = Side.white,
+    this.checkGhosts = const {},
+    this.currentMatePuzzle,
+    this.mateFeedback,
+    this.isLoading = false,
   });
 
   ChessVisionState copyWith({
@@ -146,6 +195,13 @@ class ChessVisionState {
     Set<Square>? pawnThreatSquares,
     int? pawnAttackDifficulty,
     int? pawnAttackMoves,
+    Chess? Function()? scanPosition,
+    String? Function()? scanDisplayFen,
+    Side? scanSideToMove,
+    Map<Square, Piece>? checkGhosts,
+    ParsedPuzzle? Function()? currentMatePuzzle,
+    ScanMateFeedback? Function()? mateFeedback,
+    bool? isLoading,
   }) {
     return ChessVisionState(
       drillType: drillType ?? this.drillType,
@@ -189,6 +245,17 @@ class ChessVisionState {
       pawnAttackDifficulty:
           pawnAttackDifficulty ?? this.pawnAttackDifficulty,
       pawnAttackMoves: pawnAttackMoves ?? this.pawnAttackMoves,
+      scanPosition:
+          scanPosition != null ? scanPosition() : this.scanPosition,
+      scanDisplayFen:
+          scanDisplayFen != null ? scanDisplayFen() : this.scanDisplayFen,
+      scanSideToMove: scanSideToMove ?? this.scanSideToMove,
+      checkGhosts: checkGhosts ?? this.checkGhosts,
+      currentMatePuzzle: currentMatePuzzle != null
+          ? currentMatePuzzle()
+          : this.currentMatePuzzle,
+      mateFeedback: mateFeedback != null ? mateFeedback() : this.mateFeedback,
+      isLoading: isLoading ?? this.isLoading,
     );
   }
 
@@ -216,8 +283,19 @@ class ChessVisionState {
               pawn, const Piece(color: Side.black, role: Role.pawn));
         }
         return b.fen;
+      case VisionDrillType.findChecks:
+      case VisionDrillType.findCaptures:
+      case VisionDrillType.hangingPieces:
+      case VisionDrillType.mateInOne:
+        return scanDisplayFen ?? Board.empty.fen;
     }
   }
+
+  /// Scanning drills orient the board to the side the kid is playing (real
+  /// positions come with either side to move — flipped-board training).
+  /// Every other drill keeps the fixed white orientation.
+  Side get boardOrientation =>
+      drillType.isScanDrill ? scanSideToMove : Side.white;
 
   int get totalFound => foundSquares.length;
   int get totalCorrect => correctSquares.length;
@@ -231,6 +309,9 @@ class ChessVisionState {
     switch (drillType) {
       case VisionDrillType.forksAndSkewers:
       case VisionDrillType.knightSight:
+      case VisionDrillType.findChecks:
+      case VisionDrillType.findCaptures:
+      case VisionDrillType.hangingPieces:
         for (final sq in foundSquares) {
           highlights = highlights.addAll(highlightSquare(
             sq.file.value,
@@ -280,6 +361,22 @@ class ChessVisionState {
             ));
           }
         }
+      case VisionDrillType.mateInOne:
+        // On a correct mate the played move stays highlighted (the wrong-move
+        // case is carried by the solution arrow in [mateFeedbackShapes]).
+        final feedback = mateFeedback;
+        if (feedback != null && feedback.isCorrect) {
+          final move = feedback.attemptedMove;
+          if (move != null) {
+            for (final sq in [move.from, move.to]) {
+              highlights = highlights.addAll(highlightSquare(
+                sq.file.value,
+                sq.rank.value,
+                AppColors.correctGreen.withValues(alpha: 0.6),
+              ));
+            }
+          }
+        }
     }
 
     final flash = incorrectFlashSquare;
@@ -292,6 +389,24 @@ class ChessVisionState {
     }
 
     return highlights;
+  }
+
+  /// Mate in 1 only: a green arrow revealing the dataset's solution after a
+  /// wrong attempt (move-trainer feedback pattern).
+  ISet<Shape> get mateFeedbackShapes {
+    final feedback = mateFeedback;
+    if (drillType != VisionDrillType.mateInOne ||
+        feedback == null ||
+        feedback.isCorrect) {
+      return const ISetConst({});
+    }
+    return ISet({
+      Arrow(
+        color: AppColors.correctGreen.withValues(alpha: 0.8),
+        orig: feedback.solutionMove.from,
+        dest: feedback.solutionMove.to,
+      ),
+    });
   }
 }
 
