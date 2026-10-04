@@ -333,14 +333,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get aboutWhatIsBody =>
-      '一款有趣的互动应用，教孩子们国际象棋基础。通过练习、测验和限时挑战学习列、行、格和棋子走法——配有语音反馈和连胜追踪，让你保持动力！';
+      '一款有趣的互动应用，教孩子们国际象棋的基础知识。“棋盘视觉”训练你一眼看出双攻、串击、马的走法、将军、吃子和无保护的棋子。“国际象棋记谱”教你认识直线、横线、格子、棋子字母、着法和棋子价值。在“开局探索器”里，你可以借助真正的国际象棋引擎的提示来尝试各种开局。语音反馈、连胜和保存的个人最佳成绩让你保持动力！';
 
   @override
   String get aboutTrainingModes => '训练模式';
 
   @override
   String get aboutTrainingModesBody =>
-      '• 探索 — 按自己的节奏学习\n• 练习 — 自我测试，建立连胜\n• 限时挑战 — 30秒，你能答对多少？\n• 困难模式 — 隐藏坐标，迎接真正的挑战';
+      '• 探索 — 按自己的节奏学习\n• 练习 — 自我测试，建立连胜\n• 限时挑战 — 和时间赛跑（30秒或60秒），创造新纪录\n• 困难模式 — 从黑方的一侧看棋盘';
 
   @override
   String get aboutCredits => '致谢';
@@ -403,18 +403,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get tacticsComingSoon => '战术训练即将推出';
-
-  @override
-  String get squareTrainer => '格位训练';
-
-  @override
-  String get squareComingSoon => '格位训练即将推出';
-
-  @override
-  String get moveTrainer => '着法训练';
-
-  @override
-  String get moveComingSoon => '着法训练即将推出';
 
   @override
   String get promptSquare => '格';
@@ -515,18 +503,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get knowYourPieces => 'Know your pieces!';
 
   @override
-  String get whichSideWins => 'Which Side Wins?';
+  String get whichSideWins => '哪一方赢？';
 
   @override
-  String get whichSideWinsDesc =>
-      'Compare groups of pieces — tap the side worth more!';
+  String get whichSideWinsDesc => '比较两组棋子——点击价值更高的一方！';
 
   @override
-  String get tapTheSideWorthMore => 'Tap the side worth more';
+  String get tapTheSideWorthMore => '点击价值更高的一方';
 
   @override
-  String get whichSideWinsPracticeDesc =>
-      'Build your streak — difficulty increases as you go!';
+  String get whichSideWinsPracticeDesc => '保持连胜——难度会逐渐增加！';
 
   @override
   String get letters => '字母';
@@ -619,4 +605,73 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get blackToPlay => '黑方走棋';
+
+  @override
+  String get openingExplorer => '开局探索器';
+
+  @override
+  String get startFromOpening => '从开局开始';
+
+  @override
+  String get flipBoard => '翻转棋盘';
+
+  @override
+  String get showScores => '显示评分';
+
+  @override
+  String get hideScores => '隐藏评分';
+
+  @override
+  String get searchOpenings => '搜索开局…';
+
+  @override
+  String get noOpeningsFound => '未找到开局';
+
+  @override
+  String get popularOpenings => '热门';
+
+  @override
+  String get browseByCategory => '按类别浏览';
+
+  @override
+  String get ecoFlankOpenings => '侧翼开局';
+
+  @override
+  String get ecoSemiOpenGames => '半开放性开局';
+
+  @override
+  String get ecoOpenGames => '开放性开局';
+
+  @override
+  String get ecoClosedGames => '封闭与半封闭';
+
+  @override
+  String get ecoIndianDefenses => '印度防御';
+
+  @override
+  String get engineUnavailable => '国际象棋引擎未能启动。';
+
+  @override
+  String get visionPromptForks => '点出所有能让你的棋子同时攻击王和另一个棋子的格子！';
+
+  @override
+  String get visionPromptKnightSight => '点出你的马能跳到的所有格子！';
+
+  @override
+  String get visionPromptKnightFlight => '用最少的步数把你的马跳到圆圈里！';
+
+  @override
+  String get visionPromptPawnAttack => '吃掉所有的兵——不要停在有阴影的格子上！';
+
+  @override
+  String get startOver => '重新开始';
+
+  @override
+  String get loadFailed => '无法加载题目。';
+
+  @override
+  String get checkmate => '将杀！';
+
+  @override
+  String get draw => '和棋！';
 }

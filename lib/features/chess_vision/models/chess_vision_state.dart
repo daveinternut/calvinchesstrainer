@@ -22,6 +22,21 @@ enum VisionDrillType {
   /// Scanning drills played by tapping target squares on a fixed board.
   bool get isTapScanDrill =>
       this == findChecks || this == findCaptures || this == hangingPieces;
+
+  /// Knight Sight and Knight Flight: practice only, no piece or mode choice.
+  bool get isKnightDrill => this == knightSight || this == knightFlight;
+
+  /// The mode a game of this drill actually runs in. Knight drills are
+  /// practice-only, and concentric belongs to Forks & Skewers alone — Pawn
+  /// Attack and the scanning drills run it as their timed mode. The menu,
+  /// the provider and the game screen all go through this one rule.
+  VisionMode effectiveMode(VisionMode requested) {
+    if (isKnightDrill) return VisionMode.practice;
+    if (this != forksAndSkewers && requested == VisionMode.concentric) {
+      return VisionMode.speed;
+    }
+    return requested;
+  }
 }
 
 enum VisionMode { practice, speed, concentric }
@@ -95,8 +110,14 @@ class ChessVisionState {
   final int? timeRemainingSeconds;
   final int elapsedSeconds;
   final int concentricIndex;
+
+  /// Targets on this game's concentric spiral (those with a solution).
+  final int concentricTotal;
   final bool isGameOver;
   final bool isRoundComplete;
+
+  /// Set at game over when this run beat the saved personal best.
+  final bool isNewRecord;
 
   // Knight drill fields
   final Square? knightSquare;
@@ -112,6 +133,13 @@ class ChessVisionState {
   final int pawnAttackDifficulty;
   final int pawnAttackMoves;
 
+  /// The current board's pawns as dealt — what "Start over" restores.
+  final Set<Square> pawnAttackStartPawns;
+
+  /// The player has trapped themselves: the pawns left can no longer all be
+  /// captured from here (the screen then highlights "Start over").
+  final bool pawnAttackDeadEnd;
+
   // Scanning drill fields (findChecks / findCaptures / hangingPieces /
   // mateInOne). Curated real positions: `scanPosition` is the ground truth,
   // `scanDisplayFen` is what the board renders (differs only after a correct
@@ -122,7 +150,18 @@ class ChessVisionState {
   final Map<Square, Piece> checkGhosts;
   final ParsedPuzzle? currentMatePuzzle;
   final ScanMateFeedback? mateFeedback;
+
+  /// Mate in 1 only: the checkmated position after a correct move, so the
+  /// board can highlight the mated king.
+  final Position? matedPosition;
+
+  /// True while a scanning drill's curated set loads, and in the neutral
+  /// state a fresh provider starts in (before the screen calls startGame).
   final bool isLoading;
+
+  /// The scanning drill's curated set could not be loaded; the screen offers
+  /// a retry instead of an endless spinner.
+  final bool loadFailed;
 
   static const Square blackKingSquare = Square.d5;
 
@@ -144,8 +183,10 @@ class ChessVisionState {
     this.timeRemainingSeconds,
     this.elapsedSeconds = 0,
     this.concentricIndex = 0,
+    this.concentricTotal = 0,
     this.isGameOver = false,
     this.isRoundComplete = false,
+    this.isNewRecord = false,
     this.knightSquare,
     this.flightTargetSquare,
     this.flightPath = const [],
@@ -156,13 +197,17 @@ class ChessVisionState {
     this.pawnThreatSquares = const {},
     this.pawnAttackDifficulty = 3,
     this.pawnAttackMoves = 0,
+    this.pawnAttackStartPawns = const {},
+    this.pawnAttackDeadEnd = false,
     this.scanPosition,
     this.scanDisplayFen,
     this.scanSideToMove = Side.white,
     this.checkGhosts = const {},
     this.currentMatePuzzle,
     this.mateFeedback,
+    this.matedPosition,
     this.isLoading = false,
+    this.loadFailed = false,
   });
 
   ChessVisionState copyWith({
@@ -183,8 +228,10 @@ class ChessVisionState {
     int? Function()? timeRemainingSeconds,
     int? elapsedSeconds,
     int? concentricIndex,
+    int? concentricTotal,
     bool? isGameOver,
     bool? isRoundComplete,
+    bool? isNewRecord,
     Square? Function()? knightSquare,
     Square? Function()? flightTargetSquare,
     List<Square>? flightPath,
@@ -195,13 +242,17 @@ class ChessVisionState {
     Set<Square>? pawnThreatSquares,
     int? pawnAttackDifficulty,
     int? pawnAttackMoves,
+    Set<Square>? pawnAttackStartPawns,
+    bool? pawnAttackDeadEnd,
     Chess? Function()? scanPosition,
     String? Function()? scanDisplayFen,
     Side? scanSideToMove,
     Map<Square, Piece>? checkGhosts,
     ParsedPuzzle? Function()? currentMatePuzzle,
     ScanMateFeedback? Function()? mateFeedback,
+    Position? Function()? matedPosition,
     bool? isLoading,
+    bool? loadFailed,
   }) {
     return ChessVisionState(
       drillType: drillType ?? this.drillType,
@@ -227,8 +278,10 @@ class ChessVisionState {
           : this.timeRemainingSeconds,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       concentricIndex: concentricIndex ?? this.concentricIndex,
+      concentricTotal: concentricTotal ?? this.concentricTotal,
       isGameOver: isGameOver ?? this.isGameOver,
       isRoundComplete: isRoundComplete ?? this.isRoundComplete,
+      isNewRecord: isNewRecord ?? this.isNewRecord,
       knightSquare:
           knightSquare != null ? knightSquare() : this.knightSquare,
       flightTargetSquare: flightTargetSquare != null
@@ -245,6 +298,8 @@ class ChessVisionState {
       pawnAttackDifficulty:
           pawnAttackDifficulty ?? this.pawnAttackDifficulty,
       pawnAttackMoves: pawnAttackMoves ?? this.pawnAttackMoves,
+      pawnAttackStartPawns: pawnAttackStartPawns ?? this.pawnAttackStartPawns,
+      pawnAttackDeadEnd: pawnAttackDeadEnd ?? this.pawnAttackDeadEnd,
       scanPosition:
           scanPosition != null ? scanPosition() : this.scanPosition,
       scanDisplayFen:
@@ -255,7 +310,10 @@ class ChessVisionState {
           ? currentMatePuzzle()
           : this.currentMatePuzzle,
       mateFeedback: mateFeedback != null ? mateFeedback() : this.mateFeedback,
+      matedPosition:
+          matedPosition != null ? matedPosition() : this.matedPosition,
       isLoading: isLoading ?? this.isLoading,
+      loadFailed: loadFailed ?? this.loadFailed,
     );
   }
 

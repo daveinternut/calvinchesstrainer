@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:chessground/chessground.dart' show PieceSet;
 import 'package:dartchess/dartchess.dart' show PieceKind;
 import 'package:flutter/material.dart';
@@ -26,14 +28,55 @@ class ChessVisionMenuScreen extends StatefulWidget {
 }
 
 class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
-  late VisionDrillType _drill = widget.initialDrill;
-  late WhitePiece _piece = widget.initialPiece;
-  late TargetPiece _target = widget.initialTarget;
-  late VisionMode _mode = widget.initialMode;
+  /// Keeps the options readable on a wide (landscape iPad) window instead of
+  /// stretching chips and cards edge to edge.
+  static const double _maxContentWidth = 720;
+
+  late VisionDrillType _drill;
+  late WhitePiece _piece;
+  late TargetPiece _target;
+  late VisionMode _mode;
+
+  @override
+  void initState() {
+    super.initState();
+    _piece = widget.initialPiece;
+    _target = _allowedTarget(widget.initialTarget, _piece);
+    _drill = widget.initialDrill;
+    _mode = widget.initialMode;
+    _selectDrill(widget.initialDrill);
+  }
+
+  /// Knight vs knight has no fork anywhere (the knights can always take each
+  /// other), so a knight can't pick the knight target.
+  static bool _isTargetAllowed(TargetPiece target, WhitePiece piece) =>
+      !(piece == WhitePiece.knight && target == TargetPiece.knight);
+
+  static TargetPiece _allowedTarget(TargetPiece target, WhitePiece piece) =>
+      _isTargetAllowed(target, piece) ? target : TargetPiece.rook;
+
+  /// Switches drill and moves the mode selection onto what this drill will
+  /// really run, so the highlighted mode card is always the one that starts
+  /// (concentric is forks-only). Knight drills show no mode cards, so the
+  /// choice is kept for when the player comes back to a drill that has them.
+  void _selectDrill(VisionDrillType drill) {
+    _drill = drill;
+    if (!drill.isKnightDrill) _mode = drill.effectiveMode(_mode);
+  }
+
+  void _selectPiece(WhitePiece piece) {
+    _piece = piece;
+    _target = _allowedTarget(_target, piece);
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // Centre the options in a column of at most _maxContentWidth; the scroll
+    // area itself stays full width.
+    final usableWidth = MediaQuery.sizeOf(context).width -
+        MediaQuery.paddingOf(context).horizontal;
+    final sidePadding = math.max(24.0, (usableWidth - _maxContentWidth) / 2);
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.chessVision),
@@ -47,7 +90,7 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                padding: EdgeInsets.fromLTRB(sidePadding, 24, sidePadding, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -139,7 +182,8 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                             _buildPieceImageChip(
                               pieceKind: p.pieceKind,
                               selected: _piece == p,
-                              onSelected: () => setState(() => _piece = p),
+                              onSelected: () =>
+                                  setState(() => _selectPiece(p)),
                               selectedColor: AppColors.primary,
                               tooltip: p.localizedLabel(l10n),
                             ),
@@ -163,6 +207,7 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                             _buildPieceImageChip(
                               pieceKind: t.pieceKind,
                               selected: _target == t,
+                              enabled: _isTargetAllowed(t, _piece),
                               onSelected: () => setState(() => _target = t),
                               selectedColor: Colors.grey.shade800,
                               tooltip: t.localizedLabel(l10n),
@@ -221,7 +266,8 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                             _buildPieceImageChip(
                               pieceKind: p.pieceKind,
                               selected: _piece == p,
-                              onSelected: () => setState(() => _piece = p),
+                              onSelected: () =>
+                                  setState(() => _selectPiece(p)),
                               selectedColor: AppColors.primary,
                               tooltip: p.localizedLabel(l10n),
                             ),
@@ -297,7 +343,7 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+              padding: EdgeInsets.fromLTRB(sidePadding, 16, sidePadding, 16),
               child: SizedBox(
                 height: 56,
                 width: double.infinity,
@@ -337,11 +383,18 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
                 size: 18,
                 color: selected ? Colors.white : AppColors.textSecondary),
             const SizedBox(width: 6),
-            Text(label),
+            // Long labels (French, Spanish, Russian…) shrink to fit a phone's
+            // half-width chip instead of overflowing it.
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(label, maxLines: 1),
+              ),
+            ),
           ],
         ),
         selected: selected,
-        onSelected: (_) => setState(() => _drill = drill),
+        onSelected: (_) => setState(() => _selectDrill(drill)),
         showCheckmark: false,
         selectedColor: AppColors.primary,
         labelStyle: TextStyle(
@@ -359,38 +412,44 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
     required VoidCallback onSelected,
     required Color selectedColor,
     required String tooltip,
+    bool enabled = true,
   }) {
     final asset = PieceSet.cburnett.assets[pieceKind];
     return Expanded(
       child: Tooltip(
         message: tooltip,
         child: GestureDetector(
-          onTap: onSelected,
-          child: AnimatedContainer(
+          onTap: enabled ? onSelected : null,
+          child: AnimatedOpacity(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            decoration: BoxDecoration(
-              color: selected ? selectedColor : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: selected ? selectedColor : Colors.grey.shade300,
-                width: selected ? 2 : 1,
+            opacity: enabled ? 1 : 0.3,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              decoration: BoxDecoration(
+                color: selected ? selectedColor : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: selected ? selectedColor : Colors.grey.shade300,
+                  width: selected ? 2 : 1,
+                ),
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: selectedColor.withValues(alpha: 0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        )
+                      ]
+                    : [],
               ),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: selectedColor.withValues(alpha: 0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      )
-                    ]
-                  : [],
-            ),
-            child: Center(
-              child: SizedBox(
-                width: 44,
-                height: 44,
-                child: asset != null ? Image(image: asset) : const SizedBox(),
+              child: Center(
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child:
+                      asset != null ? Image(image: asset) : const SizedBox(),
+                ),
               ),
             ),
           ),
@@ -475,17 +534,12 @@ class _ChessVisionMenuScreenState extends State<ChessVisionMenuScreen> {
       };
 
   void _startGame() {
-    final effectiveMode = (_drill == VisionDrillType.knightSight ||
-            _drill == VisionDrillType.knightFlight)
-        ? VisionMode.practice
-        : (_drill.isScanDrill && _mode == VisionMode.concentric)
-            ? VisionMode.speed
-            : _mode;
+    final effectiveMode = _drill.effectiveMode(_mode);
     context.push(
       '/chess-vision/game'
       '?drill=${_drill.name}'
       '&piece=${_piece.name}'
-      '&target=${_target.name}'
+      '&target=${_allowedTarget(_target, _piece).name}'
       '&mode=${effectiveMode.name}',
     );
   }

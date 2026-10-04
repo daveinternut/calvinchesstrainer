@@ -28,6 +28,12 @@ class LetterGameScreen extends ConsumerStatefulWidget {
 }
 
 class _LetterGameScreenState extends ConsumerState<LetterGameScreen> {
+  static const double _maxContentWidth = 640;
+
+  /// Below this height the prompt, streak, timer and tiles can't all fit, so
+  /// the page scrolls as one.
+  static const double _minColumnHeight = 520;
+
   late final AudioService _audioService;
 
   @override
@@ -35,10 +41,9 @@ class _LetterGameScreenState extends ConsumerState<LetterGameScreen> {
     super.initState();
     _audioService = ref.read(audioServiceProvider);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(letterGameProvider.notifier).startGame(
-            widget.mode,
-            isHardMode: widget.isHardMode,
-          );
+      ref
+          .read(letterGameProvider.notifier)
+          .startGame(widget.mode, isHardMode: widget.isHardMode);
     });
   }
 
@@ -54,10 +59,7 @@ class _LetterGameScreenState extends ConsumerState<LetterGameScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(_title),
-        ),
+        title: FittedBox(fit: BoxFit.scaleDown, child: Text(_title)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -70,8 +72,8 @@ class _LetterGameScreenState extends ConsumerState<LetterGameScreen> {
                 child: Text(
                   '${gameState.totalCorrect}/${gameState.totalAttempts}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -80,52 +82,15 @@ class _LetterGameScreenState extends ConsumerState<LetterGameScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  const SizedBox(height: 12),
-                  LetterPromptDisplay(gameState: gameState),
-                  const SizedBox(height: 12),
-                  if (gameState.mode != LetterTrainerMode.explore) ...[
-                    StreakCounter(
-                      streak: gameState.streak,
-                      bestStreak: gameState.bestStreak,
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  Expanded(
-                    child: Center(
-                      child: SingleChildScrollView(
-                        child: gameState.mode == LetterTrainerMode.explore
-                            ? LetterExploreGrid(
-                                gameState: gameState,
-                                onTap: (piece) => ref
-                                    .read(letterGameProvider.notifier)
-                                    .handleAnswer(piece),
-                              )
-                            : LetterAnswerGrid(
-                                gameState: gameState,
-                                onTap: (piece) => ref
-                                    .read(letterGameProvider.notifier)
-                                    .handleAnswer(piece),
-                              ),
-                      ),
-                    ),
-                  ),
-                  if (gameState.mode == LetterTrainerMode.speed &&
-                      gameState.timeRemainingSeconds != null) ...[
-                    const SizedBox(height: 12),
-                    TimerBar(
-                      remainingSeconds: gameState.timeRemainingSeconds!,
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                ],
-              ),
+            LayoutBuilder(
+              builder: (context, constraints) =>
+                  _buildContent(gameState, constraints),
             ),
             if (gameState.mode != LetterTrainerMode.explore)
-              MilestoneBanner(streak: gameState.streak),
+              MilestoneBanner(
+                streak: gameState.streak,
+                alignToTrainerLayout: false,
+              ),
             if (gameState.isGameOver)
               Container(
                 color: Colors.black54,
@@ -133,18 +98,79 @@ class _LetterGameScreenState extends ConsumerState<LetterGameScreen> {
                   totalCorrect: gameState.totalCorrect,
                   totalAttempts: gameState.totalAttempts,
                   bestStreak: gameState.bestStreak,
-                  isNewRecord:
-                      ref.read(letterGameProvider.notifier).isNewRecord,
+                  isNewRecord: gameState.isNewRecord,
                   onPlayAgain: () {
-                    ref.read(letterGameProvider.notifier).startGame(
-                          widget.mode,
-                          isHardMode: widget.isHardMode,
-                        );
+                    ref
+                        .read(letterGameProvider.notifier)
+                        .startGame(widget.mode, isHardMode: widget.isHardMode);
                   },
                   onBack: () => context.pop(),
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// One centred column, capped in width so a landscape iPad doesn't spread
+  /// the tiles across the screen. When the window is too short for the fixed
+  /// prompt, streak and timer plus the tiles, the whole page scrolls instead
+  /// of overflowing.
+  Widget _buildContent(LetterGameState gameState, BoxConstraints constraints) {
+    final isExplore = gameState.mode == LetterTrainerMode.explore;
+    final header = <Widget>[
+      const SizedBox(height: 12),
+      LetterPromptDisplay(gameState: gameState),
+      const SizedBox(height: 12),
+      if (!isExplore) ...[
+        StreakCounter(
+          streak: gameState.streak,
+          bestStreak: gameState.bestStreak,
+        ),
+        const SizedBox(height: 12),
+      ],
+    ];
+    final tiles = isExplore
+        ? LetterExploreGrid(
+            gameState: gameState,
+            onTap: (piece) =>
+                ref.read(letterGameProvider.notifier).handleAnswer(piece),
+          )
+        : LetterAnswerGrid(
+            gameState: gameState,
+            onTap: (piece) =>
+                ref.read(letterGameProvider.notifier).handleAnswer(piece),
+          );
+    final footer = <Widget>[
+      if (gameState.mode == LetterTrainerMode.speed &&
+          gameState.timeRemainingSeconds != null) ...[
+        const SizedBox(height: 12),
+        TimerBar(remainingSeconds: gameState.timeRemainingSeconds!),
+      ],
+      const SizedBox(height: 16),
+    ];
+
+    final column = constraints.maxHeight < _minColumnHeight
+        ? SingleChildScrollView(
+            child: Column(children: [...header, tiles, ...footer]),
+          )
+        : Column(
+            children: [
+              ...header,
+              Expanded(
+                child: Center(child: SingleChildScrollView(child: tiles)),
+              ),
+              ...footer,
+            ],
+          );
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: column,
         ),
       ),
     );

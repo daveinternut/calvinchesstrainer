@@ -2,6 +2,7 @@ import 'package:dartchess/dartchess.dart';
 import 'package:flutter/material.dart';
 
 import '../models/opening_game_state.dart';
+import '../models/uci_move.dart';
 
 const _classificationStyles = {
   MoveClassification.brilliant: (
@@ -86,9 +87,10 @@ class EvalDeltaOverlay extends StatelessWidget {
     final positions = <Offset>[];
     final moves = <SuggestedMove>[];
     for (final move in topMoves) {
-      if (move.uci.length < 4) continue;
-      final orig = _squareCenter(Square.fromName(move.uci.substring(0, 2)));
-      final dest = _squareCenter(Square.fromName(move.uci.substring(2, 4)));
+      final parsed = parseUci(move.uci);
+      if (parsed == null) continue;
+      final orig = _squareCenter(parsed.from);
+      final dest = _squareCenter(parsed.to);
       var pos = Offset.lerp(orig, dest, 0.6)!;
 
       // Nudge along the arrow if still too close to an earlier badge.

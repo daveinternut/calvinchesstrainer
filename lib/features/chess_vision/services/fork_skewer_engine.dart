@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:dartchess/dartchess.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import '../models/chess_vision_state.dart';
@@ -16,16 +18,21 @@ class ForkSkewerEngine {
     for (final z in Square.values) {
       if (z == kingSquare || z == targetSquare) continue;
 
-      final wkSquare = _findSafeWhiteKingSquare(targetSquare, z, targetRole);
+      final withoutWhiteKing = Board.empty
+          .setPieceAt(z, Piece(color: Side.white, role: whitePiece.role))
+          .setPieceAt(kingSquare, Piece.blackKing)
+          .setPieceAt(targetSquare, Piece(color: Side.black, role: targetRole));
+
+      final wkSquare = _findNeutralWhiteKingSquare(
+        board: withoutWhiteKing,
+        kingSquare: kingSquare,
+        targetSquare: targetSquare,
+        pieceSquare: z,
+      );
       if (wkSquare == null) continue;
 
       final position = _buildPosition(
-        whiteKing: wkSquare,
-        whitePiece: whitePiece.role,
-        pieceSquare: z,
-        blackKing: kingSquare,
-        blackTarget: targetSquare,
-        targetRole: targetRole,
+        withoutWhiteKing.setPieceAt(wkSquare, Piece.whiteKing),
       );
       if (position == null) continue;
 
@@ -86,20 +93,7 @@ class ForkSkewerEngine {
     return false;
   }
 
-  static Position? _buildPosition({
-    required Square whiteKing,
-    required Role whitePiece,
-    required Square pieceSquare,
-    required Square blackKing,
-    required Square blackTarget,
-    required Role targetRole,
-  }) {
-    var board = Board.empty
-        .setPieceAt(whiteKing, Piece.whiteKing)
-        .setPieceAt(pieceSquare, Piece(color: Side.white, role: whitePiece))
-        .setPieceAt(blackKing, Piece.blackKing)
-        .setPieceAt(blackTarget, Piece(color: Side.black, role: targetRole));
-
+  static Position? _buildPosition(Board board) {
     final setup = Setup(
       board: board,
       turn: Side.black,
@@ -115,44 +109,60 @@ class ForkSkewerEngine {
     }
   }
 
-  static const _cornerCandidates = [Square.h1, Square.a1, Square.h8, Square.a8];
+  static const _corners = [Square.h1, Square.a1, Square.h8, Square.a8];
 
-  static Square? _findSafeWhiteKingSquare(
-      Square target, Square candidate, Role targetRole) {
-    for (final corner in _cornerCandidates) {
-      if (corner == target || corner == candidate) continue;
-      if (_isAttackedByPiece(corner, target, targetRole)) continue;
-      if (_isAdjacent(corner, target)) continue;
-      return corner;
+  /// Corners first (where the king has always been parked), then every other
+  /// square as a fallback.
+  static final List<Square> _whiteKingCandidates = [
+    ..._corners,
+    ...Square.values.where((s) => !_corners.contains(s)),
+  ];
+
+  /// The white king never appears in the drill (the board shows only the
+  /// black king and the target), so it must stand where it changes nothing:
+  /// - not in check — real attacks, blockers included;
+  /// - at least 3 squares from the black king, so it takes away none of the
+  ///   king's escape squares;
+  /// - not next to the white piece, the target, or a square where the target
+  ///   could block the check (it would defend the white piece there and stop
+  ///   the black king recapturing);
+  /// - not between the white piece and the target (it would block the fork,
+  ///   the skewer, or the target's own capture of the white piece).
+  ///
+  /// Any square that passes gives the same answer. Corners are tried first;
+  /// a rook or queen target on a corner sees the other corners, so the
+  /// fallback squares keep those positions from being silently skipped.
+  static Square? _findNeutralWhiteKingSquare({
+    required Board board,
+    required Square kingSquare,
+    required Square targetSquare,
+    required Square pieceSquare,
+  }) {
+    final blockSquares = between(pieceSquare, kingSquare).squares.toList();
+    final targetLine = between(pieceSquare, targetSquare);
+
+    for (final square in _whiteKingCandidates) {
+      if (square == kingSquare ||
+          square == targetSquare ||
+          square == pieceSquare) {
+        continue;
+      }
+      if (_distance(square, kingSquare) < 3) continue;
+      if (_distance(square, pieceSquare) < 2 ||
+          _distance(square, targetSquare) < 2) {
+        continue;
+      }
+      if (blockSquares.any((b) => _distance(square, b) < 2)) continue;
+      if (targetLine.has(square)) continue;
+      if (board.attacksTo(square, Side.black).isNotEmpty) continue;
+      return square;
     }
     return null;
   }
 
-  static bool _isAttackedByPiece(Square square, Square pieceSquare, Role role) {
-    switch (role) {
-      case Role.rook:
-        return square.file == pieceSquare.file ||
-            square.rank == pieceSquare.rank;
-      case Role.bishop:
-        final fileDiff = (square.file.value - pieceSquare.file.value).abs();
-        final rankDiff = (square.rank.value - pieceSquare.rank.value).abs();
-        return fileDiff == rankDiff && fileDiff > 0;
-      case Role.queen:
-        return _isAttackedByPiece(square, pieceSquare, Role.rook) ||
-            _isAttackedByPiece(square, pieceSquare, Role.bishop);
-      case Role.knight:
-        final fileDiff = (square.file.value - pieceSquare.file.value).abs();
-        final rankDiff = (square.rank.value - pieceSquare.rank.value).abs();
-        return (fileDiff == 1 && rankDiff == 2) ||
-            (fileDiff == 2 && rankDiff == 1);
-      default:
-        return false;
-    }
-  }
-
-  static bool _isAdjacent(Square a, Square b) {
-    final fileDiff = (a.file.value - b.file.value).abs();
-    final rankDiff = (a.rank.value - b.rank.value).abs();
-    return fileDiff <= 1 && rankDiff <= 1;
-  }
+  /// King-move distance between two squares.
+  static int _distance(Square a, Square b) => max(
+        (a.file.value - b.file.value).abs(),
+        (a.rank.value - b.rank.value).abs(),
+      );
 }

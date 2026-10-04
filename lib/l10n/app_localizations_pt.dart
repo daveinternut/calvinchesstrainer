@@ -334,14 +334,14 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get aboutWhatIsBody =>
-      'Um aplicativo divertido e interativo que ensina os fundamentos do xadrez para crianças. Aprenda colunas, fileiras, casas e movimentos de peças através de exercícios, quizzes e desafios cronometrados — tudo com feedback de áudio e acompanhamento de sequências para te manter motivado!';
+      'Um app divertido e interativo que ensina às crianças os fundamentos do xadrez. A Visão de Xadrez treina você a enxergar num relance garfos, espetos, saltos do cavalo, xeques, capturas e peças desprotegidas. A Notação de Xadrez ensina colunas, fileiras, casas, letras das peças, lances e o valor das peças. No Explorador de Aberturas você experimenta aberturas com dicas de um motor de xadrez de verdade. Som, sequências e recordes salvos mantêm você motivado!';
 
   @override
   String get aboutTrainingModes => 'Modos de Treinamento';
 
   @override
   String get aboutTrainingModesBody =>
-      '• Explorar — aprenda no seu ritmo\n• Prática — teste-se e construa sequências\n• Rodada Rápida — 30 segundos, quantos você consegue?\n• Modo Difícil — esconda as coordenadas para um verdadeiro desafio';
+      '• Explorar — aprenda no seu ritmo\n• Prática — teste-se e construa sequências\n• Rodada Rápida — corra contra o relógio (30 ou 60 segundos) e bata seu recorde\n• Modo Difícil — jogue do lado das pretas';
 
   @override
   String get aboutCredits => 'Créditos e Agradecimentos';
@@ -406,18 +406,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get tacticsComingSoon => 'Treinador de tática em breve';
-
-  @override
-  String get squareTrainer => 'Treinador de Casas';
-
-  @override
-  String get squareComingSoon => 'Treinador de casas em breve';
-
-  @override
-  String get moveTrainer => 'Treinador de Lances';
-
-  @override
-  String get moveComingSoon => 'Treinador de lances em breve';
 
   @override
   String get promptSquare => 'casa';
@@ -520,18 +508,18 @@ class AppLocalizationsPt extends AppLocalizations {
   String get knowYourPieces => 'Know your pieces!';
 
   @override
-  String get whichSideWins => 'Which Side Wins?';
+  String get whichSideWins => 'Qual lado vence?';
 
   @override
   String get whichSideWinsDesc =>
-      'Compare groups of pieces — tap the side worth more!';
+      'Compare grupos de peças — toque no lado que vale mais!';
 
   @override
-  String get tapTheSideWorthMore => 'Tap the side worth more';
+  String get tapTheSideWorthMore => 'Toque no lado que vale mais';
 
   @override
   String get whichSideWinsPracticeDesc =>
-      'Build your streak — difficulty increases as you go!';
+      'Construa sua sequência — a dificuldade aumenta conforme você avança!';
 
   @override
   String get letters => 'Letras';
@@ -630,4 +618,77 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get blackToPlay => 'Pretas jogam';
+
+  @override
+  String get openingExplorer => 'Explorador de Aberturas';
+
+  @override
+  String get startFromOpening => 'Começar de uma abertura';
+
+  @override
+  String get flipBoard => 'Girar tabuleiro';
+
+  @override
+  String get showScores => 'Mostrar pontuações';
+
+  @override
+  String get hideScores => 'Ocultar pontuações';
+
+  @override
+  String get searchOpenings => 'Buscar aberturas…';
+
+  @override
+  String get noOpeningsFound => 'Nenhuma abertura encontrada';
+
+  @override
+  String get popularOpenings => 'Populares';
+
+  @override
+  String get browseByCategory => 'Navegar por categoria';
+
+  @override
+  String get ecoFlankOpenings => 'Aberturas de flanco';
+
+  @override
+  String get ecoSemiOpenGames => 'Aberturas semiabertas';
+
+  @override
+  String get ecoOpenGames => 'Aberturas abertas';
+
+  @override
+  String get ecoClosedGames => 'Fechadas e semifechadas';
+
+  @override
+  String get ecoIndianDefenses => 'Defesas índias';
+
+  @override
+  String get engineUnavailable => 'O motor de xadrez não iniciou.';
+
+  @override
+  String get visionPromptForks =>
+      'Toque em cada casa de onde sua peça ataca o rei e a outra peça!';
+
+  @override
+  String get visionPromptKnightSight =>
+      'Toque em cada casa para onde seu cavalo pode pular!';
+
+  @override
+  String get visionPromptKnightFlight =>
+      'Leve seu cavalo até o anel com o menor número de lances possível!';
+
+  @override
+  String get visionPromptPawnAttack =>
+      'Capture todos os peões — nunca pare numa casa sombreada!';
+
+  @override
+  String get startOver => 'Recomeçar';
+
+  @override
+  String get loadFailed => 'Não foi possível carregar os exercícios.';
+
+  @override
+  String get checkmate => 'Xeque-mate!';
+
+  @override
+  String get draw => 'Empate!';
 }

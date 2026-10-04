@@ -1,11 +1,11 @@
 {
-    "name": "calvinchesstrainer",
-    "short_name": "calvinchesstrainer",
+    "name": "Calvin Chess Trainer",
+    "short_name": "Chess Trainer",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#1B5E20",
+    "theme_color": "#1B5E20",
+    "description": "Chess training for kids: board vision drills, chess notation practice, and tactics \u2014 from Internut Education.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

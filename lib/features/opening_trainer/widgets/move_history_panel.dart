@@ -19,6 +19,9 @@ class MoveHistoryPanel extends StatefulWidget {
   /// When false (challenge mode / engine busy) the panel is display-only.
   final bool enabled;
 
+  /// Rows beyond this height scroll.
+  final double maxHeight;
+
   final void Function(int lineIndex, int ply)? onTapMove;
   final VoidCallback? onBack;
   final VoidCallback? onForward;
@@ -29,10 +32,17 @@ class MoveHistoryPanel extends StatefulWidget {
     required this.activeLineIndex,
     required this.cursorPly,
     this.enabled = true,
+    this.maxHeight = rowExtent * 2.5,
     this.onTapMove,
     this.onBack,
     this.onForward,
   });
+
+  /// Smallest comfortable touch target for small fingers (Apple's 44 pt).
+  static const double touchTarget = 44;
+
+  /// Height of one line row: the touch target + 2 × 1 vertical margin.
+  static const double rowExtent = touchTarget + 2;
 
   @override
   State<MoveHistoryPanel> createState() => _MoveHistoryPanelState();
@@ -41,7 +51,7 @@ class MoveHistoryPanel extends StatefulWidget {
 class _MoveHistoryPanelState extends State<MoveHistoryPanel> {
   /// Width reserved at the left of EVERY row for the nav buttons, so
   /// switching the active line doesn't shift the move chips sideways.
-  static const _navGutterWidth = 56.0;
+  static const _navGutterWidth = MoveHistoryPanel.touchTarget * 2;
 
   final _verticalController = ScrollController();
   final Map<int, ScrollController> _rowControllers = {};
@@ -93,16 +103,14 @@ class _MoveHistoryPanelState extends State<MoveHistoryPanel> {
     }
   }
 
-  /// Approximate row extent: 32 content + 2×1 vertical margin.
-  static const _rowExtent = 34.0;
-
   void _revealActiveRow() {
     if (!_verticalController.hasClients) return;
     final displayIndex = _displayOrder().indexOf(widget.activeLineIndex);
     if (displayIndex < 0) return;
 
-    final rowTop = displayIndex * _rowExtent;
-    final rowBottom = rowTop + _rowExtent;
+    const rowExtent = MoveHistoryPanel.rowExtent;
+    final rowTop = displayIndex * rowExtent;
+    final rowBottom = rowTop + rowExtent;
     final viewport = _verticalController.position.viewportDimension;
     final offset = _verticalController.offset;
 
@@ -169,13 +177,13 @@ class _MoveHistoryPanelState extends State<MoveHistoryPanel> {
   Widget build(BuildContext context) {
     final hasMoves = widget.lines.any((l) => l.moves.isNotEmpty);
     if (!hasMoves) {
-      return const SizedBox(height: 36);
+      return const SizedBox(height: MoveHistoryPanel.rowExtent);
     }
 
     final order = _displayOrder();
 
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 112),
+      constraints: BoxConstraints(maxHeight: widget.maxHeight),
       child: Scrollbar(
         controller: _verticalController,
         thumbVisibility: true,
@@ -230,7 +238,7 @@ class _MoveHistoryPanelState extends State<MoveHistoryPanel> {
             ),
           Expanded(
             child: SizedBox(
-              height: 32,
+              height: MoveHistoryPanel.touchTarget,
               child: SingleChildScrollView(
                 controller: _controllerFor(lineIndex),
                 scrollDirection: Axis.horizontal,
@@ -242,7 +250,10 @@ class _MoveHistoryPanelState extends State<MoveHistoryPanel> {
           ),
           if (line.moves.isNotEmpty) ...[
             const SizedBox(width: 4),
-            _EvalTag(evalPawns: line.moves.last.eval),
+            _EvalTag(
+              evalPawns: line.moves.last.eval,
+              mateIn: line.moves.last.mateIn,
+            ),
           ],
         ],
       ),
@@ -282,7 +293,7 @@ class _MoveHistoryPanelState extends State<MoveHistoryPanel> {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 13,
+          fontSize: 14,
           fontWeight: FontWeight.w600,
           color: Colors.grey.shade600,
         ),
@@ -299,14 +310,14 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Padding(
-        padding: const EdgeInsets.all(3),
+    return SizedBox.square(
+      dimension: MoveHistoryPanel.touchTarget,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
         child: Icon(
           icon,
-          size: 20,
+          size: 28,
           color: onTap != null
               ? Theme.of(context).colorScheme.primary
               : Colors.grey.shade400,
@@ -318,8 +329,9 @@ class _NavButton extends StatelessWidget {
 
 class _EvalTag extends StatelessWidget {
   final double evalPawns;
+  final int? mateIn;
 
-  const _EvalTag({required this.evalPawns});
+  const _EvalTag({required this.evalPawns, this.mateIn});
 
   @override
   Widget build(BuildContext context) {
@@ -330,10 +342,10 @@ class _EvalTag extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        formatEval((evalPawns * 100).round(), null),
+        formatEval((evalPawns * 100).round(), mateIn),
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
           height: 1.1,
         ),
@@ -355,13 +367,18 @@ class _MoveChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(4);
+    final radius = BorderRadius.circular(8);
 
     return InkWell(
       onTap: onTap,
       borderRadius: radius,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        constraints: const BoxConstraints(
+          minWidth: MoveHistoryPanel.touchTarget,
+          minHeight: MoveHistoryPanel.touchTarget,
+        ),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
         decoration: BoxDecoration(
           color: isHighlighted
               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
@@ -371,7 +388,7 @@ class _MoveChip extends StatelessWidget {
         child: Text(
           san,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 15,
             fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w500,
             color: isHighlighted
                 ? Theme.of(context).colorScheme.primary

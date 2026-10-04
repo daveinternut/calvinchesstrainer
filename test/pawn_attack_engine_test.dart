@@ -96,13 +96,13 @@ void main() {
   group('PawnAttackEngine.generatePawns', () {
     test('generates correct number of pawns', () {
       final rng = Random(42);
-      final pawns = PawnAttackEngine.generatePawns(5, rng);
+      final pawns = PawnAttackEngine.generatePawns(5, rng, role: Role.queen);
       expect(pawns.length, 5);
     });
 
     test('pawns are on ranks 2-7', () {
       final rng = Random(42);
-      final pawns = PawnAttackEngine.generatePawns(8, rng);
+      final pawns = PawnAttackEngine.generatePawns(8, rng, role: Role.rook);
       for (final p in pawns) {
         expect(p.rank.value, greaterThanOrEqualTo(1));
         expect(p.rank.value, lessThanOrEqualTo(6));
@@ -110,31 +110,117 @@ void main() {
     });
 
     test('a1 is never occupied by a pawn', () {
-      final rng = Random(42);
       for (var i = 0; i < 20; i++) {
-        final pawns = PawnAttackEngine.generatePawns(8, Random(i));
+        final pawns =
+            PawnAttackEngine.generatePawns(8, Random(i), role: Role.knight);
         expect(pawns, isNot(contains(Square.a1)));
       }
     });
 
-    test('dark squares only mode for bishop', () {
-      final rng = Random(42);
-      final pawns =
-          PawnAttackEngine.generatePawns(5, rng, darkSquaresOnly: true);
-      for (final p in pawns) {
+    test('dark squares only for the bishop (and on request)', () {
+      final bishop =
+          PawnAttackEngine.generatePawns(5, Random(42), role: Role.bishop);
+      final forced = PawnAttackEngine.generatePawns(5, Random(42),
+          role: Role.queen, darkSquaresOnly: true);
+      for (final p in {...bishop, ...forced}) {
         expect(PawnAttackEngine.isDarkSquare(p), isTrue,
             reason: '${p.name} should be a dark square');
       }
     });
 
     test('a1 is not threatened by initial pawns', () {
-      final rng = Random(42);
       for (var i = 0; i < 20; i++) {
-        final pawns = PawnAttackEngine.generatePawns(5, Random(i));
+        final pawns =
+            PawnAttackEngine.generatePawns(5, Random(i), role: Role.queen);
         final threats = PawnAttackEngine.pawnThreats(pawns);
         expect(threats, isNot(contains(Square.a1)),
             reason: 'a1 should not be threatened');
       }
     });
+
+    test('every dealt board is solvable for the piece that plays it', () {
+      // Without the solvability check, about 1 knight board in 30 at level 8
+      // left the knight on a1 with no safe first hop (e.g. pawns c4 + d3).
+      for (final role in [Role.knight, Role.bishop, Role.rook, Role.queen]) {
+        for (var level = 3; level <= 8; level++) {
+          for (var seed = 0; seed < 120; seed++) {
+            final pawns = PawnAttackEngine.generatePawns(
+                level, Random(seed * 31 + level),
+                role: role);
+            expect(pawns, hasLength(level));
+            expect(_referenceSolvable(role, Square.a1, pawns), isTrue,
+                reason: '$role level $level: ${pawns.map((s) => s.name)}');
+          }
+        }
+      }
+    });
   });
+
+  group('PawnAttackEngine.isSolvable', () {
+    test('a knight boxed in on a1 (b3 and c2 attacked) is not solvable', () {
+      final pawns = {Square.c4, Square.d3};
+      expect(
+          PawnAttackEngine.validMoves(
+              role: Role.knight, from: Square.a1, remainingPawns: pawns),
+          isEmpty);
+      expect(
+          PawnAttackEngine.isSolvable(
+              role: Role.knight, from: Square.a1, pawns: pawns),
+          isFalse);
+    });
+
+    test('the same pawns are solvable for a queen', () {
+      expect(
+          PawnAttackEngine.isSolvable(
+              role: Role.queen, from: Square.a1, pawns: {Square.c4, Square.d3}),
+          isTrue);
+    });
+
+    test('no pawns left is solved', () {
+      expect(
+          PawnAttackEngine.isSolvable(
+              role: Role.knight, from: Square.h8, pawns: const {}),
+          isTrue);
+    });
+
+    test('agrees with an independent search on random boards', () {
+      final rng = Random(5);
+      for (final role in [Role.knight, Role.bishop, Role.rook, Role.queen]) {
+        for (var i = 0; i < 150; i++) {
+          final pawns = <Square>{};
+          final count = 1 + rng.nextInt(7);
+          while (pawns.length < count) {
+            final sq = Square(8 + rng.nextInt(48)); // ranks 2–7
+            if (sq != Square.a1) pawns.add(sq);
+          }
+          final from = Square(rng.nextInt(64));
+          if (pawns.contains(from)) continue;
+          expect(
+            PawnAttackEngine.isSolvable(role: role, from: from, pawns: pawns),
+            _referenceSolvable(role, from, pawns),
+            reason: '$role from ${from.name}: ${pawns.map((s) => s.name)}',
+          );
+        }
+      }
+    });
+  });
+}
+
+/// Independent breadth-first search over (square, pawns left).
+bool _referenceSolvable(Role role, Square from, Set<Square> pawns) {
+  final start = (from, pawns.map((s) => s.name).toSet());
+  final seen = <String>{};
+  final queue = <(Square, Set<String>)>[start];
+  while (queue.isNotEmpty) {
+    final (square, left) = queue.removeLast();
+    if (left.isEmpty) return true;
+    final key = '${square.name}:${(left.toList()..sort()).join()}';
+    if (!seen.add(key)) continue;
+    final remaining = left.map(Square.fromName).toSet();
+    for (final to in PawnAttackEngine.validMoves(
+        role: role, from: square, remainingPawns: remaining)) {
+      queue.add((to, {...left}..remove(to.name)));
+    }
+  }
+  return false;
 }

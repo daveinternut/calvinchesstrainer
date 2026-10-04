@@ -35,8 +35,17 @@ MedalLevel medalForMoves(int userMoveCount) {
 class MoveRecord {
   final String fen;
   final String san;
+
+  /// Standard UCI (castling `e1g1`, promotion `e7e8q` — see `uci_move.dart`),
+  /// so the same move always has the same key.
   final String uci;
+
+  /// Eval of the position after this move, in pawns (white's perspective).
   final double eval;
+
+  /// Set when [eval] is a forced mate (see [EvalResult.mateIn]).
+  final int? mateIn;
+
   final bool isUserMove;
   final NormalMove move;
 
@@ -49,16 +58,18 @@ class MoveRecord {
     required this.san,
     required this.uci,
     required this.eval,
+    this.mateIn,
     required this.isUserMove,
     required this.move,
     this.hintsBeforeMove = const [],
   });
 
-  MoveRecord withEval(double newEval) => MoveRecord(
+  MoveRecord withEval(EvalResult result) => MoveRecord(
         fen: fen,
         san: san,
         uci: uci,
-        eval: newEval,
+        eval: result.pawns,
+        mateIn: result.mateIn,
         isUserMove: isUserMove,
         move: move,
         hintsBeforeMove: hintsBeforeMove,
@@ -129,14 +140,20 @@ MoveClassification classifyDelta(double deltaPawns) {
   return MoveClassification.blunder;
 }
 
-/// Format a white-perspective eval for badge display: "+0.3", "-1.2", "M3".
+/// Format a white-perspective eval for badge display: "+0.3", "-1.2", "M3",
+/// "-M2", and "#" for a position that is already checkmate (mate 0 has no
+/// sign of its own — it used to render as "-M0" on a winning move).
 String formatEval(int centipawns, int? mateIn) {
   if (mateIn != null) {
+    if (mateIn == 0) return '#';
     return mateIn > 0 ? 'M$mateIn' : '-M${-mateIn}';
   }
   final pawns = centipawns / 100.0;
   return '${pawns >= 0 ? "+" : ""}${pawns.toStringAsFixed(1)}';
 }
+
+/// How a finished game ended (the board's banner).
+enum GameEnd { checkmate, draw }
 
 /// A dedicated single-move evaluation (selected-piece analysis).
 class MoveEval {
@@ -255,15 +272,24 @@ class OpeningGameState {
   final bool isPlayerTurn;
   final bool isEngineThinking;
   final bool isGameOver;
+
+  /// How the game ended, while [isGameOver] (drives the board banner).
+  final GameEnd? gameEnd;
+
   final bool showPrincipleCard;
   final String? principleText;
 
-  final NormalMove? lastEngineMove;
+  /// The move that produced the board position, for the last-move
+  /// highlight (null at the starting position).
+  final NormalMove? lastMove;
 
   /// Depth the engine has reached in the current analysis (-1 = idle).
   final int engineDepth;
   /// Final depth the current analysis will run to (0 = no analysis running).
   final int engineTargetDepth;
+
+  /// The engine failed to start; the screen offers a Retry.
+  final bool engineUnavailable;
 
   const OpeningGameState({
     required this.mode,
@@ -285,11 +311,13 @@ class OpeningGameState {
     this.isPlayerTurn = true,
     this.isEngineThinking = false,
     this.isGameOver = false,
+    this.gameEnd,
     this.showPrincipleCard = false,
     this.principleText,
-    this.lastEngineMove,
+    this.lastMove,
     this.engineDepth = -1,
     this.engineTargetDepth = 0,
+    this.engineUnavailable = false,
   });
 
   MedalLevel get currentMedal => medalForMoves(userMoveCount);
@@ -330,11 +358,13 @@ class OpeningGameState {
     bool? isPlayerTurn,
     bool? isEngineThinking,
     bool? isGameOver,
+    GameEnd? Function()? gameEnd,
     bool? showPrincipleCard,
     String? Function()? principleText,
-    NormalMove? Function()? lastEngineMove,
+    NormalMove? Function()? lastMove,
     int? engineDepth,
     int? engineTargetDepth,
+    bool? engineUnavailable,
   }) {
     return OpeningGameState(
       mode: mode ?? this.mode,
@@ -356,11 +386,13 @@ class OpeningGameState {
       isPlayerTurn: isPlayerTurn ?? this.isPlayerTurn,
       isEngineThinking: isEngineThinking ?? this.isEngineThinking,
       isGameOver: isGameOver ?? this.isGameOver,
+      gameEnd: gameEnd != null ? gameEnd() : this.gameEnd,
       showPrincipleCard: showPrincipleCard ?? this.showPrincipleCard,
       principleText: principleText != null ? principleText() : this.principleText,
-      lastEngineMove: lastEngineMove != null ? lastEngineMove() : this.lastEngineMove,
+      lastMove: lastMove != null ? lastMove() : this.lastMove,
       engineDepth: engineDepth ?? this.engineDepth,
       engineTargetDepth: engineTargetDepth ?? this.engineTargetDepth,
+      engineUnavailable: engineUnavailable ?? this.engineUnavailable,
     );
   }
 }

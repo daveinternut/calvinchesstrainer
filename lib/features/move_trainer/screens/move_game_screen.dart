@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:chessground/chessground.dart';
 import 'package:dartchess/dartchess.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
@@ -11,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/audio/audio_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/square_name_overlay.dart';
+import '../../../core/widgets/trainer_layout.dart';
 import '../../file_rank_trainer/widgets/milestone_banner.dart';
 import '../../file_rank_trainer/widgets/streak_counter.dart';
 import '../../file_rank_trainer/widgets/timer_bar.dart';
@@ -82,41 +81,28 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
+            TrainerLayout(
+              header: [
+                const SizedBox(height: 12),
+                MovePromptDisplay(gameState: gameState),
+                const SizedBox(height: 12),
+                StreakCounter(
+                  streak: gameState.streak,
+                  bestStreak: gameState.bestStreak,
+                ),
+                const SizedBox(height: 12),
+              ],
+              board: (context, size) => _buildBoard(gameState, size),
+              footer: [
+                if (gameState.mode == MoveTrainerMode.speed &&
+                    gameState.timeRemainingSeconds != null) ...[
                   const SizedBox(height: 12),
-                  MovePromptDisplay(gameState: gameState),
-                  const SizedBox(height: 12),
-                  StreakCounter(
-                    streak: gameState.streak,
-                    bestStreak: gameState.bestStreak,
+                  TimerBar(
+                    remainingSeconds: gameState.timeRemainingSeconds!,
                   ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: Center(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final boardSize = math.min(
-                            constraints.maxWidth,
-                            constraints.maxHeight,
-                          );
-                          return _buildBoard(gameState, boardSize);
-                        },
-                      ),
-                    ),
-                  ),
-                  if (gameState.mode == MoveTrainerMode.speed &&
-                      gameState.timeRemainingSeconds != null) ...[
-                    const SizedBox(height: 12),
-                    TimerBar(
-                      remainingSeconds: gameState.timeRemainingSeconds!,
-                    ),
-                  ],
-                  const SizedBox(height: 16),
                 ],
-              ),
+                const SizedBox(height: 16),
+              ],
             ),
             MilestoneBanner(streak: gameState.streak),
             if (gameState.isGameOver)
@@ -126,8 +112,7 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
                   totalCorrect: gameState.totalCorrect,
                   totalAttempts: gameState.totalAttempts,
                   bestStreak: gameState.bestStreak,
-                  isNewRecord:
-                      ref.read(moveGameProvider.notifier).isNewRecord,
+                  isNewRecord: gameState.isNewRecord,
                   onPlayAgain: () {
                     ref.read(moveGameProvider.notifier).startGame(
                           widget.mode,
@@ -182,9 +167,11 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
         playerSide: orientation == Side.white
             ? PlayerSide.white
             : PlayerSide.black,
+        // Side to move and check come from the position on screen, which
+        // differs from the puzzle position once a correct answer is played.
         sideToMove: gameState.sideToMove ?? Side.white,
         validMoves: validMoves,
-        isCheck: puzzle.position.isCheck,
+        isCheck: gameState.isCheck,
         promotionMove: null,
         onMove: (move, {bool? viaDragAndDrop}) {
           if (move is NormalMove) {

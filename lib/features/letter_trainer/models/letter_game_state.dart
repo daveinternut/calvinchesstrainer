@@ -81,6 +81,9 @@ class LetterGameState {
   final bool isGameOver;
   final bool isWaitingForNext;
 
+  /// Set at game over when the round beat the saved personal best.
+  final bool isNewRecord;
+
   const LetterGameState({
     required this.mode,
     this.isHardMode = false,
@@ -93,6 +96,7 @@ class LetterGameState {
     this.lastFeedback,
     this.isGameOver = false,
     this.isWaitingForNext = false,
+    this.isNewRecord = false,
   });
 
   LetterGameState copyWith({
@@ -107,6 +111,7 @@ class LetterGameState {
     LetterFeedback? Function()? lastFeedback,
     bool? isGameOver,
     bool? isWaitingForNext,
+    bool? isNewRecord,
   }) {
     return LetterGameState(
       mode: mode ?? this.mode,
@@ -123,6 +128,7 @@ class LetterGameState {
       lastFeedback: lastFeedback != null ? lastFeedback() : this.lastFeedback,
       isGameOver: isGameOver ?? this.isGameOver,
       isWaitingForNext: isWaitingForNext ?? this.isWaitingForNext,
+      isNewRecord: isNewRecord ?? this.isNewRecord,
     );
   }
 }

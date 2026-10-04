@@ -5,10 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/audio/audio_service.dart';
 import '../../../core/constants.dart';
 import '../../../core/services/analytics_service.dart';
+import '../../../core/services/personal_bests_service.dart';
 import '../models/file_rank_game_state.dart';
 
+/// Auto-disposed: a round never outlives its screen, so leaving mid-round
+/// cancels both timers (no late prompts, buzzes or "new record" cheers).
 final fileRankGameProvider =
-    NotifierProvider<FileRankGameNotifier, FileRankGameState>(
+    NotifierProvider.autoDispose<FileRankGameNotifier, FileRankGameState>(
   FileRankGameNotifier.new,
 );
 
@@ -16,19 +19,16 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
   final _random = Random();
   Timer? _advanceTimer;
   Timer? _countdownTimer;
-  final Map<String, int> _personalBests = {};
 
   AudioService get _audio => ref.read(audioServiceProvider);
   AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
 
   String get _bestKey =>
-      '${state.subject.name}_${state.mode.name}_${state.isHardMode}';
-
-  int get personalBest => _personalBests[_bestKey] ?? 0;
+      'fileRank.${state.subject.name}_${state.mode.name}_${state.isHardMode}';
 
   @override
   FileRankGameState build() {
-    ref.onDispose(_dispose);
+    ref.onDispose(_cancelTimers);
     return const FileRankGameState(
       subject: TrainerSubject.files,
       mode: TrainerMode.explore,
@@ -256,21 +256,41 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
   }
 
   void _startCountdown() {
+    _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       final remaining = (state.timeRemainingSeconds ?? 0) - 1;
       if (remaining <= 0) {
-        _cancelTimers();
-        state = state.copyWith(
-          timeRemainingSeconds: () => 0,
-          isGameOver: true,
-          isWaitingForNext: true,
-        );
-        _checkAndUpdatePersonalBest();
-        _audio.playGameOver();
+        _endRound();
       } else {
         state = state.copyWith(timeRemainingSeconds: () => remaining);
       }
     });
+  }
+
+  void _endRound() {
+    _cancelTimers();
+    final isNewRecord = state.mode == TrainerMode.speed &&
+        ref.read(personalBestsProvider.notifier).submit(
+              _bestKey,
+              state.totalCorrect,
+            );
+    state = state.copyWith(
+      timeRemainingSeconds: () => 0,
+      isGameOver: true,
+      isWaitingForNext: true,
+      isNewRecord: isNewRecord,
+    );
+    if (isNewRecord) _audio.playNewRecord();
+    _analytics.logFileRankDrillCompleted(
+      subject: state.subject.name,
+      mode: state.mode.name,
+      hardMode: state.isHardMode,
+      totalCorrect: state.totalCorrect,
+      totalAttempts: state.totalAttempts,
+      bestStreak: state.bestStreak,
+      isNewRecord: isNewRecord,
+    );
+    _audio.playGameOver();
   }
 
   void _scheduleAdvance(Duration delay) {
@@ -288,37 +308,8 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
     });
   }
 
-  bool get isNewRecord {
-    if (state.mode != TrainerMode.speed) return false;
-    final best = _personalBests[_bestKey] ?? 0;
-    return state.totalCorrect > best && state.totalCorrect > 0;
-  }
-
-  void _checkAndUpdatePersonalBest() {
-    if (state.mode != TrainerMode.speed) return;
-    final newRecord = state.totalCorrect > (_personalBests[_bestKey] ?? 0) &&
-        state.totalCorrect > 0;
-    if (newRecord) {
-      _personalBests[_bestKey] = state.totalCorrect;
-      _audio.playNewRecord();
-    }
-    _analytics.logFileRankDrillCompleted(
-      subject: state.subject.name,
-      mode: state.mode.name,
-      hardMode: state.isHardMode,
-      totalCorrect: state.totalCorrect,
-      totalAttempts: state.totalAttempts,
-      bestStreak: state.bestStreak,
-      isNewRecord: newRecord,
-    );
-  }
-
   void _cancelTimers() {
     _advanceTimer?.cancel();
     _countdownTimer?.cancel();
-  }
-
-  void _dispose() {
-    _cancelTimers();
   }
 }

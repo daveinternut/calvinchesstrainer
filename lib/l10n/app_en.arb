@@ -131,9 +131,9 @@
   "seePositionMakeMove": "See a position, make the move!",
 
   "aboutWhatIs": "What is Calvin Chess Trainer?",
-  "aboutWhatIsBody": "A fun, interactive app that teaches chess fundamentals to kids. Learn files, ranks, squares, and piece moves through drills, quizzes, and timed challenges — all with audio feedback and streak tracking to keep you motivated!",
+  "aboutWhatIsBody": "A fun, interactive app that teaches chess fundamentals to kids. Chess Vision trains you to spot forks, skewers, knight moves, checks, captures and hanging pieces at a glance. Chess Notation teaches files, ranks, squares, piece letters, moves and piece values. The Opening Explorer lets you try openings with hints from a real chess engine. Audio feedback, streaks and saved personal bests keep you motivated!",
   "aboutTrainingModes": "Training Modes",
-  "aboutTrainingModesBody": "• Explore — learn at your own pace\n• Practice — quiz yourself and build streaks\n• Speed Round — 30 seconds, how many can you get?\n• Hard Mode — hide coordinates for a real challenge",
+  "aboutTrainingModesBody": "• Explore — learn at your own pace\n• Practice — quiz yourself and build streaks\n• Speed Round — race the clock (30 or 60 seconds) and set a new record\n• Hard Mode — play from Black's side of the board",
   "aboutCredits": "Credits & Acknowledgments",
   "aboutCreditsBody": "• Chess puzzles from the Lichess database (CC0 license)\n• Board UI powered by Lichess chessground\n• Chess logic by Lichess dartchess\n• Voice clips by ElevenLabs\n• Built with Flutter & Dart",
   "aboutInspired": "Inspired by Rapid Chess Improvement",
@@ -156,11 +156,6 @@
 
   "tacticsTrainer": "Tactics Trainer",
   "tacticsComingSoon": "Tactics trainer coming soon",
-  "squareTrainer": "Square Trainer",
-  "squareComingSoon": "Square trainer coming soon",
-  "moveTrainer": "Move Trainer",
-  "moveComingSoon": "Move trainer coming soon",
-
   "promptSquare": "square",
   "promptFile": "file",
   "promptRank": "rank",
@@ -231,5 +226,99 @@
   "blitz": "Blitz",
   "scanBlitzDesc": "60 seconds — how many mates can you find?",
   "whiteToPlay": "White to play",
-  "blackToPlay": "Black to play"
+  "blackToPlay": "Black to play",
+
+  "openingExplorer": "Opening Explorer",
+  "@openingExplorer": {
+    "description": "Opening trainer screen title"
+  },
+  "startFromOpening": "Start from an opening",
+  "@startFromOpening": {
+    "description": "Opening picker sheet title and its toolbar tooltip"
+  },
+  "flipBoard": "Flip board",
+  "@flipBoard": {
+    "description": "Toolbar tooltip: flip the board"
+  },
+  "showScores": "Show scores",
+  "@showScores": {
+    "description": "Toolbar tooltip: show move scores"
+  },
+  "hideScores": "Hide scores",
+  "@hideScores": {
+    "description": "Toolbar tooltip: hide move scores"
+  },
+  "searchOpenings": "Search openings…",
+  "@searchOpenings": {
+    "description": "Opening picker search field hint"
+  },
+  "noOpeningsFound": "No openings found",
+  "@noOpeningsFound": {
+    "description": "Opening picker: search found nothing"
+  },
+  "popularOpenings": "Popular",
+  "@popularOpenings": {
+    "description": "Opening picker section heading"
+  },
+  "browseByCategory": "Browse by category",
+  "@browseByCategory": {
+    "description": "Opening picker section heading"
+  },
+  "ecoFlankOpenings": "Flank Openings",
+  "@ecoFlankOpenings": {
+    "description": "ECO category A"
+  },
+  "ecoSemiOpenGames": "Semi-Open Games",
+  "@ecoSemiOpenGames": {
+    "description": "ECO category B"
+  },
+  "ecoOpenGames": "Open Games",
+  "@ecoOpenGames": {
+    "description": "ECO category C"
+  },
+  "ecoClosedGames": "Closed & Semi-Closed",
+  "@ecoClosedGames": {
+    "description": "ECO category D"
+  },
+  "ecoIndianDefenses": "Indian Defenses",
+  "@ecoIndianDefenses": {
+    "description": "ECO category E"
+  },
+  "engineUnavailable": "The chess engine didn't start.",
+  "@engineUnavailable": {
+    "description": "Shown when Stockfish fails to start; paired with the Retry button"
+  },
+  "visionPromptForks": "Tap every square where your piece attacks the king and the other piece!",
+  "@visionPromptForks": {
+    "description": "Forks & Skewers in-drill instruction"
+  },
+  "visionPromptKnightSight": "Tap every square your knight can jump to!",
+  "@visionPromptKnightSight": {
+    "description": "Knight Sight in-drill instruction"
+  },
+  "visionPromptKnightFlight": "Jump your knight to the ring in as few moves as you can!",
+  "@visionPromptKnightFlight": {
+    "description": "Knight Flight in-drill instruction"
+  },
+  "visionPromptPawnAttack": "Capture every pawn — never stop on a shaded square!",
+  "@visionPromptPawnAttack": {
+    "description": "Pawn Attack in-drill instruction (shaded squares are the ones pawns attack)"
+  },
+  "startOver": "Start over",
+  "@startOver": {
+    "description": "Button: reset the current board to its starting position"
+  },
+
+  "loadFailed": "Couldn't load the puzzles.",
+  "@loadFailed": {
+    "description": "Shown when a drill could not load its puzzle file; paired with the Retry button"
+  },
+  "checkmate": "Checkmate!",
+  "@checkmate": {
+    "description": "Opening Explorer: the game ended in checkmate"
+  },
+  "draw": "Draw!",
+  "@draw": {
+    "description": "Opening Explorer: the game ended in a draw (stalemate, repetition, etc.)"
+  }
 }

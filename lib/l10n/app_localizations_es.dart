@@ -338,14 +338,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get aboutWhatIsBody =>
-      'Una app divertida e interactiva que enseña los fundamentos del ajedrez a los niños. Aprende columnas, filas, casillas y movimientos de piezas a través de ejercicios, cuestionarios y desafíos cronometrados — ¡todo con retroalimentación de audio y seguimiento de rachas para mantenerte motivado!';
+      'Una app divertida e interactiva que enseña a los niños los fundamentos del ajedrez. Visión de Ajedrez te entrena para ver de un vistazo horquillas, enfiladas, saltos del caballo, jaques, capturas y piezas colgadas. Notación de Ajedrez te enseña columnas, filas, casillas, letras de las piezas, jugadas y el valor de las piezas. Con el Explorador de Aperturas pruebas aperturas con pistas de un motor de ajedrez de verdad. ¡El audio, las rachas y tus récords guardados te mantienen motivado!';
 
   @override
   String get aboutTrainingModes => 'Modos de Entrenamiento';
 
   @override
   String get aboutTrainingModesBody =>
-      '• Explorar — aprende a tu ritmo\n• Práctica — ponte a prueba y construye rachas\n• Ronda Rápida — 30 segundos, ¿cuántos puedes resolver?\n• Modo Difícil — oculta las coordenadas para un verdadero desafío';
+      '• Explorar — aprende a tu ritmo\n• Práctica — ponte a prueba y construye rachas\n• Ronda Rápida — corre contra el reloj (30 o 60 segundos) y bate tu récord\n• Modo Difícil — juega desde el lado de las negras';
 
   @override
   String get aboutCredits => 'Créditos y Agradecimientos';
@@ -410,18 +410,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tacticsComingSoon => 'Entrenador de táctica próximamente';
-
-  @override
-  String get squareTrainer => 'Entrenador de Casillas';
-
-  @override
-  String get squareComingSoon => 'Entrenador de casillas próximamente';
-
-  @override
-  String get moveTrainer => 'Entrenador de Jugadas';
-
-  @override
-  String get moveComingSoon => 'Entrenador de jugadas próximamente';
 
   @override
   String get promptSquare => 'casilla';
@@ -524,18 +512,18 @@ class AppLocalizationsEs extends AppLocalizations {
   String get knowYourPieces => 'Know your pieces!';
 
   @override
-  String get whichSideWins => 'Which Side Wins?';
+  String get whichSideWins => '¿Qué lado gana?';
 
   @override
   String get whichSideWinsDesc =>
-      'Compare groups of pieces — tap the side worth more!';
+      'Compara grupos de piezas — ¡toca el lado que vale más!';
 
   @override
-  String get tapTheSideWorthMore => 'Tap the side worth more';
+  String get tapTheSideWorthMore => 'Toca el lado que vale más';
 
   @override
   String get whichSideWinsPracticeDesc =>
-      'Build your streak — difficulty increases as you go!';
+      'Construye tu racha — ¡la dificultad aumenta sobre la marcha!';
 
   @override
   String get letters => 'Letras';
@@ -632,4 +620,77 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get blackToPlay => 'Juegan negras';
+
+  @override
+  String get openingExplorer => 'Explorador de Aperturas';
+
+  @override
+  String get startFromOpening => 'Empezar desde una apertura';
+
+  @override
+  String get flipBoard => 'Girar tablero';
+
+  @override
+  String get showScores => 'Mostrar puntuaciones';
+
+  @override
+  String get hideScores => 'Ocultar puntuaciones';
+
+  @override
+  String get searchOpenings => 'Buscar aperturas…';
+
+  @override
+  String get noOpeningsFound => 'No se encontraron aperturas';
+
+  @override
+  String get popularOpenings => 'Populares';
+
+  @override
+  String get browseByCategory => 'Explorar por categoría';
+
+  @override
+  String get ecoFlankOpenings => 'Aperturas de flanco';
+
+  @override
+  String get ecoSemiOpenGames => 'Aperturas semiabiertas';
+
+  @override
+  String get ecoOpenGames => 'Aperturas abiertas';
+
+  @override
+  String get ecoClosedGames => 'Cerradas y semicerradas';
+
+  @override
+  String get ecoIndianDefenses => 'Defensas indias';
+
+  @override
+  String get engineUnavailable => 'El motor de ajedrez no se inició.';
+
+  @override
+  String get visionPromptForks =>
+      '¡Toca cada casilla desde la que tu pieza ataca al rey y a la otra pieza!';
+
+  @override
+  String get visionPromptKnightSight =>
+      '¡Toca cada casilla a la que puede saltar tu caballo!';
+
+  @override
+  String get visionPromptKnightFlight =>
+      '¡Lleva tu caballo al anillo en el menor número de saltos posible!';
+
+  @override
+  String get visionPromptPawnAttack =>
+      '¡Captura todos los peones — nunca te detengas en una casilla sombreada!';
+
+  @override
+  String get startOver => 'Empezar de nuevo';
+
+  @override
+  String get loadFailed => 'No se pudieron cargar los ejercicios.';
+
+  @override
+  String get checkmate => '¡Jaque mate!';
+
+  @override
+  String get draw => '¡Tablas!';
 }

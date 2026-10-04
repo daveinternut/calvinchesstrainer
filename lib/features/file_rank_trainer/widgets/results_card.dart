@@ -23,84 +23,95 @@ class ResultsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // Capped in width so it stays a card on an iPad, and scrollable so a
+    // short landscape window can't overflow it.
     return Center(
-      child: Card(
-        margin: const EdgeInsets.all(32),
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isNewRecord) ...[
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.correctGreen,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    l10n.newRecord,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              Text(
-                l10n.timesUp,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 24),
-              _StatRow(label: l10n.correct, value: '$totalCorrect'),
-              const SizedBox(height: 10),
-              _StatRow(
-                label: l10n.accuracy,
-                value: totalAttempts > 0
-                    ? '${(totalCorrect / totalAttempts * 100).round()}%'
-                    : '-',
-              ),
-              const SizedBox(height: 10),
-              _StatRow(label: l10n.bestStreak, value: '$bestStreak'),
-              const SizedBox(height: 28),
-              Row(
+      child: SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: Card(
+            margin: const EdgeInsets.all(32),
+            elevation: 8,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: onBack,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  if (isNewRecord) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.correctGreen,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        l10n.newRecord,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
-                      child: Text(l10n.menu),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  Text(
+                    l10n.timesUp,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: FilledButton(
-                      onPressed: onPlayAgain,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 24),
+                  _StatRow(label: l10n.correct, value: '$totalCorrect'),
+                  const SizedBox(height: 10),
+                  _StatRow(
+                    label: l10n.accuracy,
+                    value: totalAttempts > 0
+                        ? '${(totalCorrect / totalAttempts * 100).round()}%'
+                        : '-',
+                  ),
+                  const SizedBox(height: 10),
+                  _StatRow(label: l10n.bestStreak, value: '$bestStreak'),
+                  const SizedBox(height: 28),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: onBack,
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(l10n.menu),
                         ),
                       ),
-                      child: Text(l10n.playAgain),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: FilledButton(
+                          onPressed: onPlayAgain,
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(l10n.playAgain),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -125,10 +136,7 @@ class _StatRow extends StatelessWidget {
         ),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
       ],
     );

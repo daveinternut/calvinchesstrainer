@@ -1,8 +1,12 @@
+import 'dart:collection';
 import 'dart:math';
 import 'package:dartchess/dartchess.dart';
 
 class PawnAttackEngine {
   PawnAttackEngine._();
+
+  /// Where the player's piece starts every board.
+  static const Square startSquare = Square.a1;
 
   static Set<Square> pawnThreats(Set<Square> pawns) {
     final threats = <Square>{};
@@ -84,19 +88,69 @@ class PawnAttackEngine {
     return (sq.file.value + sq.rank.value) % 2 == 0;
   }
 
+  /// Whether a [role] standing on [from] can still capture every pawn in
+  /// [pawns] (breadth-first search over piece square × pawns left: at most
+  /// 64 × 2⁸ states for the 8-pawn top level, so it is cheap).
+  ///
+  /// Line pieces always have a safe square to retreat to (ranks 7–8 are never
+  /// attacked); a knight can be dealt a board with no safe first hop, or walk
+  /// itself into a dead end.
+  static bool isSolvable({
+    required Role role,
+    required Square from,
+    required Set<Square> pawns,
+  }) {
+    if (pawns.isEmpty) return true;
+    final pawnList = pawns.toList(growable: false);
+    final pawnIndex = {
+      for (var i = 0; i < pawnList.length; i++) pawnList[i]: i,
+    };
+    final allPawns = (1 << pawnList.length) - 1;
+    final seen = <int>{(allPawns << 6) | from.value};
+    final queue = Queue<(Square, int)>()..add((from, allPawns));
+
+    while (queue.isNotEmpty) {
+      final (square, mask) = queue.removeFirst();
+      final remaining = {
+        for (var i = 0; i < pawnList.length; i++)
+          if (mask & (1 << i) != 0) pawnList[i],
+      };
+      for (final to in validMoves(
+        role: role,
+        from: square,
+        remainingPawns: remaining,
+      )) {
+        final index = pawnIndex[to];
+        final next = (index != null && mask & (1 << index) != 0)
+            ? mask & ~(1 << index)
+            : mask;
+        if (next == 0) return true;
+        if (seen.add((next << 6) | to.value)) queue.add((to, next));
+      }
+    }
+    return false;
+  }
+
+  /// Deals [count] pawns for a [role] starting on [startSquare]: ranks 2–7,
+  /// never attacking the start square, and always solvable for that piece
+  /// (dark squares only for the bishop, which can never reach a light one).
   static Set<Square> generatePawns(
     int count,
     Random random, {
-    bool darkSquaresOnly = false,
+    required Role role,
+    bool? darkSquaresOnly,
   }) {
-    for (var attempt = 0; attempt < 50; attempt++) {
-      final pawns = _tryGeneratePawns(count, random,
-          darkSquaresOnly: darkSquaresOnly);
-      if (pawns != null) return pawns;
+    final darkOnly = darkSquaresOnly ?? role == Role.bishop;
+    for (var attempt = 0; attempt < 500; attempt++) {
+      final pawns = _tryGeneratePawns(count, random, darkSquaresOnly: darkOnly);
+      if (pawns != null &&
+          isSolvable(role: role, from: startSquare, pawns: pawns)) {
+        return pawns;
+      }
     }
-    return _tryGeneratePawns(count, random,
-            darkSquaresOnly: darkSquaresOnly) ??
-        {Square.d4};
+    // Unreachable in practice (over 96% of random boards are solvable even
+    // for the knight); a lone d4 pawn is solvable for every piece.
+    return {Square.d4};
   }
 
   static Set<Square>? _tryGeneratePawns(
@@ -107,7 +161,7 @@ class PawnAttackEngine {
     final candidates = Square.values.where((sq) {
       final r = sq.rank.value;
       if (r < 1 || r > 6) return false;
-      if (sq == Square.a1) return false;
+      if (sq == startSquare) return false;
       if (darkSquaresOnly && !isDarkSquare(sq)) return false;
       return true;
     }).toList();
@@ -123,7 +177,7 @@ class PawnAttackEngine {
     if (pawns.length < count) return null;
 
     final threats = pawnThreats(pawns);
-    if (threats.contains(Square.a1)) return null;
+    if (threats.contains(startSquare)) return null;
 
     return pawns;
   }

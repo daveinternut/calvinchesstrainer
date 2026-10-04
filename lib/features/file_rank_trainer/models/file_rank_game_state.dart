@@ -2,7 +2,6 @@ import 'package:chessground/chessground.dart';
 import 'package:dartchess/dartchess.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import '../../../core/board_utils.dart';
-import '../../../core/constants.dart';
 import '../../../core/theme/app_theme.dart';
 
 /// `moves`, `letters` and `pieceValue` are menu-only subjects: the notation
@@ -49,6 +48,9 @@ class FileRankGameState {
   final bool isGameOver;
   final bool isWaitingForNext;
 
+  /// Set at game over when the round beat the saved personal best.
+  final bool isNewRecord;
+
   const FileRankGameState({
     required this.subject,
     required this.mode,
@@ -65,6 +67,7 @@ class FileRankGameState {
     this.lastFeedback,
     this.isGameOver = false,
     this.isWaitingForNext = false,
+    this.isNewRecord = false,
   });
 
   FileRankGameState copyWith({
@@ -83,6 +86,7 @@ class FileRankGameState {
     AnswerFeedback? Function()? lastFeedback,
     bool? isGameOver,
     bool? isWaitingForNext,
+    bool? isNewRecord,
   }) {
     return FileRankGameState(
       subject: subject ?? this.subject,
@@ -108,6 +112,7 @@ class FileRankGameState {
           lastFeedback != null ? lastFeedback() : this.lastFeedback,
       isGameOver: isGameOver ?? this.isGameOver,
       isWaitingForNext: isWaitingForNext ?? this.isWaitingForNext,
+      isNewRecord: isNewRecord ?? this.isNewRecord,
     );
   }
 
@@ -161,17 +166,4 @@ class FileRankGameState {
 
     return highlights;
   }
-
-  String get promptLabel {
-    if (subject == TrainerSubject.squares) {
-      return 'square ${currentPrompt ?? ''}';
-    }
-    if (currentPromptIsFile) {
-      return 'file ${currentPrompt ?? ''}';
-    }
-    return 'rank ${currentPrompt ?? ''}';
-  }
-
-  static String fileNameAt(int index) => ChessConstants.files[index];
-  static String rankNameAt(int index) => ChessConstants.ranks[index];
 }

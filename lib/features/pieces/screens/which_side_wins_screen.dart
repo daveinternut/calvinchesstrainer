@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/audio/audio_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../file_rank_trainer/widgets/streak_counter.dart';
 import '../../file_rank_trainer/widgets/timer_bar.dart';
@@ -25,12 +26,28 @@ class WhichSideWinsScreen extends ConsumerStatefulWidget {
 }
 
 class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
+  static const double _maxContentWidth = 900;
+
+  /// Below this height the panels can't share the page with the prompt,
+  /// streak and timer, so the page scrolls with fixed-height panels instead.
+  static const double _minColumnHeight = 460;
+  static const double _scrollingPanelHeight = 260;
+
+  late final AudioService _audioService;
+
   @override
   void initState() {
     super.initState();
+    _audioService = ref.read(audioServiceProvider);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(whichSideWinsProvider.notifier).startGame(widget.mode);
     });
+  }
+
+  @override
+  void dispose() {
+    _audioService.stop();
+    super.dispose();
   }
 
   @override
@@ -65,42 +82,9 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.tapTheSideWorthMore,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  StreakCounter(
-                    streak: gameState.streak,
-                    bestStreak: gameState.bestStreak,
-                  ),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: _buildPuzzleArea(gameState),
-                  ),
-                  if (gameState.mode == WhichSideWinsMode.speed &&
-                      gameState.timeRemainingSeconds != null) ...[
-                    const SizedBox(height: 12),
-                    TimerBar(
-                      remainingSeconds: gameState.timeRemainingSeconds!,
-                    ),
-                  ],
-                  if (gameState.mode == WhichSideWinsMode.practice)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: _buildDifficultyIndicator(gameState),
-                    ),
-                  const SizedBox(height: 16),
-                ],
-              ),
+            LayoutBuilder(
+              builder: (context, constraints) =>
+                  _buildContent(gameState, constraints, l10n),
             ),
             if (gameState.isGameOver)
               Container(
@@ -109,8 +93,7 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
                   totalCorrect: gameState.totalCorrect,
                   totalAttempts: gameState.totalAttempts,
                   bestStreak: gameState.bestStreak,
-                  isNewRecord:
-                      ref.read(whichSideWinsProvider.notifier).isNewRecord,
+                  isNewRecord: gameState.isNewRecord,
                   onPlayAgain: () {
                     ref
                         .read(whichSideWinsProvider.notifier)
@@ -120,6 +103,77 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// One centred column, capped in width so a landscape iPad keeps the two
+  /// sides close enough to compare at a glance.
+  Widget _buildContent(
+    WhichSideWinsState gameState,
+    BoxConstraints constraints,
+    AppLocalizations l10n,
+  ) {
+    final header = <Widget>[
+      const SizedBox(height: 8),
+      Text(
+        l10n.tapTheSideWorthMore,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+        textAlign: TextAlign.center,
+      ),
+      const SizedBox(height: 8),
+      StreakCounter(
+        streak: gameState.streak,
+        bestStreak: gameState.bestStreak,
+      ),
+      const SizedBox(height: 8),
+    ];
+    final footer = <Widget>[
+      if (gameState.mode == WhichSideWinsMode.speed &&
+          gameState.timeRemainingSeconds != null) ...[
+        const SizedBox(height: 12),
+        TimerBar(
+          remainingSeconds: gameState.timeRemainingSeconds!,
+        ),
+      ],
+      if (gameState.mode == WhichSideWinsMode.practice)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: _buildDifficultyIndicator(gameState),
+        ),
+      const SizedBox(height: 16),
+    ];
+
+    final column = constraints.maxHeight < _minColumnHeight
+        ? SingleChildScrollView(
+            child: Column(
+              children: [
+                ...header,
+                SizedBox(
+                  height: _scrollingPanelHeight,
+                  child: _buildPuzzleArea(gameState),
+                ),
+                ...footer,
+              ],
+            ),
+          )
+        : Column(
+            children: [
+              ...header,
+              Expanded(child: _buildPuzzleArea(gameState)),
+              ...footer,
+            ],
+          );
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: column,
         ),
       ),
     );
@@ -137,6 +191,8 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
     final rightColor = _panelColor(
       gameState, AnswerSide.right, puzzle.correctSide,
     );
+    // After an answer, show what each side is worth.
+    final showTotals = gameState.lastResult != null;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -148,6 +204,7 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
               .handleAnswer(AnswerSide.left),
           backgroundColor: leftColor,
           enabled: !gameState.isWaitingForNext,
+          total: showTotals ? puzzle.leftValue : null,
         ),
         const VsDivider(),
         PieceGroupPanel(
@@ -157,6 +214,7 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
               .handleAnswer(AnswerSide.right),
           backgroundColor: rightColor,
           enabled: !gameState.isWaitingForNext,
+          total: showTotals ? puzzle.rightValue : null,
         ),
       ],
     );

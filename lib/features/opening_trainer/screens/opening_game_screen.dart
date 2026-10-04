@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:chessground/chessground.dart';
 import 'package:dartchess/dartchess.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
@@ -9,13 +10,22 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/services/opening_book_service.dart';
 import '../../../core/theme/app_theme.dart';
-import '../widgets/opening_picker.dart';
+import '../../../core/widgets/trainer_layout.dart';
 import '../models/opening_game_state.dart';
+import '../models/uci_move.dart';
 import '../providers/opening_game_provider.dart';
 import '../widgets/eval_bar.dart';
 import '../widgets/eval_delta_overlay.dart';
 import '../widgets/move_history_panel.dart';
+import '../widgets/opening_picker.dart';
 import '../widgets/thinking_indicator.dart';
+
+/// Two lines of the opening name, reserved even when there is none, so the
+/// board never resizes as names come and go.
+const _kOpeningNameFontSize = 14.0;
+const _kOpeningNameLineHeight = 1.3;
+const _kOpeningNameHeight =
+    _kOpeningNameFontSize * _kOpeningNameLineHeight * 2 + 2;
 
 class OpeningGameScreen extends ConsumerStatefulWidget {
   final OpeningMode mode;
@@ -41,12 +51,26 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
   Square? _selectedPieceSquare;
 
   /// Dedicated per-move evaluations for the selected piece, filled in
-  /// progressively as the engine finishes each move. Key = UCI string.
+  /// progressively as the engine finishes each move. Key = standard UCI
+  /// (`e1g1`, `e7e8q`), matching the engine's hint keys.
   Map<String, MoveEval> _extraMoveEvals = {};
+
+  /// The selected piece's evaluation session has ended — finished,
+  /// cancelled or failed — so nothing more will arrive: squares without a
+  /// score stop showing "thinking".
+  bool _pieceAnalysisDone = false;
 
   /// Identifies the current evaluation session, so a superseded session's
   /// late callbacks can't overwrite newer results.
   int _evalSession = 0;
+
+  /// Stops the engine while the app is in the background, and picks the
+  /// analysis back up when it returns.
+  late final AppLifecycleListener _lifecycle;
+
+  /// The opening picker is open (or opening): one at a time, and no
+  /// analysis restarts behind it.
+  bool _pickerOpen = false;
 
   /// The board position is about to change — drop the selected piece and
   /// its now-stale evaluations.
@@ -54,6 +78,7 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
     setState(() {
       _selectedPieceSquare = null;
       _extraMoveEvals = {};
+      _pieceAnalysisDone = false;
       _evalSession++;
     });
   }
@@ -61,7 +86,12 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
   @override
   void initState() {
     super.initState();
+    _lifecycle = AppLifecycleListener(
+      onHide: _onAppHidden,
+      onShow: _onAppShown,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       ref.read(openingGameProvider.notifier).startGame(
             widget.mode,
             widget.difficulty,
@@ -70,20 +100,54 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
     });
   }
 
-  Future<void> _showOpeningPicker(BuildContext context) async {
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    _evalSession++;
+    super.dispose();
+  }
+
+  void _onAppHidden() {
+    if (!mounted) return;
+    if (_selectedPieceSquare != null) _clearAnalysisSelection();
+    ref.read(openingGameProvider.notifier).pauseAnalysis();
+  }
+
+  void _onAppShown() {
+    if (!mounted || _pickerOpen) return;
+    ref.read(openingGameProvider.notifier).resumeHints();
+  }
+
+  Future<void> _showOpeningPicker() async {
+    if (_pickerOpen) return;
+    _pickerOpen = true;
+    try {
+      await _runOpeningPicker();
+    } finally {
+      _pickerOpen = false;
+    }
+  }
+
+  Future<void> _runOpeningPicker() async {
     final notifier = ref.read(openingGameProvider.notifier);
+    final navigator = Navigator.of(context);
+    final bookService = ref.read(openingBookServiceProvider);
+
+    // Drop the piece analysis first: pausing ends its session, and squares
+    // still waiting for a score would otherwise keep "thinking" forever.
+    _clearAnalysisSelection();
     await notifier.pauseHints();
     if (!mounted) return;
 
-    final bookService = ref.read(openingBookServiceProvider);
-    final selectedPgn = await Navigator.of(context).push<String>(
+    final selectedPgn = await navigator.push<String>(
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (ctx) => Scaffold(
           appBar: AppBar(
-            title: const Text('Start from Opening'),
+            title: Text(AppLocalizations.of(ctx)!.startFromOpening),
             leading: IconButton(
               icon: const Icon(Icons.close),
+              tooltip: MaterialLocalizations.of(ctx).closeButtonTooltip,
               onPressed: () => Navigator.of(ctx).pop(),
             ),
           ),
@@ -99,11 +163,6 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
 
     if (!mounted) return;
     if (selectedPgn != null) {
-      setState(() {
-        _selectedPieceSquare = null;
-        _extraMoveEvals = {};
-        _evalSession++;
-      });
       notifier.startFromOpening(selectedPgn);
     } else {
       notifier.resumeHints();
@@ -113,23 +172,25 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
   @override
   Widget build(BuildContext context) {
     final gameState = ref.watch(openingGameProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Opening Explorer'),
+        title: Text(l10n.openingExplorer),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           onPressed: () => context.pop(),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.menu_book_rounded, size: 20),
-            tooltip: 'Start from opening',
-            onPressed: () => _showOpeningPicker(context),
+            icon: const Icon(Icons.menu_book_rounded),
+            tooltip: l10n.startFromOpening,
+            onPressed: _showOpeningPicker,
           ),
           IconButton(
-            icon: const Icon(Icons.swap_vert_rounded, size: 20),
-            tooltip: 'Flip board',
+            icon: const Icon(Icons.swap_vert_rounded),
+            tooltip: l10n.flipBoard,
             onPressed: () => setState(() {
               _orientation = _orientation == Side.white
                   ? Side.black
@@ -137,99 +198,146 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
             }),
           ),
           IconButton(
-            icon: Icon(
-              _showScores ? Icons.tag : Icons.tag_outlined,
-              size: 20,
-            ),
-            tooltip: _showScores ? 'Hide scores' : 'Show scores',
+            icon: Icon(_showScores ? Icons.tag : Icons.tag_outlined),
+            tooltip: _showScores ? l10n.hideScores : l10n.showScores,
             onPressed: () => setState(() => _showScores = !_showScores),
           ),
         ],
       ),
       body: SafeArea(
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  if (gameState.openingName != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      gameState.openingName!,
-                      style:
-                          Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
-                              ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: EvalBar(eval: gameState.currentEval),
-                      ),
-                      if (gameState.engineTargetDepth > 0) ...[
-                        const SizedBox(width: 8),
-                        ThinkingIndicator(
-                          depth: gameState.engineDepth,
-                          targetDepth: gameState.engineTargetDepth,
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: Center(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final boardSize = math.min(
-                            constraints.maxWidth,
-                            constraints.maxHeight,
-                          );
-                          return _buildBoard(gameState, boardSize);
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  MoveHistoryPanel(
-                    lines: gameState.lines,
-                    activeLineIndex: gameState.activeLineIndex,
-                    cursorPly: gameState.cursorPly,
-                    enabled: gameState.mode == OpeningMode.practice &&
-                        !gameState.isEngineThinking,
-                    onTapMove: (lineIndex, ply) {
-                      _clearAnalysisSelection();
-                      ref
-                          .read(openingGameProvider.notifier)
-                          .goTo(lineIndex, ply);
-                    },
-                    onBack: () {
-                      _clearAnalysisSelection();
-                      ref.read(openingGameProvider.notifier).scrubBack();
-                    },
-                    onForward: () {
-                      _clearAnalysisSelection();
-                      ref.read(openingGameProvider.notifier).scrubForward();
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                ],
-              ),
-            ),
-          ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final landscape = TrainerLayout.isLandscape(constraints);
+            return TrainerLayout(
+              header: _buildHeader(gameState, l10n),
+              board: (context, size) => _buildBoard(gameState, size),
+              footer: _buildFooter(gameState, landscape: landscape),
+            );
+          },
         ),
       ),
     );
   }
 
+  List<Widget> _buildHeader(OpeningGameState gameState, AppLocalizations l10n) {
+    return [
+      const SizedBox(height: 4),
+      SizedBox(
+        height: _kOpeningNameHeight,
+        child: Center(
+          child: Text(
+            gameState.openingName ?? '',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: _kOpeningNameFontSize,
+              height: _kOpeningNameLineHeight,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 4),
+      Row(
+        children: [
+          Expanded(
+            child: EvalBar(eval: gameState.currentEval),
+          ),
+          if (gameState.engineTargetDepth > 0) ...[
+            const SizedBox(width: 8),
+            ThinkingIndicator(
+              depth: gameState.engineDepth,
+              targetDepth: gameState.engineTargetDepth,
+            ),
+          ],
+        ],
+      ),
+      if (gameState.engineUnavailable) _buildEngineBanner(l10n),
+      const SizedBox(height: 8),
+    ];
+  }
+
+  Widget _buildEngineBanner(AppLocalizations l10n) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(left: 12, right: 4),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        border: Border.all(color: Colors.orange.shade200),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded,
+              color: Colors.orange.shade800, size: 22),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              l10n.engineUnavailable,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(minimumSize: const Size(64, 44)),
+            onPressed: () =>
+                ref.read(openingGameProvider.notifier).retryEngine(),
+            child: Text(l10n.retry),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildFooter(
+    OpeningGameState gameState, {
+    required bool landscape,
+  }) {
+    final panel = MoveHistoryPanel(
+      lines: gameState.lines,
+      activeLineIndex: gameState.activeLineIndex,
+      cursorPly: gameState.cursorPly,
+      // Portrait: a fixed height (rows scroll), so the board never resizes
+      // as variations appear. Landscape: the side panel has room for more.
+      maxHeight: landscape
+          ? MoveHistoryPanel.rowExtent * 6
+          : MoveHistoryPanel.rowExtent * 2.5,
+      enabled: gameState.mode == OpeningMode.practice &&
+          !gameState.isEngineThinking,
+      onTapMove: (lineIndex, ply) {
+        _clearAnalysisSelection();
+        ref.read(openingGameProvider.notifier).goTo(lineIndex, ply);
+      },
+      onBack: () {
+        _clearAnalysisSelection();
+        ref.read(openingGameProvider.notifier).scrubBack();
+      },
+      onForward: () {
+        _clearAnalysisSelection();
+        ref.read(openingGameProvider.notifier).scrubForward();
+      },
+    );
+    return [
+      const SizedBox(height: 8),
+      if (landscape)
+        panel
+      else
+        SizedBox(
+          height: MoveHistoryPanel.rowExtent * 2.5,
+          child: Align(alignment: Alignment.topCenter, child: panel),
+        ),
+      const SizedBox(height: 12),
+    ];
+  }
+
   Widget _buildBoard(OpeningGameState gameState, double boardSize) {
     final orientation = _orientation;
-    final provider = ref.read(openingGameProvider.notifier);
-    final position = provider.currentPosition;
+    final position = ref.read(openingGameProvider.notifier).currentPosition;
     final isPractice = gameState.mode == OpeningMode.practice;
 
     final isInteractive = !gameState.isGameOver &&
@@ -240,12 +348,11 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
         ? makeLegalMoves(position)
         : const IMapConst<Square, ISet<Square>>({});
 
-    final sideToMove =
-        position.turn == Side.white ? Side.white : Side.black;
-
+    // Practice plays both sides. Challenge: the side the player chose —
+    // never the board's orientation, which the flip button changes.
     final playerSide = isPractice
         ? PlayerSide.both
-        : (orientation == Side.white
+        : (gameState.playerColor == Side.white
             ? PlayerSide.white
             : PlayerSide.black);
 
@@ -260,13 +367,11 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
         ? const ISetConst<Shape>({})
         : _buildHintArrows(gameState);
 
-    final moveHighlights = pieceAnalysis?.highlights;
-
     final board = Chessboard(
       size: boardSize,
       orientation: orientation,
       fen: gameState.currentFen,
-      lastMove: gameState.lastEngineMove,
+      lastMove: gameState.lastMove,
       settings: ChessboardSettings(
         enableCoordinates: true,
         colorScheme: ChessboardColorScheme.green,
@@ -280,7 +385,7 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
       ),
       game: GameData(
         playerSide: playerSide,
-        sideToMove: sideToMove,
+        sideToMove: position.turn,
         validMoves: validMoves,
         isCheck: position.isCheck,
         promotionMove: null,
@@ -288,6 +393,7 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
           setState(() {
             _selectedPieceSquare = null;
             _extraMoveEvals = {};
+            _pieceAnalysisDone = false;
             _evalSession++;
           });
           if (move is NormalMove) {
@@ -297,55 +403,50 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
         onPromotionSelection: (_) {},
       ),
       shapes: shapes,
-      squareHighlights: moveHighlights ?? const IMapConst({}),
+      squareHighlights: pieceAnalysis?.highlights ?? const IMapConst({}),
     );
 
-    // Wrap in Listener to detect piece selection taps
-    final boardWithListener = isPractice && isInteractive
-        ? Listener(
+    // The board is always child 0 of the same Stack (and always inside the
+    // Listener), so overlays coming and going never rebuild its state.
+    return SizedBox.square(
+      dimension: boardSize,
+      child: Stack(
+        children: [
+          Listener(
             behavior: HitTestBehavior.translucent,
-            onPointerUp: (event) {
-              _handleBoardTap(
-                  event.localPosition, boardSize, orientation, position);
-            },
+            onPointerUp: isPractice && isInteractive
+                ? (event) =>
+                    _handleBoardTap(event.localPosition, boardSize, orientation)
+                : null,
             child: board,
-          )
-        : board;
-
-    if (isPractice && !gameState.isGameOver) {
-      if (pieceAnalysis != null) {
-        return Stack(
-          children: [
-            boardWithListener,
+          ),
+          if (isPractice && !gameState.isGameOver && pieceAnalysis != null)
             _PieceAnalysisOverlay(
               boardSize: boardSize,
               orientation: orientation,
               analysisEntries: pieceAnalysis.entries,
               showScores: _showScores,
-            ),
-          ],
-        );
-      }
-      if (gameState.topMoves.isNotEmpty) {
-        return Stack(
-          children: [
-            boardWithListener,
+            )
+          else if (isPractice &&
+              !gameState.isGameOver &&
+              gameState.topMoves.isNotEmpty)
             EvalDeltaOverlay(
               boardSize: boardSize,
               orientation: orientation,
               topMoves: gameState.topMoves,
               showScores: _showScores,
             ),
-          ],
-        );
-      }
-    }
-
-    return boardWithListener;
+          if (gameState.isGameOver && gameState.gameEnd != null)
+            Positioned.fill(child: _GameEndBanner(end: gameState.gameEnd!)),
+        ],
+      ),
+    );
   }
 
-  void _handleBoardTap(
-      Offset localPos, double boardSize, Side orientation, Position position) {
+  void _handleBoardTap(Offset localPos, double boardSize, Side orientation) {
+    // The position *now*: when this tap was the end of a move, the board has
+    // already moved on (the board's own handler runs first).
+    final position = ref.read(openingGameProvider.notifier).currentPosition;
     final squareSize = boardSize / 8;
     final col = (localPos.dx / squareSize).floor().clamp(0, 7);
     final row = (localPos.dy / squareSize).floor().clamp(0, 7);
@@ -361,6 +462,7 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
       setState(() {
         _selectedPieceSquare = newSelection;
         _extraMoveEvals = {};
+        _pieceAnalysisDone = false;
         _evalSession++;
       });
       if (newSelection != null) {
@@ -379,21 +481,20 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
     // If a piece is selected and user taps a destination square,
     // DON'T clear selection here — let the board handle the move.
     // The selection is cleared in onMove callback after the move completes.
-    if (_selectedPieceSquare != null) return;
-
-    // No piece selected, tapped empty/opponent square — nothing to do
   }
 
   void _evaluateMissingMoves(Square fromSquare, Position position) {
-    final allLegal = makeLegalMoves(position);
-    final dests = allLegal[fromSquare];
+    final dests = makeLegalMoves(position)[fromSquare];
     if (dests == null || dests.isEmpty) return;
 
     // Evaluate ALL moves for this piece — don't trust top 5 data which
-    // may be from an early/inaccurate wave.
-    final movesToEval = <NormalMove>[];
+    // may be from an early/inaccurate wave. Standard spelling (castling
+    // once, as e1g1; promotions as e7e8q), so keys match the engine's.
+    final movesToEval = <String, NormalMove>{};
     for (final dest in dests) {
-      movesToEval.add(NormalMove(from: fromSquare, to: dest));
+      final move =
+          standardMove(position, NormalMove(from: fromSquare, to: dest));
+      movesToEval[move.uci] = move;
     }
 
     final session = ++_evalSession;
@@ -401,7 +502,7 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
     ref
         .read(openingGameProvider.notifier)
         .evaluateSpecificMoves(
-          movesToEval,
+          movesToEval.values.toList(),
           onResult: (uci, eval) {
             if (mounted && session == _evalSession) {
               setState(() {
@@ -418,10 +519,11 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
         })
         .whenComplete(() {
           // Nothing more will arrive for this session — whether it ran to
-          // the last pass, errored, or was cancelled. Clear any lingering
-          // "still refining" spinners so none can spin forever.
+          // the last pass, errored, or was cancelled. Clear every "still
+          // thinking" signal so none can spin forever.
           if (!mounted || session != _evalSession) return;
           setState(() {
+            _pieceAnalysisDone = true;
             _extraMoveEvals = {
               for (final entry in _extraMoveEvals.entries)
                 entry.key: entry.value.asFinal(),
@@ -452,8 +554,12 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
     final entries = <_PieceAnalysisEntry>[];
 
     for (final dest in dests) {
-      final uci = '${fromSquare.name}${dest.name}';
-      final move = NormalMove(from: fromSquare, to: dest);
+      final move =
+          standardMove(position, NormalMove(from: fromSquare, to: dest));
+      // Castling is legal onto g1 and onto the h1 rook: one badge, on the
+      // king's destination.
+      if (move.to != dest) continue;
+      final uci = move.uci;
       final topMove = topMovesMap[uci];
       final isBook = openingBook.isBookMove(position, move);
 
@@ -466,16 +572,19 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
       // baseline, so scores match the arrow view); fall back to top-5 data.
       final extra = _extraMoveEvals[uci];
       if (extra != null) {
-        classification = classifyDelta(extra.deltaPawns);
+        // Delivering checkmate is the best move there is.
+        classification = extra.mateIn == 0
+            ? MoveClassification.best
+            : classifyDelta(extra.deltaPawns);
         scoreText = formatEval(extra.centipawns, extra.mateIn);
         depthText = extra.depth > 0 ? 'd${extra.depth}' : null;
-        isRefining = !extra.isFinal;
+        isRefining = !extra.isFinal && !_pieceAnalysisDone;
       } else if (topMove != null && topMove.hasEval) {
         classification = topMove.classification;
         scoreText = formatEval(topMove.centipawns, topMove.mateIn);
         // Borrowed from the arrow search — this move's own evaluation is
-        // still queued, so it will change.
-        isRefining = true;
+        // still queued, so it will change (unless the session has ended).
+        isRefining = !_pieceAnalysisDone;
       }
 
       // Book membership wins the color; the engine's #1 move gets `best`.
@@ -486,16 +595,19 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
       }
 
       // No data yet (evaluation still running) → animated thinking badge.
-      final isPending = classification == null;
+      // Once the session has ended, a square without a score just gets a
+      // plain badge.
+      final hasData = classification != null;
+      final isPending = !hasData && !_pieceAnalysisDone;
       final effective = classification ?? MoveClassification.good;
-      final color = isPending
-          ? Colors.blueGrey.shade200
-          : colorForClassification(effective);
+      final color = hasData
+          ? colorForClassification(effective)
+          : Colors.blueGrey.shade200;
       final icon = uci == bestUci
           ? '👑'
-          : isPending
-              ? ''
-              : classificationStyle(effective).icon;
+          : hasData
+              ? classificationStyle(effective).icon
+              : '';
 
       highlights[dest] = SquareHighlight(
         details: HighlightDetails(
@@ -528,47 +640,92 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
 
     final shapes = <Shape>{};
 
-    for (int i = 0; i < gameState.topMoves.length; i++) {
-      final suggested = gameState.topMoves[i];
-      final move = _parseUciMove(suggested.uci);
-      if (move != null) {
-        // Shade carries "how far behind the best move" even when score
-        // badges are hidden; the thick arrow is the engine's #1 move.
-        final base = colorForClassification(suggested.classification);
-        final color = suggested.hasEval
-            ? shadeForDelta(base, suggested.deltaPawns)
-            : base;
-        shapes.add(Arrow(
-          color: color.withValues(alpha: 0.8),
-          orig: move.from,
-          dest: move.to,
-          scale: suggested.isBest ? 0.55 : 0.35,
-        ));
-      }
+    for (final suggested in gameState.topMoves) {
+      final move = parseUci(suggested.uci);
+      if (move == null) continue;
+      // Shade carries "how far behind the best move" even when score
+      // badges are hidden; the thick arrow is the engine's #1 move.
+      final base = colorForClassification(suggested.classification);
+      final color = suggested.hasEval
+          ? shadeForDelta(base, suggested.deltaPawns)
+          : base;
+      shapes.add(Arrow(
+        color: color.withValues(alpha: 0.8),
+        orig: move.from,
+        dest: move.to,
+        scale: suggested.isBest ? 0.55 : 0.35,
+      ));
     }
 
     return ISet(shapes);
   }
+}
 
-  NormalMove? _parseUciMove(String uci) {
-    if (uci.length < 4) return null;
-    try {
-      final from = Square.fromName(uci.substring(0, 2));
-      final to = Square.fromName(uci.substring(2, 4));
-      Role? promotion;
-      if (uci.length > 4) {
-        promotion = switch (uci[4]) {
-          'q' => Role.queen,
-          'r' => Role.rook,
-          'b' => Role.bishop,
-          'n' => Role.knight,
-          _ => null,
-        };
-      }
-      return NormalMove(from: from, to: to, promotion: promotion);
-    } catch (_) {
-      return null;
-    }
+/// "Checkmate!" / "Draw!" over the finished position.
+class _GameEndBanner extends StatelessWidget {
+  final GameEnd end;
+
+  const _GameEndBanner({required this.end});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isMate = end == GameEnd.checkmate;
+
+    return IgnorePointer(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.6, end: 1.0),
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeOutBack,
+              builder: (context, scale, child) =>
+                  Transform.scale(scale: scale, child: child),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                decoration: BoxDecoration(
+                  color: (isMate ? AppColors.primary : Colors.blueGrey.shade700)
+                      .withValues(alpha: 0.92),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isMate
+                          ? Icons.emoji_events_rounded
+                          : Icons.handshake_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      isMate ? l10n.checkmate : l10n.draw,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -697,10 +854,15 @@ class _PieceAnalysisOverlayState extends State<_PieceAnalysisOverlay>
   Widget _buildIconBadge(_PieceAnalysisEntry entry) {
     final offset = _squareOffset(entry.square);
     final size = _squareSize * 0.4;
+    // The badge sits over the square's top-right corner; kept inside the
+    // board so it isn't cut off on the top rank or the right-hand file.
+    final maxOffset = math.max(0.0, widget.boardSize - size);
+    final left = (offset.dx + _squareSize - size * 0.8).clamp(0.0, maxOffset);
+    final top = (offset.dy - size * 0.2).clamp(0.0, maxOffset);
 
     return Positioned(
-      left: offset.dx + _squareSize - size * 0.8,
-      top: offset.dy - size * 0.2,
+      left: left,
+      top: top,
       child: Container(
         width: size,
         height: size,
@@ -775,7 +937,7 @@ class _PieceAnalysisOverlayState extends State<_PieceAnalysisOverlay>
 
   Widget _buildScoreLabel(_PieceAnalysisEntry entry) {
     final offset = _squareOffset(entry.square);
-    final fontSize = (_squareSize * 0.22).clamp(8.0, 13.0);
+    final fontSize = (_squareSize * 0.22).clamp(8.0, 15.0);
 
     return Positioned(
       left: offset.dx,
@@ -783,30 +945,34 @@ class _PieceAnalysisOverlayState extends State<_PieceAnalysisOverlay>
       width: _squareSize,
       height: _squareSize,
       child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-              decoration: BoxDecoration(
-                color: entry.color.withValues(alpha: 0.85),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                entry.scoreText!,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.bold,
-                  height: 1.1,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: entry.color.withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  entry.scoreText!,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.bold,
+                    height: 1.1,
+                  ),
                 ),
               ),
-            ),
-            if (entry.depthText != null || entry.isRefining) ...[
-              SizedBox(height: _squareSize * 0.03),
-              _buildDepthChip(entry),
+              if (entry.depthText != null || entry.isRefining) ...[
+                SizedBox(height: _squareSize * 0.03),
+                _buildDepthChip(entry),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -815,7 +981,7 @@ class _PieceAnalysisOverlayState extends State<_PieceAnalysisOverlay>
   /// "d12" with a spinner while a deeper pass is still coming — tells the
   /// user this square's score is provisional and will keep improving.
   Widget _buildDepthChip(_PieceAnalysisEntry entry) {
-    final fontSize = (_squareSize * 0.16).clamp(7.0, 10.0);
+    final fontSize = (_squareSize * 0.16).clamp(7.0, 11.0);
     final spinnerSize = fontSize * 1.1;
 
     return Container(

@@ -335,14 +335,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get aboutWhatIsBody =>
-      'Une application amusante et interactive qui enseigne les fondamentaux des échecs aux enfants. Apprends les colonnes, rangées, cases et mouvements de pièces grâce à des exercices, des quiz et des défis chronométrés — le tout avec un retour audio et un suivi des séries pour te motiver !';
+      'Une application amusante et interactive qui apprend les bases des échecs aux enfants. Vision aux Échecs t\'entraîne à repérer d\'un coup d\'œil fourchettes, enfilades, sauts du cavalier, échecs, prises et pièces en prise. Notation aux Échecs t\'apprend les colonnes, les rangées, les cases, les lettres des pièces, les coups et la valeur des pièces. L\'Explorateur d\'ouvertures te fait essayer des ouvertures avec les conseils d\'un vrai moteur d\'échecs. Le son, les séries et tes records sauvegardés te gardent motivé !';
 
   @override
   String get aboutTrainingModes => 'Modes d\'entraînement';
 
   @override
   String get aboutTrainingModesBody =>
-      '• Explorer — apprends à ton rythme\n• Entraînement — teste-toi et construis des séries\n• Contre la Montre — 30 secondes, combien peux-tu en résoudre ?\n• Mode Difficile — cache les coordonnées pour un vrai défi';
+      '• Explorer — apprends à ton rythme\n• Entraînement — teste-toi et construis des séries\n• Contre la Montre — bats le chrono (30 ou 60 secondes) et établis un nouveau record\n• Mode Difficile — joue du côté des noirs';
 
   @override
   String get aboutCredits => 'Crédits et Remerciements';
@@ -407,18 +407,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tacticsComingSoon => 'Entraîneur de tactique bientôt disponible';
-
-  @override
-  String get squareTrainer => 'Entraîneur de Cases';
-
-  @override
-  String get squareComingSoon => 'Entraîneur de cases bientôt disponible';
-
-  @override
-  String get moveTrainer => 'Entraîneur de Coups';
-
-  @override
-  String get moveComingSoon => 'Entraîneur de coups bientôt disponible';
 
   @override
   String get promptSquare => 'case';
@@ -521,18 +509,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get knowYourPieces => 'Know your pieces!';
 
   @override
-  String get whichSideWins => 'Which Side Wins?';
+  String get whichSideWins => 'Quel camp gagne ?';
 
   @override
   String get whichSideWinsDesc =>
-      'Compare groups of pieces — tap the side worth more!';
+      'Compare des groupes de pièces — touche le camp qui vaut le plus !';
 
   @override
-  String get tapTheSideWorthMore => 'Tap the side worth more';
+  String get tapTheSideWorthMore => 'Touche le camp qui vaut le plus';
 
   @override
   String get whichSideWinsPracticeDesc =>
-      'Build your streak — difficulty increases as you go!';
+      'Construis ta série — la difficulté augmente au fur et à mesure !';
 
   @override
   String get letters => 'Lettres';
@@ -631,4 +619,77 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get blackToPlay => 'Trait aux Noirs';
+
+  @override
+  String get openingExplorer => 'Explorateur d\'ouvertures';
+
+  @override
+  String get startFromOpening => 'Partir d\'une ouverture';
+
+  @override
+  String get flipBoard => 'Retourner l\'échiquier';
+
+  @override
+  String get showScores => 'Afficher les scores';
+
+  @override
+  String get hideScores => 'Masquer les scores';
+
+  @override
+  String get searchOpenings => 'Rechercher une ouverture…';
+
+  @override
+  String get noOpeningsFound => 'Aucune ouverture trouvée';
+
+  @override
+  String get popularOpenings => 'Populaires';
+
+  @override
+  String get browseByCategory => 'Parcourir par catégorie';
+
+  @override
+  String get ecoFlankOpenings => 'Ouvertures de flanc';
+
+  @override
+  String get ecoSemiOpenGames => 'Parties semi-ouvertes';
+
+  @override
+  String get ecoOpenGames => 'Parties ouvertes';
+
+  @override
+  String get ecoClosedGames => 'Fermées et semi-fermées';
+
+  @override
+  String get ecoIndianDefenses => 'Défenses indiennes';
+
+  @override
+  String get engineUnavailable => 'Le moteur d\'échecs n\'a pas démarré.';
+
+  @override
+  String get visionPromptForks =>
+      'Touche chaque case d\'où ta pièce attaque le roi et l\'autre pièce !';
+
+  @override
+  String get visionPromptKnightSight =>
+      'Touche chaque case où ton cavalier peut sauter !';
+
+  @override
+  String get visionPromptKnightFlight =>
+      'Amène ton cavalier jusqu\'à l\'anneau en un minimum de coups !';
+
+  @override
+  String get visionPromptPawnAttack =>
+      'Prends tous les pions — ne t\'arrête jamais sur une case ombrée !';
+
+  @override
+  String get startOver => 'Recommencer';
+
+  @override
+  String get loadFailed => 'Impossible de charger les exercices.';
+
+  @override
+  String get checkmate => 'Échec et mat !';
+
+  @override
+  String get draw => 'Partie nulle !';
 }

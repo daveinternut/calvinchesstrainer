@@ -1,16 +1,15 @@
 import 'package:dartchess/dartchess.dart' show PieceKind;
 
 enum PieceType {
-  pawn(1, 'Pawn', PieceKind.whitePawn),
-  knight(3, 'Knight', PieceKind.whiteKnight),
-  bishop(3, 'Bishop', PieceKind.whiteBishop),
-  rook(5, 'Rook', PieceKind.whiteRook),
-  queen(9, 'Queen', PieceKind.whiteQueen);
+  pawn(1, PieceKind.whitePawn),
+  knight(3, PieceKind.whiteKnight),
+  bishop(3, PieceKind.whiteBishop),
+  rook(5, PieceKind.whiteRook),
+  queen(9, PieceKind.whiteQueen);
 
   final int value;
-  final String label;
   final PieceKind pieceKind;
-  const PieceType(this.value, this.label, this.pieceKind);
+  const PieceType(this.value, this.pieceKind);
 }
 
 enum WhichSideWinsMode { practice, speed }
@@ -50,6 +49,9 @@ class WhichSideWinsState {
   final bool isGameOver;
   final bool isWaitingForNext;
 
+  /// Set at game over when the round beat the saved personal best.
+  final bool isNewRecord;
+
   const WhichSideWinsState({
     required this.mode,
     this.currentPuzzle,
@@ -63,6 +65,7 @@ class WhichSideWinsState {
     this.timeRemainingSeconds,
     this.isGameOver = false,
     this.isWaitingForNext = false,
+    this.isNewRecord = false,
   });
 
   WhichSideWinsState copyWith({
@@ -78,6 +81,7 @@ class WhichSideWinsState {
     int? Function()? timeRemainingSeconds,
     bool? isGameOver,
     bool? isWaitingForNext,
+    bool? isNewRecord,
   }) {
     return WhichSideWinsState(
       mode: mode ?? this.mode,
@@ -96,6 +100,7 @@ class WhichSideWinsState {
           : this.timeRemainingSeconds,
       isGameOver: isGameOver ?? this.isGameOver,
       isWaitingForNext: isWaitingForNext ?? this.isWaitingForNext,
+      isNewRecord: isNewRecord ?? this.isNewRecord,
     );
   }
 }

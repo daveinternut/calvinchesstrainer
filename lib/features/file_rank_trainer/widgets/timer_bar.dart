@@ -17,8 +17,8 @@ class TimerBar extends StatefulWidget {
 
 class _TimerBarState extends State<TimerBar>
     with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseAnimation;
 
   @override
   void initState() {
@@ -27,15 +27,30 @@ class _TimerBarState extends State<TimerBar>
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.06).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    // Swells and settles back, so the bar is at rest between beats.
+    _pulseAnimation =
+        TweenSequence<double>([
+          TweenSequenceItem(
+            tween: Tween<double>(begin: 1.0, end: 1.06),
+            weight: 1,
+          ),
+          TweenSequenceItem(
+            tween: Tween<double>(begin: 1.06, end: 1.0),
+            weight: 1,
+          ),
+        ]).animate(
+          CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+        );
   }
 
   @override
   void didUpdateWidget(TimerBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.remainingSeconds <= 5 && widget.remainingSeconds > 0) {
+    // One beat per tick of the clock — not on every rebuild of the screen
+    // (each answer in the last five seconds used to restart it).
+    if (widget.remainingSeconds != oldWidget.remainingSeconds &&
+        widget.remainingSeconds <= 5 &&
+        widget.remainingSeconds > 0) {
       _pulseController.forward(from: 0.0);
     }
   }
@@ -49,7 +64,9 @@ class _TimerBarState extends State<TimerBar>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final fraction = widget.remainingSeconds / widget.totalSeconds;
+    final fraction = widget.totalSeconds > 0
+        ? (widget.remainingSeconds / widget.totalSeconds).clamp(0.0, 1.0)
+        : 0.0;
     final color = _timerColor(widget.remainingSeconds);
     final isUrgent = widget.remainingSeconds <= 5;
 

@@ -1,7 +1,7 @@
 name: calvinchesstrainer
 description: "A chess learning app that teaches fundamentals through interactive drills and timed challenges."
 publish_to: 'none'
-version: 1.4.0+5
+version: 1.4.0+6
 
 environment:
   sdk: ^3.9.2
@@ -14,7 +14,6 @@ dependencies:
   intl: any
 
   # UI
-  cupertino_icons: ^1.0.8
   google_fonts: ^8.0.2
   go_router: ^17.1.0
 
@@ -28,15 +27,19 @@ dependencies:
 
   # Chess engine
   stockfish: ^1.8.1
+  ffi: ^2.2.0 # imported directly by stockfish_engine_io.dart
 
   # Audio
   just_audio: ^0.10.5
+  audio_session: ^0.2.4
   flutter_tts: ^4.2.5
+
+  # Device storage + app info
+  shared_preferences: ^2.5.5 # persisted personal bests
+  package_info_plus: ^10.2.2 # version shown on the About screen
 
   # Firebase
   firebase_core: ^4.4.0
-  firebase_auth: ^6.1.4
-  cloud_firestore: ^6.1.2
   firebase_analytics: ^12.1.2
   flutter_native_splash: ^2.4.7
   http: ^1.6.0
@@ -56,6 +59,10 @@ flutter:
     - assets/puzzles/
     - assets/images/
     - assets/data/
+    # Inter, bundled so the app never fetches fonts from Google at runtime
+    # (offline first launch, kids' privacy). google_fonts finds these by file
+    # name; main() turns runtime fetching off.
+    - assets/google_fonts/
 
   fonts:
     - family: BradBunR

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../../core/services/feedback_service.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -15,6 +16,24 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
   final _feedbackController = TextEditingController();
   bool _isSending = false;
   bool _sent = false;
+
+  /// The real app version from the platform (pubspec's `version:` at build
+  /// time). Null until it loads, and the line stays hidden if it never does.
+  String? _version;
+
+  /// Feedback travels in the request's query string, so keep it well under
+  /// common server URL limits.
+  static const _maxFeedbackLength = 500;
+
+  @override
+  void initState() {
+    super.initState();
+    PackageInfo.fromPlatform().then((info) {
+      if (mounted) setState(() => _version = info.version);
+    }).catchError((Object e) {
+      debugPrint('App version unavailable: $e');
+    });
+  }
 
   @override
   void dispose() {
@@ -99,13 +118,15 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
                   ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 4),
-            Text(
-              l10n.aboutVersion('1.0.0'),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-            ),
+            if (_version != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                l10n.aboutVersion(_version!),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+              ),
+            ],
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -243,6 +264,7 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
             TextField(
               controller: _feedbackController,
               maxLines: 4,
+              maxLength: _maxFeedbackLength,
               enabled: !_isSending,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(

@@ -18,55 +18,85 @@ class StreakCounter extends StatefulWidget {
 
 class _StreakCounterState extends State<StreakCounter>
     with TickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
-  late AnimationController _milestoneController;
-  late Animation<double> _milestoneAnimation;
-  late Animation<double> _glowAnimation;
-  int _previousStreak = 0;
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseAnimation;
+  late final AnimationController _milestoneController;
+  late final Animation<double> _milestoneAnimation;
+  late final Animation<double> _glowAnimation;
+  late int _previousStreak;
   bool _showMilestone = false;
+
+  /// The streak the running milestone celebrates, captured when it starts so
+  /// a change mid-animation can't relabel it (a big green "0 — Legendary!").
+  int _milestoneStreak = 0;
 
   @override
   void initState() {
     super.initState();
+    _previousStreak = widget.streak;
+
+    // Both animations pop up and settle back, so the counter always returns
+    // to its resting size between answers.
     _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 350),
       vsync: this,
     );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.elasticOut),
-    );
+    _pulseAnimation = _popAndSettle(1.2).animate(_pulseController);
 
     _milestoneController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 700),
       vsync: this,
     );
-    _milestoneAnimation = Tween<double>(begin: 1.0, end: 1.5).animate(
-      CurvedAnimation(parent: _milestoneController, curve: Curves.elasticOut),
-    );
+    _milestoneAnimation = _popAndSettle(1.5).animate(_milestoneController);
     _glowAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _milestoneController, curve: Curves.easeOut),
     );
     _milestoneController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
+      if (status == AnimationStatus.completed && mounted) {
         setState(() => _showMilestone = false);
       }
     });
   }
 
+  static Animatable<double> _popAndSettle(double peak) {
+    return TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: 1.0,
+          end: peak,
+        ).chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 40,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(
+          begin: peak,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 60,
+      ),
+    ]);
+  }
+
   @override
   void didUpdateWidget(StreakCounter oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.streak > _previousStreak && widget.streak > 0) {
-      final isMilestone = widget.streak % 5 == 0;
-      if (isMilestone) {
-        setState(() => _showMilestone = true);
+    final streak = widget.streak;
+    if (streak != _previousStreak && _showMilestone) {
+      // The streak moved on (or broke) mid-celebration: end it so the label
+      // always matches the number on screen.
+      _milestoneController.stop();
+      _showMilestone = false;
+    }
+    if (streak > _previousStreak && streak > 0) {
+      if (streak % 5 == 0) {
+        _milestoneStreak = streak;
+        _showMilestone = true;
         _milestoneController.forward(from: 0.0);
       } else {
         _pulseController.forward(from: 0.0);
       }
     }
-    _previousStreak = widget.streak;
+    _previousStreak = streak;
   }
 
   @override
@@ -78,12 +108,12 @@ class _StreakCounterState extends State<StreakCounter>
 
   String get _milestoneLabel {
     final l10n = AppLocalizations.of(context)!;
-    return switch (widget.streak) {
+    return switch (_milestoneStreak) {
       5 => l10n.milestoneNice,
       10 => l10n.milestoneAmazing,
       15 => l10n.milestoneIncredible,
       20 => l10n.milestoneUnstoppable,
-      _ when widget.streak % 10 == 0 => l10n.milestoneLegendary,
+      _ when _milestoneStreak % 10 == 0 => l10n.milestoneLegendary,
       _ => l10n.milestoneGreat,
     };
   }
@@ -104,8 +134,9 @@ class _StreakCounterState extends State<StreakCounter>
                   height: 80 + _glowAnimation.value * 40,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.correctGreen
-                        .withValues(alpha: 0.15 * (1 - _glowAnimation.value)),
+                    color: AppColors.correctGreen.withValues(
+                      alpha: 0.15 * (1 - _glowAnimation.value),
+                    ),
                   ),
                 );
               },
@@ -128,11 +159,14 @@ class _StreakCounterState extends State<StreakCounter>
                   Text(
                     _showMilestone
                         ? _milestoneLabel
-                        : AppLocalizations.of(context)!.bestLabel(widget.bestStreak),
+                        : AppLocalizations.of(
+                            context,
+                          )!.bestLabel(widget.bestStreak),
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight:
-                          _showMilestone ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: _showMilestone
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                       color: _showMilestone
                           ? AppColors.correctGreen
                           : AppColors.textSecondary.withValues(alpha: 0.7),

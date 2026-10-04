@@ -333,14 +333,14 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get aboutWhatIsBody =>
-      '아이들에게 체스 기초를 가르치는 재미있고 상호작용적인 앱입니다. 훈련, 퀴즈, 시간 제한 도전을 통해 파일, 랭크, 칸, 기물 이동을 배우세요 — 오디오 피드백과 연승 추적으로 동기를 유지하세요!';
+      '아이들에게 체스의 기초를 가르쳐 주는 재미있는 인터랙티브 앱이에요. 체스 비전은 포크, 스큐어, 나이트의 움직임, 체크, 잡기, 지켜지지 않는 기물을 한눈에 찾는 눈을 길러 줘요. 체스 기보법에서는 파일, 랭크, 칸, 기물 기호, 수, 기물의 가치를 배워요. 오프닝 탐색기에서는 진짜 체스 엔진의 힌트를 보며 오프닝을 연습할 수 있어요. 소리 피드백, 연속 기록, 저장되는 최고 기록이 계속 의욕을 북돋아 줘요!';
 
   @override
   String get aboutTrainingModes => '훈련 모드';
 
   @override
   String get aboutTrainingModesBody =>
-      '• 탐색 — 자신의 속도로 배우기\n• 연습 — 스스로를 테스트하고 연승 기록 세우기\n• 스피드 라운드 — 30초, 몇 개나 맞출 수 있을까요?\n• 하드 모드 — 좌표를 숨겨 진정한 도전';
+      '• 탐색 — 자신의 속도로 배우기\n• 연습 — 스스로를 테스트하고 연속 기록 세우기\n• 스피드 라운드 — 시간과 겨뤄(30초 또는 60초) 새 기록에 도전하기\n• 하드 모드 — 흑의 쪽에서 보드 보기';
 
   @override
   String get aboutCredits => '크레딧 및 감사의 말';
@@ -404,18 +404,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get tacticsComingSoon => '전술 트레이너 출시 예정';
-
-  @override
-  String get squareTrainer => '칸 트레이너';
-
-  @override
-  String get squareComingSoon => '칸 트레이너 출시 예정';
-
-  @override
-  String get moveTrainer => '수 트레이너';
-
-  @override
-  String get moveComingSoon => '수 트레이너 출시 예정';
 
   @override
   String get promptSquare => '칸';
@@ -516,18 +504,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get knowYourPieces => 'Know your pieces!';
 
   @override
-  String get whichSideWins => 'Which Side Wins?';
+  String get whichSideWins => '어느 쪽이 이길까?';
 
   @override
-  String get whichSideWinsDesc =>
-      'Compare groups of pieces — tap the side worth more!';
+  String get whichSideWinsDesc => '기물 그룹을 비교하고 더 가치 있는 쪽을 탭하세요!';
 
   @override
-  String get tapTheSideWorthMore => 'Tap the side worth more';
+  String get tapTheSideWorthMore => '더 가치 있는 쪽을 탭하세요';
 
   @override
-  String get whichSideWinsPracticeDesc =>
-      'Build your streak — difficulty increases as you go!';
+  String get whichSideWinsPracticeDesc => '연속 기록을 쌓으세요 — 갈수록 어려워져요!';
 
   @override
   String get letters => '글자';
@@ -620,4 +606,73 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get blackToPlay => '흑 차례';
+
+  @override
+  String get openingExplorer => '오프닝 탐색기';
+
+  @override
+  String get startFromOpening => '오프닝에서 시작하기';
+
+  @override
+  String get flipBoard => '보드 뒤집기';
+
+  @override
+  String get showScores => '점수 보기';
+
+  @override
+  String get hideScores => '점수 숨기기';
+
+  @override
+  String get searchOpenings => '오프닝 검색…';
+
+  @override
+  String get noOpeningsFound => '오프닝을 찾을 수 없어요';
+
+  @override
+  String get popularOpenings => '인기';
+
+  @override
+  String get browseByCategory => '분류별로 보기';
+
+  @override
+  String get ecoFlankOpenings => '측면 오프닝';
+
+  @override
+  String get ecoSemiOpenGames => '세미 오픈 게임';
+
+  @override
+  String get ecoOpenGames => '오픈 게임';
+
+  @override
+  String get ecoClosedGames => '클로즈드 & 세미 클로즈드';
+
+  @override
+  String get ecoIndianDefenses => '인디언 디펜스';
+
+  @override
+  String get engineUnavailable => '체스 엔진을 시작하지 못했어요.';
+
+  @override
+  String get visionPromptForks => '내 기물이 킹과 다른 기물을 동시에 공격하는 칸을 모두 탭하세요!';
+
+  @override
+  String get visionPromptKnightSight => '나이트가 뛸 수 있는 칸을 모두 탭하세요!';
+
+  @override
+  String get visionPromptKnightFlight => '최대한 적은 수로 나이트를 링까지 옮기세요!';
+
+  @override
+  String get visionPromptPawnAttack => '폰을 모두 잡으세요 — 색칠된 칸에는 멈추지 마세요!';
+
+  @override
+  String get startOver => '처음부터';
+
+  @override
+  String get loadFailed => '문제를 불러오지 못했어요.';
+
+  @override
+  String get checkmate => '체크메이트!';
+
+  @override
+  String get draw => '무승부!';
 }

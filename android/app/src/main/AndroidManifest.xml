@@ -1,4 +1,29 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Calvin Chess Trainer is a children's app and does NOT use the Android
+         Advertising ID. Firebase Analytics (play-services-measurement) merges in
+         the AD_ID permission by default; strip it so the Play Console "advertising
+         ID" declaration stays "No" and no AAID is collected from kids. -->
+    <uses-permission
+        android:name="com.google.android.gms.permission.AD_ID"
+        tools:node="remove" />
+    <!-- Same for the Privacy Sandbox ad-services permissions that newer
+         play-services-measurement versions merge in. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_ADSERVICES_AD_ID"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_ADSERVICES_TOPICS"
+        tools:node="remove" />
+
+    <!-- The feedback form and analytics need the network. Declared here rather
+         than relying on Firebase's merged manifest to supply it. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:label="Calvin Chess Trainer"
         android:name="${applicationName}"
@@ -30,6 +55,14 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Match the removed AD_ID permission: keep Firebase/Google Analytics
+             from collecting the Advertising ID at all (appropriate for a kids' app). -->
+        <meta-data
+            android:name="google_analytics_adid_collection_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_personalization_signals"
+            android:value="false" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

@@ -333,14 +333,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get aboutWhatIsBody =>
-      'チェスの基礎を子供たちに教える楽しいインタラクティブアプリ。ドリル、クイズ、タイムチャレンジを通じてファイル、ランク、マス、駒の動きを学ぼう — 音声フィードバックと連勝記録で、やる気を維持！';
+      '子どもたちにチェスの基礎を教える、楽しいインタラクティブアプリ。チェスビジョンでは、フォーク、スキュワー、ナイトの動き、チェック、駒取り、守られていない駒をひと目で見つける力を鍛えます。チェスの棋譜記号では、ファイル、ランク、マス、駒の記号、指し手、駒の価値を学べます。オープニングエクスプローラーでは、本物のチェスエンジンのヒントを見ながらオープニングを試せます。音声フィードバック、連続正解、保存される自己ベストでやる気が続く！';
 
   @override
   String get aboutTrainingModes => 'トレーニングモード';
 
   @override
   String get aboutTrainingModesBody =>
-      '• 探索 — 自分のペースで学ぶ\n• 練習 — 自分を試して連勝を作ろう\n• スピードラウンド — 30秒、いくつ解ける？\n• ハードモード — 座標を隠して本格チャレンジ';
+      '• 探索 — 自分のペースで学ぶ\n• 練習 — 自分を試して連続正解を伸ばそう\n• スピードラウンド — 時間と勝負（30秒または60秒）して新記録を目指そう\n• ハードモード — 黒の側から盤を見る';
 
   @override
   String get aboutCredits => 'クレジットと謝辞';
@@ -404,18 +404,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get tacticsComingSoon => 'タクティクストレーナーは近日公開';
-
-  @override
-  String get squareTrainer => 'マストレーナー';
-
-  @override
-  String get squareComingSoon => 'マストレーナーは近日公開';
-
-  @override
-  String get moveTrainer => 'ムーブトレーナー';
-
-  @override
-  String get moveComingSoon => 'ムーブトレーナーは近日公開';
 
   @override
   String get promptSquare => 'マス';
@@ -516,18 +504,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get knowYourPieces => 'Know your pieces!';
 
   @override
-  String get whichSideWins => 'Which Side Wins?';
+  String get whichSideWins => 'どっちが勝つ？';
 
   @override
-  String get whichSideWinsDesc =>
-      'Compare groups of pieces — tap the side worth more!';
+  String get whichSideWinsDesc => '駒のグループを比べて、価値が高いほうをタップしよう！';
 
   @override
-  String get tapTheSideWorthMore => 'Tap the side worth more';
+  String get tapTheSideWorthMore => '価値が高いほうをタップ';
 
   @override
-  String get whichSideWinsPracticeDesc =>
-      'Build your streak — difficulty increases as you go!';
+  String get whichSideWinsPracticeDesc => '連続正解を伸ばそう — 進むほど難しくなるよ！';
 
   @override
   String get letters => '文字';
@@ -620,4 +606,73 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get blackToPlay => '黒の番';
+
+  @override
+  String get openingExplorer => 'オープニングエクスプローラー';
+
+  @override
+  String get startFromOpening => 'オープニングから始める';
+
+  @override
+  String get flipBoard => '盤を反転';
+
+  @override
+  String get showScores => '評価値を表示';
+
+  @override
+  String get hideScores => '評価値を隠す';
+
+  @override
+  String get searchOpenings => 'オープニングを検索…';
+
+  @override
+  String get noOpeningsFound => 'オープニングが見つかりません';
+
+  @override
+  String get popularOpenings => '人気';
+
+  @override
+  String get browseByCategory => 'カテゴリーから探す';
+
+  @override
+  String get ecoFlankOpenings => 'フランクオープニング';
+
+  @override
+  String get ecoSemiOpenGames => 'セミオープンゲーム';
+
+  @override
+  String get ecoOpenGames => 'オープンゲーム';
+
+  @override
+  String get ecoClosedGames => 'クローズド＆セミクローズド';
+
+  @override
+  String get ecoIndianDefenses => 'インディアン・ディフェンス';
+
+  @override
+  String get engineUnavailable => 'チェスエンジンを起動できませんでした。';
+
+  @override
+  String get visionPromptForks => '自分の駒がキングともう1つの駒を同時に攻撃できるマスをすべてタップしよう！';
+
+  @override
+  String get visionPromptKnightSight => 'ナイトが跳べるマスをすべてタップしよう！';
+
+  @override
+  String get visionPromptKnightFlight => 'できるだけ少ない手数でナイトをリングまで跳ばそう！';
+
+  @override
+  String get visionPromptPawnAttack => 'ポーンを全部取ろう — 色のついたマスには止まらないで！';
+
+  @override
+  String get startOver => '最初から';
+
+  @override
+  String get loadFailed => '問題を読み込めませんでした。';
+
+  @override
+  String get checkmate => 'チェックメイト！';
+
+  @override
+  String get draw => '引き分け！';
 }

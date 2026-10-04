@@ -335,14 +335,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get aboutWhatIsBody =>
-      'Eine unterhaltsame, interaktive App, die Kindern die Grundlagen des Schachs beibringt. Lerne Linien, Reihen, Felder und Figurenzüge durch Übungen, Quiz und zeitgesteuerte Herausforderungen — alles mit Audio-Feedback und Serientracking, um dich zu motivieren!';
+      'Eine unterhaltsame, interaktive App, die Kindern die Grundlagen des Schachs beibringt. Schachvision trainiert dich, Gabeln, Spieße, Springerzüge, Schachgebote, Schlagmöglichkeiten und ungedeckte Figuren auf einen Blick zu erkennen. Schachnotation bringt dir Linien, Reihen, Felder, Figurenbuchstaben, Züge und Figurenwerte bei. Im Eröffnungs-Explorer probierst du Eröffnungen mit Tipps einer echten Schach-Engine aus. Audio-Feedback, Serien und gespeicherte Bestleistungen halten dich motiviert!';
 
   @override
   String get aboutTrainingModes => 'Trainingsmodi';
 
   @override
   String get aboutTrainingModesBody =>
-      '• Erkunden — lerne in deinem Tempo\n• Übung — teste dich und baue Serien auf\n• Schnellrunde — 30 Sekunden, wie viele schaffst du?\n• Schwerer Modus — verberge Koordinaten für eine echte Herausforderung';
+      '• Erkunden — lerne in deinem Tempo\n• Übung — teste dich und baue Serien auf\n• Schnellrunde — spiel gegen die Uhr (30 oder 60 Sekunden) und stell einen neuen Rekord auf\n• Schwerer Modus — spiel von der Seite von Schwarz';
 
   @override
   String get aboutCredits => 'Credits und Danksagungen';
@@ -407,18 +407,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get tacticsComingSoon => 'Taktiktrainer kommt bald';
-
-  @override
-  String get squareTrainer => 'Feldertrainer';
-
-  @override
-  String get squareComingSoon => 'Feldertrainer kommt bald';
-
-  @override
-  String get moveTrainer => 'Zugtrainer';
-
-  @override
-  String get moveComingSoon => 'Zugtrainer kommt bald';
 
   @override
   String get promptSquare => 'Feld';
@@ -521,18 +509,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get knowYourPieces => 'Know your pieces!';
 
   @override
-  String get whichSideWins => 'Which Side Wins?';
+  String get whichSideWins => 'Welche Seite gewinnt?';
 
   @override
   String get whichSideWinsDesc =>
-      'Compare groups of pieces — tap the side worth more!';
+      'Vergleiche Figurengruppen — tippe auf die wertvollere Seite!';
 
   @override
-  String get tapTheSideWorthMore => 'Tap the side worth more';
+  String get tapTheSideWorthMore => 'Tippe auf die wertvollere Seite';
 
   @override
   String get whichSideWinsPracticeDesc =>
-      'Build your streak — difficulty increases as you go!';
+      'Baue deine Serie auf — es wird nach und nach schwieriger!';
 
   @override
   String get letters => 'Buchstaben';
@@ -631,4 +619,77 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get blackToPlay => 'Schwarz am Zug';
+
+  @override
+  String get openingExplorer => 'Eröffnungs-Explorer';
+
+  @override
+  String get startFromOpening => 'Mit einer Eröffnung starten';
+
+  @override
+  String get flipBoard => 'Brett drehen';
+
+  @override
+  String get showScores => 'Bewertungen zeigen';
+
+  @override
+  String get hideScores => 'Bewertungen ausblenden';
+
+  @override
+  String get searchOpenings => 'Eröffnungen suchen…';
+
+  @override
+  String get noOpeningsFound => 'Keine Eröffnungen gefunden';
+
+  @override
+  String get popularOpenings => 'Beliebt';
+
+  @override
+  String get browseByCategory => 'Nach Kategorie durchsuchen';
+
+  @override
+  String get ecoFlankOpenings => 'Flankeneröffnungen';
+
+  @override
+  String get ecoSemiOpenGames => 'Halboffene Spiele';
+
+  @override
+  String get ecoOpenGames => 'Offene Spiele';
+
+  @override
+  String get ecoClosedGames => 'Geschlossene & halbgeschlossene Spiele';
+
+  @override
+  String get ecoIndianDefenses => 'Indische Verteidigungen';
+
+  @override
+  String get engineUnavailable => 'Die Schach-Engine ist nicht gestartet.';
+
+  @override
+  String get visionPromptForks =>
+      'Tippe auf jedes Feld, von dem aus deine Figur den König und die andere Figur angreift!';
+
+  @override
+  String get visionPromptKnightSight =>
+      'Tippe auf jedes Feld, auf das dein Springer springen kann!';
+
+  @override
+  String get visionPromptKnightFlight =>
+      'Bring deinen Springer mit so wenigen Zügen wie möglich zum Ring!';
+
+  @override
+  String get visionPromptPawnAttack =>
+      'Schlage alle Bauern — bleib nie auf einem schattierten Feld stehen!';
+
+  @override
+  String get startOver => 'Neu starten';
+
+  @override
+  String get loadFailed => 'Die Aufgaben konnten nicht geladen werden.';
+
+  @override
+  String get checkmate => 'Schachmatt!';
+
+  @override
+  String get draw => 'Remis!';
 }

@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +8,7 @@ import '../../../core/audio/audio_service.dart';
 import '../../../core/constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/square_name_overlay.dart';
+import '../../../core/widgets/trainer_layout.dart';
 import '../models/file_rank_game_state.dart';
 import '../providers/file_rank_game_provider.dart';
 import '../widgets/prompt_display.dart';
@@ -87,77 +87,31 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  const SizedBox(height: 12),
-                  PromptDisplay(gameState: gameState),
-                  const SizedBox(height: 12),
-                  if (gameState.mode != TrainerMode.explore)
-                    StreakCounter(
-                      streak: gameState.streak,
-                      bestStreak: gameState.bestStreak,
-                    ),
-                  if (gameState.mode != TrainerMode.explore)
-                    const SizedBox(height: 12),
-                  Expanded(
-                    child: Center(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final boardSize = math.min(
-                            constraints.maxWidth,
-                            constraints.maxHeight,
-                          );
-                          final orientation =
-                              widget.isHardMode ? Side.black : Side.white;
-                          final board = Chessboard.fixed(
-                            size: boardSize,
-                            orientation: orientation,
-                            fen: kInitialBoardFEN,
-                            settings: ChessboardSettings(
-                              enableCoordinates: false,
-                              colorScheme: ChessboardColorScheme.green,
-                              pieceAssets: PieceSet.cburnett.assets,
-                              animationDuration:
-                                  const Duration(milliseconds: 200),
-                            ),
-                            squareHighlights: gameState.allHighlights,
-                            onTouchedSquare: (square) {
-                              ref
-                                  .read(fileRankGameProvider.notifier)
-                                  .handleBoardTap(
-                                    square.file,
-                                    square.rank,
-                                  );
-                            },
-                          );
-                          final labels = _buildSquareLabels(gameState);
-                          if (labels.isEmpty) return board;
-                          return Stack(
-                            children: [
-                              board,
-                              SquareNameOverlay(
-                                boardSize: boardSize,
-                                orientation: orientation,
-                                labels: labels,
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
+            TrainerLayout(
+              header: [
+                const SizedBox(height: 12),
+                PromptDisplay(gameState: gameState),
+                const SizedBox(height: 12),
+                if (gameState.mode != TrainerMode.explore) ...[
+                  StreakCounter(
+                    streak: gameState.streak,
+                    bestStreak: gameState.bestStreak,
                   ),
-                  if (gameState.mode == TrainerMode.speed &&
-                      gameState.timeRemainingSeconds != null) ...[
-                    const SizedBox(height: 12),
-                    TimerBar(
-                      remainingSeconds: gameState.timeRemainingSeconds!,
-                    ),
-                  ],
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                 ],
-              ),
+              ],
+              board: (context, boardSize) =>
+                  _buildBoard(gameState, boardSize),
+              footer: [
+                if (gameState.mode == TrainerMode.speed &&
+                    gameState.timeRemainingSeconds != null) ...[
+                  const SizedBox(height: 12),
+                  TimerBar(
+                    remainingSeconds: gameState.timeRemainingSeconds!,
+                  ),
+                ],
+                const SizedBox(height: 16),
+              ],
             ),
             if (gameState.mode != TrainerMode.explore)
               MilestoneBanner(streak: gameState.streak),
@@ -168,8 +122,7 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
                   totalCorrect: gameState.totalCorrect,
                   totalAttempts: gameState.totalAttempts,
                   bestStreak: gameState.bestStreak,
-                  isNewRecord:
-                      ref.read(fileRankGameProvider.notifier).isNewRecord,
+                  isNewRecord: gameState.isNewRecord,
                   onPlayAgain: () {
                     ref.read(fileRankGameProvider.notifier).startGame(
                           widget.subject,
@@ -183,6 +136,40 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildBoard(FileRankGameState gameState, double boardSize) {
+    final orientation = widget.isHardMode ? Side.black : Side.white;
+    final board = Chessboard.fixed(
+      size: boardSize,
+      orientation: orientation,
+      fen: kInitialBoardFEN,
+      settings: ChessboardSettings(
+        enableCoordinates: false,
+        colorScheme: ChessboardColorScheme.green,
+        pieceAssets: PieceSet.cburnett.assets,
+        animationDuration: const Duration(milliseconds: 200),
+      ),
+      squareHighlights: gameState.allHighlights,
+      onTouchedSquare: (square) {
+        ref.read(fileRankGameProvider.notifier).handleBoardTap(
+              square.file,
+              square.rank,
+            );
+      },
+    );
+    final labels = _buildSquareLabels(gameState);
+    if (labels.isEmpty) return board;
+    return Stack(
+      children: [
+        board,
+        SquareNameOverlay(
+          boardSize: boardSize,
+          orientation: orientation,
+          labels: labels,
+        ),
+      ],
     );
   }
 

@@ -1,8 +1,10 @@
+import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/services/opening_book_service.dart';
 
-/// Curated popular openings for quick access.
+/// Curated popular openings for quick access. The names are proper names of
+/// openings and stay as they are in every language.
 const _popularOpenings = [
   ('C50', 'Italian Game', '1. e4 e5 2. Nf3 Nc6 3. Bc4'),
   ('C60', 'Ruy Lopez', '1. e4 e5 2. Nf3 Nc6 3. Bb5'),
@@ -26,13 +28,14 @@ const _popularOpenings = [
   ('C20', "King's Pawn Game", '1. e4 e5'),
 ];
 
-const _ecoCategories = [
-  ('A', 'Flank Openings'),
-  ('B', 'Semi-Open Games'),
-  ('C', 'Open Games'),
-  ('D', 'Closed & Semi-Closed'),
-  ('E', 'Indian Defenses'),
-];
+/// The ECO letters with their localized category names.
+List<(String, String)> _ecoCategories(AppLocalizations l10n) => [
+      ('A', l10n.ecoFlankOpenings),
+      ('B', l10n.ecoSemiOpenGames),
+      ('C', l10n.ecoOpenGames),
+      ('D', l10n.ecoClosedGames),
+      ('E', l10n.ecoIndianDefenses),
+    ];
 
 class OpeningPicker extends StatefulWidget {
   final OpeningBookService bookService;
@@ -52,8 +55,15 @@ class _OpeningPickerState extends State<OpeningPicker> {
   String _searchQuery = '';
   String? _expandedEco;
 
+  /// The book may still be loading when the picker opens right after the
+  /// screen; the load is shared, so this just waits for it. Null when there
+  /// is nothing to wait for.
+  late final Future<void>? _bookReady =
+      widget.bookService.isLoaded ? null : widget.bookService.load();
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         Padding(
@@ -62,11 +72,11 @@ class _OpeningPickerState extends State<OpeningPicker> {
             autocorrect: false,
             enableSuggestions: false,
             decoration: InputDecoration(
-              hintText: 'Search openings...',
+              hintText: l10n.searchOpenings,
               prefixIcon: const Icon(Icons.search, size: 20),
               isDense: true,
               contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -76,16 +86,32 @@ class _OpeningPickerState extends State<OpeningPicker> {
         ),
         const SizedBox(height: 8),
         Expanded(
-          child: _searchQuery.isNotEmpty
-              ? _buildSearchResults(null)
-              : _buildBrowseView(null),
+          child: _bookReady == null
+              ? _buildLists(l10n)
+              : FutureBuilder<void>(
+                  future: _bookReady,
+                  builder: (context, snapshot) {
+                    // A failed load still leaves the popular list; search
+                    // and categories need the book.
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    return _buildLists(l10n);
+                  },
+                ),
         ),
       ],
     );
   }
 
-  Widget _buildSearchResults(ScrollController? controller) {
-    final terms = _searchQuery.toLowerCase().split(RegExp(r'\s+'))
+  Widget _buildLists(AppLocalizations l10n) => _searchQuery.isNotEmpty
+      ? _buildSearchResults(l10n)
+      : _buildBrowseView(l10n);
+
+  Widget _buildSearchResults(AppLocalizations l10n) {
+    final terms = _searchQuery
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
         .where((t) => t.isNotEmpty)
         .toList();
     final results = widget.bookService
@@ -101,27 +127,25 @@ class _OpeningPickerState extends State<OpeningPicker> {
     if (results.isEmpty) {
       return Center(
         child: Text(
-          'No openings found',
+          l10n.noOpeningsFound,
           style: TextStyle(color: Colors.grey.shade500),
         ),
       );
     }
 
     return ListView.builder(
-      controller: controller,
       itemCount: results.length,
       itemBuilder: (context, index) => _buildOpeningTile(results[index]),
     );
   }
 
-  Widget _buildBrowseView(ScrollController? controller) {
+  Widget _buildBrowseView(AppLocalizations l10n) {
     return ListView(
-      controller: controller,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: Text(
-            'Popular',
+            l10n.popularOpenings,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade600,
@@ -134,14 +158,14 @@ class _OpeningPickerState extends State<OpeningPicker> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
           child: Text(
-            'Browse by Category',
+            l10n.browseByCategory,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade600,
                 ),
           ),
         ),
-        for (final (letter, label) in _ecoCategories)
+        for (final (letter, label) in _ecoCategories(l10n))
           _buildEcoCategory(letter, label),
         const SizedBox(height: 24),
       ],
@@ -153,7 +177,6 @@ class _OpeningPickerState extends State<OpeningPicker> {
     return Column(
       children: [
         ListTile(
-          dense: true,
           title: Text(
             '$letter — $label',
             style: const TextStyle(fontWeight: FontWeight.w600),
@@ -176,10 +199,9 @@ class _OpeningPickerState extends State<OpeningPicker> {
 
   Widget _buildOpeningTile(OpeningInfo opening) {
     return ListTile(
-      dense: true,
       leading: Container(
-        width: 38,
-        height: 28,
+        width: 42,
+        height: 30,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: Colors.grey.shade200,
@@ -188,18 +210,18 @@ class _OpeningPickerState extends State<OpeningPicker> {
         child: Text(
           opening.eco,
           style: const TextStyle(
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: FontWeight.bold,
           ),
         ),
       ),
       title: Text(
         opening.name,
-        style: const TextStyle(fontSize: 14),
+        style: const TextStyle(fontSize: 15),
       ),
       subtitle: Text(
         opening.pgn,
-        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),

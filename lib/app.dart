@@ -1,8 +1,10 @@
-import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 
+import 'core/services/analytics_service.dart'
+    show AnalyticsService, ScreenViewObserver;
+import 'core/services/stockfish_service.dart' show kEngineAvailable;
 import 'core/theme/app_theme.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/file_rank_trainer/screens/file_rank_menu_screen.dart';
@@ -24,26 +26,14 @@ import 'features/opening_trainer/models/opening_game_state.dart';
 import 'features/pieces/screens/which_side_wins_screen.dart';
 import 'features/pieces/models/which_side_wins_state.dart';
 
-/// Screen-view analytics for every named route. Firebase is initialized in
-/// main() before runApp; when it isn't (widget tests), render the app
-/// without analytics instead of failing to build.
-List<NavigatorObserver> _buildObservers() {
-  try {
-    return [
-      FirebaseAnalyticsObserver(
-        analytics: FirebaseAnalytics.instance,
-        nameExtractor: (settings) => settings.name ?? 'unknown',
-      ),
-    ];
-  } catch (e) {
-    debugPrint('Analytics observer disabled (Firebase not initialized): $e');
-    return [];
-  }
-}
-
 final _router = GoRouter(
   initialLocation: '/',
-  observers: _buildObservers(),
+  // Screen views by route name. Safe before Firebase is up: events are
+  // dropped until main()'s background init marks it ready.
+  observers: [ScreenViewObserver(AnalyticsService())],
+  // An unknown path (a stale bookmark or a typo on web) goes home instead of
+  // GoRouter's default English error page.
+  onException: (context, state, router) => router.go('/'),
   routes: [
     GoRoute(
       path: '/',
@@ -224,6 +214,13 @@ final _router = GoRouter(
     GoRoute(
       path: '/opening-trainer',
       name: 'opening_trainer',
+      // The only engine-backed trainer. Every current target has an engine
+      // (native Stockfish, or Stockfish WASM on web), so this redirect is a
+      // no-op today; it is the seam for any future engine-less target, where
+      // a deep link should land on home rather than on a board that can never
+      // move. The route stays registered so its name (and analytics screen
+      // view) is valid everywhere.
+      redirect: (context, state) => kEngineAvailable ? null : '/',
       builder: (context, state) => const OpeningGameScreen(
         mode: OpeningMode.practice,
         difficulty: OpeningDifficulty.easy,

@@ -41,17 +41,23 @@ class ScanPositionService {
         ScanSetKind.hanging => 'assets/puzzles/scan_hanging.json',
       };
 
+  /// Loads and parses one set. Throws when the asset can't be read or holds
+  /// no playable position; nothing is cached then, so a later call (the
+  /// drill's Retry) tries again, and [getRandom] can rely on a non-empty set.
   Future<void> load(ScanSetKind kind) async {
     if (_cache.containsKey(kind)) return;
 
-    final jsonStr = await rootBundle.loadString(_assetPath(kind));
-    final List<dynamic> raw = json.decode(jsonStr);
+    final path = _assetPath(kind);
+    final raw = json.decode(await rootBundle.loadString(path));
+    if (raw is! List) throw FormatException('$path: expected a JSON list');
 
     final parsed = <ScanPosition>[];
     for (final entry in raw) {
+      if (entry is! Map<String, dynamic>) continue;
       final position = _parseEntry(entry);
       if (position != null) parsed.add(position);
     }
+    if (parsed.isEmpty) throw FormatException('$path: no playable positions');
     _cache[kind] = parsed;
   }
 
@@ -74,8 +80,10 @@ class ScanPositionService {
 
   int count(ScanSetKind kind) => _cache[kind]?.length ?? 0;
 
+  /// A random position from a set already [load]ed, avoiding [exclude].
   ScanPosition getRandom(ScanSetKind kind, {ScanPosition? exclude}) {
-    final positions = _cache[kind]!;
+    final positions = _cache[kind];
+    if (positions == null) throw StateError('load($kind) has not completed');
     if (positions.length <= 1) return positions.first;
 
     ScanPosition candidate;

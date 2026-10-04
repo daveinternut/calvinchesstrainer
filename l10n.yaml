@@ -1,3 +1,7 @@
 arb-dir: lib/l10n
 template-arb-file: app_en.arb
 output-localization-file: app_localizations.dart
+# English first in supportedLocales: Flutter falls back to the first entry for
+# any device language we don't ship (Dutch, Polish, ...), and gen-l10n would
+# otherwise sort German first.
+preferred-supported-locales: [en]

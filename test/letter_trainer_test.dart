@@ -220,6 +220,9 @@ void main() {
       expect(state.timeRemainingSeconds, 0);
       expect(find.text("Time's Up!"), findsOneWidget);
       expect(find.text('Play Again'), findsOneWidget);
+      // The first scoring round is a personal best, and the card says so.
+      expect(state.isNewRecord, true);
+      expect(find.text('New Record!'), findsOneWidget);
     });
   });
 }

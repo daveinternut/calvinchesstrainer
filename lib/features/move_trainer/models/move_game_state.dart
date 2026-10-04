@@ -28,7 +28,13 @@ class MoveGameState {
 
   final ParsedPuzzle? currentPuzzle;
   final String? displayFen;
+
+  /// Side to move in the position on screen: the solver while the puzzle is
+  /// live, the opponent once a correct answer has been played.
   final Side? sideToMove;
+
+  /// Whether [sideToMove] is in check in the position on screen.
+  final bool isCheck;
   final NormalMove? lastSetupMove;
 
   final int streak;
@@ -42,12 +48,16 @@ class MoveGameState {
   final bool isWaitingForNext;
   final bool isLoading;
 
+  /// Set at game over when the round beat the saved personal best.
+  final bool isNewRecord;
+
   const MoveGameState({
     required this.mode,
     this.isHardMode = false,
     this.currentPuzzle,
     this.displayFen,
     this.sideToMove,
+    this.isCheck = false,
     this.lastSetupMove,
     this.streak = 0,
     this.bestStreak = 0,
@@ -58,6 +68,7 @@ class MoveGameState {
     this.isGameOver = false,
     this.isWaitingForNext = false,
     this.isLoading = true,
+    this.isNewRecord = false,
   });
 
   MoveGameState copyWith({
@@ -66,6 +77,7 @@ class MoveGameState {
     ParsedPuzzle? Function()? currentPuzzle,
     String? Function()? displayFen,
     Side? Function()? sideToMove,
+    bool? isCheck,
     NormalMove? Function()? lastSetupMove,
     int? streak,
     int? bestStreak,
@@ -76,6 +88,7 @@ class MoveGameState {
     bool? isGameOver,
     bool? isWaitingForNext,
     bool? isLoading,
+    bool? isNewRecord,
   }) {
     return MoveGameState(
       mode: mode ?? this.mode,
@@ -84,6 +97,7 @@ class MoveGameState {
           currentPuzzle != null ? currentPuzzle() : this.currentPuzzle,
       displayFen: displayFen != null ? displayFen() : this.displayFen,
       sideToMove: sideToMove != null ? sideToMove() : this.sideToMove,
+      isCheck: isCheck ?? this.isCheck,
       lastSetupMove:
           lastSetupMove != null ? lastSetupMove() : this.lastSetupMove,
       streak: streak ?? this.streak,
@@ -98,6 +112,7 @@ class MoveGameState {
       isGameOver: isGameOver ?? this.isGameOver,
       isWaitingForNext: isWaitingForNext ?? this.isWaitingForNext,
       isLoading: isLoading ?? this.isLoading,
+      isNewRecord: isNewRecord ?? this.isNewRecord,
     );
   }
 

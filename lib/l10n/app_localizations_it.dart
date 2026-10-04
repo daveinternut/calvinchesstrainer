@@ -336,14 +336,14 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get aboutWhatIsBody =>
-      'Un\'app divertente e interattiva che insegna i fondamentali degli scacchi ai bambini. Impara colonne, traverse, case e mosse dei pezzi attraverso esercizi, quiz e sfide a tempo — il tutto con feedback audio e tracciamento delle serie per tenerti motivato!';
+      'Un\'app divertente e interattiva che insegna ai bambini le basi degli scacchi. Visione Scacchistica ti allena a vedere al volo forchette, infilate, salti del cavallo, scacchi, catture e pezzi indifesi. Notazione Scacchistica ti insegna colonne, traverse, case, lettere dei pezzi, mosse e valore dei pezzi. Con l\'Esploratore di aperture provi le aperture con i consigli di un vero motore scacchistico. Audio, serie e record salvati ti tengono motivato!';
 
   @override
   String get aboutTrainingModes => 'Modalità di Allenamento';
 
   @override
   String get aboutTrainingModesBody =>
-      '• Esplora — impara al tuo ritmo\n• Pratica — mettiti alla prova e costruisci serie\n• Sfida a Tempo — 30 secondi, quanti riesci a risolverne?\n• Modalità Difficile — nascondi le coordinate per una vera sfida';
+      '• Esplora — impara al tuo ritmo\n• Pratica — mettiti alla prova e costruisci serie\n• Sfida a Tempo — corri contro il tempo (30 o 60 secondi) e stabilisci un nuovo record\n• Modalità Difficile — gioca dal lato del nero';
 
   @override
   String get aboutCredits => 'Crediti e Ringraziamenti';
@@ -408,18 +408,6 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get tacticsComingSoon => 'Allenatore di tattica prossimamente';
-
-  @override
-  String get squareTrainer => 'Allenatore di Case';
-
-  @override
-  String get squareComingSoon => 'Allenatore di case prossimamente';
-
-  @override
-  String get moveTrainer => 'Allenatore di Mosse';
-
-  @override
-  String get moveComingSoon => 'Allenatore di mosse prossimamente';
 
   @override
   String get promptSquare => 'casa';
@@ -522,18 +510,18 @@ class AppLocalizationsIt extends AppLocalizations {
   String get knowYourPieces => 'Know your pieces!';
 
   @override
-  String get whichSideWins => 'Which Side Wins?';
+  String get whichSideWins => 'Quale lato vince?';
 
   @override
   String get whichSideWinsDesc =>
-      'Compare groups of pieces — tap the side worth more!';
+      'Confronta gruppi di pezzi — tocca il lato che vale di più!';
 
   @override
-  String get tapTheSideWorthMore => 'Tap the side worth more';
+  String get tapTheSideWorthMore => 'Tocca il lato che vale di più';
 
   @override
   String get whichSideWinsPracticeDesc =>
-      'Build your streak — difficulty increases as you go!';
+      'Costruisci la tua serie — la difficoltà aumenta man mano!';
 
   @override
   String get letters => 'Lettere';
@@ -629,4 +617,77 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get blackToPlay => 'Muove il Nero';
+
+  @override
+  String get openingExplorer => 'Esploratore di aperture';
+
+  @override
+  String get startFromOpening => 'Inizia da un\'apertura';
+
+  @override
+  String get flipBoard => 'Gira la scacchiera';
+
+  @override
+  String get showScores => 'Mostra i punteggi';
+
+  @override
+  String get hideScores => 'Nascondi i punteggi';
+
+  @override
+  String get searchOpenings => 'Cerca aperture…';
+
+  @override
+  String get noOpeningsFound => 'Nessuna apertura trovata';
+
+  @override
+  String get popularOpenings => 'Popolari';
+
+  @override
+  String get browseByCategory => 'Sfoglia per categoria';
+
+  @override
+  String get ecoFlankOpenings => 'Aperture di fianco';
+
+  @override
+  String get ecoSemiOpenGames => 'Aperture semiaperte';
+
+  @override
+  String get ecoOpenGames => 'Aperture aperte';
+
+  @override
+  String get ecoClosedGames => 'Chiuse e semichiuse';
+
+  @override
+  String get ecoIndianDefenses => 'Difese indiane';
+
+  @override
+  String get engineUnavailable => 'Il motore scacchistico non si è avviato.';
+
+  @override
+  String get visionPromptForks =>
+      'Tocca ogni casa da cui il tuo pezzo attacca il re e l\'altro pezzo!';
+
+  @override
+  String get visionPromptKnightSight =>
+      'Tocca ogni casa su cui può saltare il tuo cavallo!';
+
+  @override
+  String get visionPromptKnightFlight =>
+      'Porta il tuo cavallo all\'anello con meno mosse possibile!';
+
+  @override
+  String get visionPromptPawnAttack =>
+      'Cattura tutti i pedoni — non fermarti mai su una casa ombreggiata!';
+
+  @override
+  String get startOver => 'Ricomincia';
+
+  @override
+  String get loadFailed => 'Impossibile caricare gli esercizi.';
+
+  @override
+  String get checkmate => 'Scacco matto!';
+
+  @override
+  String get draw => 'Patta!';
 }

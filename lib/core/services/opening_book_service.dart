@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dartchess/dartchess.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -34,64 +35,46 @@ class BookContinuation {
 /// 3.d4 is recognized as book because the position also arises from the
 /// canonical 1.e4 c6 2.d4 d5 3.Nc3 move order.
 class OpeningBookService {
-  final List<OpeningInfo> _all = [];
+  List<OpeningInfo> _all = const [];
 
   /// Every position (keyed by [_positionKey]) reachable along any book line.
-  final Set<String> _bookPositions = {};
+  Set<String> _bookPositions = const {};
 
   /// How many dataset lines pass through each position.
   /// Higher count = more popular/established (main lines have big subtrees,
   /// exotic sidelines count 1) — used to rank continuations.
-  final Map<String, int> _lineCount = {};
+  Map<String, int> _lineCount = const {};
 
   /// Opening name for each line's final position (first dataset entry wins).
-  final Map<String, OpeningInfo> _positionNames = {};
+  Map<String, OpeningInfo> _positionNames = const {};
 
   bool _loaded = false;
+  Future<void>? _loadFuture;
 
   bool get isLoaded => _loaded;
 
-  Future<void> load() async {
-    if (_loaded) return;
+  /// Loads and indexes the dataset, once. Concurrent callers share the same
+  /// load — two loads racing used to append every opening twice. A failed
+  /// load may be retried by calling again.
+  Future<void> load() => _loadFuture ??= _load();
 
-    final jsonStr = await rootBundle.loadString('assets/data/eco_openings.json');
-    final List<dynamic> entries = json.decode(jsonStr);
-
-    for (final entry in entries) {
-      final pgn = entry['pgn'] as String;
-      final info = OpeningInfo(
-        eco: entry['eco'] as String,
-        name: entry['name'] as String,
-        pgn: pgn,
-      );
-      _all.add(info);
-
-      final tokens = pgn
-          .replaceAll(RegExp(r'\d+\.\s*'), '')
-          .trim()
-          .split(RegExp(r'\s+'));
-
-      Position pos = Chess.initial;
-      var replayedFully = true;
-      for (final token in tokens) {
-        if (token.isEmpty) continue;
-        final move = pos.parseSan(token);
-        if (move == null) {
-          replayedFully = false;
-          break;
-        }
-        pos = pos.playUnchecked(move);
-        final key = _positionKey(pos);
-        _bookPositions.add(key);
-        _lineCount[key] = (_lineCount[key] ?? 0) + 1;
-      }
-
-      if (replayedFully) {
-        _positionNames.putIfAbsent(_positionKey(pos), () => info);
-      }
+  Future<void> _load() async {
+    try {
+      final jsonStr =
+          await rootBundle.loadString('assets/data/eco_openings.json');
+      // Replaying ~3640 lines is a few hundred milliseconds of CPU on an
+      // iPad: done off the UI isolate so the screen's entry animation
+      // doesn't stutter. (On web, compute runs it inline.)
+      final index = await compute(_indexOpenings, jsonStr);
+      _all = index.all;
+      _bookPositions = index.bookPositions;
+      _lineCount = index.lineCount;
+      _positionNames = index.positionNames;
+      _loaded = true;
+    } catch (_) {
+      _loadFuture = null;
+      rethrow;
     }
-
-    _loaded = true;
   }
 
   /// The opening name for the current position, if a dataset line ends here
@@ -142,13 +125,74 @@ class OpeningBookService {
     openings.sort((a, b) => a.eco.compareTo(b.eco));
     return openings;
   }
+}
 
-  /// Pieces + side to move + castling rights. The en-passant FEN field is
-  /// deliberately excluded: transposed move orders reach the same position
-  /// with different phantom ep squares (e.g. ...2.Nc3 d5 3.d4 has ep=d3 while
-  /// ...2.d4 d5 3.Nc3 has ep=-), which would defeat transposition matching.
-  String _positionKey(Position pos) {
-    final parts = pos.fen.split(' ');
-    return parts.take(3).join(' ');
+/// Pieces + side to move + castling rights. The en-passant FEN field is
+/// deliberately excluded: transposed move orders reach the same position
+/// with different phantom ep squares (e.g. ...2.Nc3 d5 3.d4 has ep=d3 while
+/// ...2.d4 d5 3.Nc3 has ep=-), which would defeat transposition matching.
+String _positionKey(Position pos) {
+  final parts = pos.fen.split(' ');
+  return parts.take(3).join(' ');
+}
+
+/// Everything [OpeningBookService.load] indexes, built in one pass.
+class _BookIndex {
+  final List<OpeningInfo> all;
+  final Set<String> bookPositions;
+  final Map<String, int> lineCount;
+  final Map<String, OpeningInfo> positionNames;
+
+  const _BookIndex(
+    this.all,
+    this.bookPositions,
+    this.lineCount,
+    this.positionNames,
+  );
+}
+
+/// Replays every dataset line and indexes the positions it passes through.
+/// Pure Dart (dartchess only), so it can run in a background isolate.
+_BookIndex _indexOpenings(String jsonStr) {
+  final all = <OpeningInfo>[];
+  final bookPositions = <String>{};
+  final lineCount = <String, int>{};
+  final positionNames = <String, OpeningInfo>{};
+
+  final List<dynamic> entries = json.decode(jsonStr);
+  for (final entry in entries) {
+    final pgn = entry['pgn'] as String;
+    final info = OpeningInfo(
+      eco: entry['eco'] as String,
+      name: entry['name'] as String,
+      pgn: pgn,
+    );
+    all.add(info);
+
+    final tokens = pgn
+        .replaceAll(RegExp(r'\d+\.\s*'), '')
+        .trim()
+        .split(RegExp(r'\s+'));
+
+    Position pos = Chess.initial;
+    var replayedFully = true;
+    for (final token in tokens) {
+      if (token.isEmpty) continue;
+      final move = pos.parseSan(token);
+      if (move == null) {
+        replayedFully = false;
+        break;
+      }
+      pos = pos.playUnchecked(move);
+      final key = _positionKey(pos);
+      bookPositions.add(key);
+      lineCount[key] = (lineCount[key] ?? 0) + 1;
+    }
+
+    if (replayedFully) {
+      positionNames.putIfAbsent(_positionKey(pos), () => info);
+    }
   }
+
+  return _BookIndex(all, bookPositions, lineCount, positionNames);
 }

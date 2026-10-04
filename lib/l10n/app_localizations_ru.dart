@@ -336,14 +336,14 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get aboutWhatIsBody =>
-      'Весёлое интерактивное приложение для обучения детей основам шахмат. Изучай вертикали, горизонтали, поля и ходы фигур через упражнения, тесты и задания на время — всё с аудио-подсказками и подсчётом серий для мотивации!';
+      'Весёлое интерактивное приложение, которое учит детей основам шахмат. «Шахматное зрение» тренирует замечать с первого взгляда вилки, линейные удары, ходы коня, шахи, взятия и незащищённые фигуры. «Шахматная нотация» учит вертикали, горизонтали, поля, буквы фигур, ходы и ценность фигур. В «Обозревателе дебютов» можно пробовать дебюты с подсказками настоящего шахматного движка. Звуки, серии и сохранённые рекорды помогают не терять интерес!';
 
   @override
   String get aboutTrainingModes => 'Режимы тренировки';
 
   @override
   String get aboutTrainingModesBody =>
-      '• Изучение — учись в своём темпе\n• Практика — проверяй себя и набирай серии\n• Блиц-раунд — 30 секунд, сколько решишь?\n• Сложный режим — скрой координаты для настоящего вызова';
+      '• Изучение — учись в своём темпе\n• Практика — проверяй себя и набирай серии\n• Блиц-раунд — соревнуйся с часами (30 или 60 секунд) и ставь новый рекорд\n• Сложный режим — играй со стороны чёрных';
 
   @override
   String get aboutCredits => 'Благодарности';
@@ -407,18 +407,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get tacticsComingSoon => 'Тренажёр тактики скоро появится';
-
-  @override
-  String get squareTrainer => 'Тренажёр полей';
-
-  @override
-  String get squareComingSoon => 'Тренажёр полей скоро появится';
-
-  @override
-  String get moveTrainer => 'Тренажёр ходов';
-
-  @override
-  String get moveComingSoon => 'Тренажёр ходов скоро появится';
 
   @override
   String get promptSquare => 'поле';
@@ -521,18 +509,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get knowYourPieces => 'Know your pieces!';
 
   @override
-  String get whichSideWins => 'Which Side Wins?';
+  String get whichSideWins => 'Какая сторона сильнее?';
 
   @override
   String get whichSideWinsDesc =>
-      'Compare groups of pieces — tap the side worth more!';
+      'Сравни группы фигур — нажми на ту сторону, что ценнее!';
 
   @override
-  String get tapTheSideWorthMore => 'Tap the side worth more';
+  String get tapTheSideWorthMore => 'Нажми на более ценную сторону';
 
   @override
   String get whichSideWinsPracticeDesc =>
-      'Build your streak — difficulty increases as you go!';
+      'Наращивай серию — сложность растёт по ходу!';
 
   @override
   String get letters => 'Буквы';
@@ -628,4 +616,77 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get blackToPlay => 'Ход чёрных';
+
+  @override
+  String get openingExplorer => 'Обозреватель дебютов';
+
+  @override
+  String get startFromOpening => 'Начать с дебюта';
+
+  @override
+  String get flipBoard => 'Перевернуть доску';
+
+  @override
+  String get showScores => 'Показать оценки';
+
+  @override
+  String get hideScores => 'Скрыть оценки';
+
+  @override
+  String get searchOpenings => 'Поиск дебютов…';
+
+  @override
+  String get noOpeningsFound => 'Дебюты не найдены';
+
+  @override
+  String get popularOpenings => 'Популярные';
+
+  @override
+  String get browseByCategory => 'По категориям';
+
+  @override
+  String get ecoFlankOpenings => 'Фланговые дебюты';
+
+  @override
+  String get ecoSemiOpenGames => 'Полуоткрытые дебюты';
+
+  @override
+  String get ecoOpenGames => 'Открытые дебюты';
+
+  @override
+  String get ecoClosedGames => 'Закрытые и полузакрытые';
+
+  @override
+  String get ecoIndianDefenses => 'Индийские защиты';
+
+  @override
+  String get engineUnavailable => 'Шахматный движок не запустился.';
+
+  @override
+  String get visionPromptForks =>
+      'Нажми на каждое поле, с которого твоя фигура атакует короля и другую фигуру!';
+
+  @override
+  String get visionPromptKnightSight =>
+      'Нажми на каждое поле, куда может прыгнуть твой конь!';
+
+  @override
+  String get visionPromptKnightFlight =>
+      'Доведи коня до кольца за как можно меньшее число ходов!';
+
+  @override
+  String get visionPromptPawnAttack =>
+      'Забери все пешки — никогда не останавливайся на затенённом поле!';
+
+  @override
+  String get startOver => 'Начать заново';
+
+  @override
+  String get loadFailed => 'Не удалось загрузить задачи.';
+
+  @override
+  String get checkmate => 'Мат!';
+
+  @override
+  String get draw => 'Ничья!';
 }

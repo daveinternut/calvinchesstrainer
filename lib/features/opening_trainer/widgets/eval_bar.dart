@@ -16,8 +16,10 @@ class EvalBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final whiteFraction = _evalToFraction(eval.centipawns);
 
+    // Mate: "M3" (the bar's fill and the label colors say who mates), and
+    // "#" once the position is checkmate.
     final label = eval.isMate
-        ? 'M${eval.mateIn!.abs()}'
+        ? (eval.mateIn == 0 ? '#' : 'M${eval.mateIn!.abs()}')
         : (eval.centipawns >= 0
             ? '+${eval.pawns.toStringAsFixed(1)}'
             : eval.pawns.toStringAsFixed(1));

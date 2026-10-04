@@ -333,14 +333,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutWhatIsBody =>
-      'A fun, interactive app that teaches chess fundamentals to kids. Learn files, ranks, squares, and piece moves through drills, quizzes, and timed challenges — all with audio feedback and streak tracking to keep you motivated!';
+      'A fun, interactive app that teaches chess fundamentals to kids. Chess Vision trains you to spot forks, skewers, knight moves, checks, captures and hanging pieces at a glance. Chess Notation teaches files, ranks, squares, piece letters, moves and piece values. The Opening Explorer lets you try openings with hints from a real chess engine. Audio feedback, streaks and saved personal bests keep you motivated!';
 
   @override
   String get aboutTrainingModes => 'Training Modes';
 
   @override
   String get aboutTrainingModesBody =>
-      '• Explore — learn at your own pace\n• Practice — quiz yourself and build streaks\n• Speed Round — 30 seconds, how many can you get?\n• Hard Mode — hide coordinates for a real challenge';
+      '• Explore — learn at your own pace\n• Practice — quiz yourself and build streaks\n• Speed Round — race the clock (30 or 60 seconds) and set a new record\n• Hard Mode — play from Black\'s side of the board';
 
   @override
   String get aboutCredits => 'Credits & Acknowledgments';
@@ -404,18 +404,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tacticsComingSoon => 'Tactics trainer coming soon';
-
-  @override
-  String get squareTrainer => 'Square Trainer';
-
-  @override
-  String get squareComingSoon => 'Square trainer coming soon';
-
-  @override
-  String get moveTrainer => 'Move Trainer';
-
-  @override
-  String get moveComingSoon => 'Move trainer coming soon';
 
   @override
   String get promptSquare => 'square';
@@ -621,4 +609,77 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get blackToPlay => 'Black to play';
+
+  @override
+  String get openingExplorer => 'Opening Explorer';
+
+  @override
+  String get startFromOpening => 'Start from an opening';
+
+  @override
+  String get flipBoard => 'Flip board';
+
+  @override
+  String get showScores => 'Show scores';
+
+  @override
+  String get hideScores => 'Hide scores';
+
+  @override
+  String get searchOpenings => 'Search openings…';
+
+  @override
+  String get noOpeningsFound => 'No openings found';
+
+  @override
+  String get popularOpenings => 'Popular';
+
+  @override
+  String get browseByCategory => 'Browse by category';
+
+  @override
+  String get ecoFlankOpenings => 'Flank Openings';
+
+  @override
+  String get ecoSemiOpenGames => 'Semi-Open Games';
+
+  @override
+  String get ecoOpenGames => 'Open Games';
+
+  @override
+  String get ecoClosedGames => 'Closed & Semi-Closed';
+
+  @override
+  String get ecoIndianDefenses => 'Indian Defenses';
+
+  @override
+  String get engineUnavailable => 'The chess engine didn\'t start.';
+
+  @override
+  String get visionPromptForks =>
+      'Tap every square where your piece attacks the king and the other piece!';
+
+  @override
+  String get visionPromptKnightSight =>
+      'Tap every square your knight can jump to!';
+
+  @override
+  String get visionPromptKnightFlight =>
+      'Jump your knight to the ring in as few moves as you can!';
+
+  @override
+  String get visionPromptPawnAttack =>
+      'Capture every pawn — never stop on a shaded square!';
+
+  @override
+  String get startOver => 'Start over';
+
+  @override
+  String get loadFailed => 'Couldn\'t load the puzzles.';
+
+  @override
+  String get checkmate => 'Checkmate!';
+
+  @override
+  String get draw => 'Draw!';
 }

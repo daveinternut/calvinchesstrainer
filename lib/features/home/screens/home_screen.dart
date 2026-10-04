@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/services/stockfish_service.dart' show kEngineAvailable;
 import '../../../core/theme/app_theme.dart';
 
 /// The home screen ranks the trainers rather than listing them: Chess Vision
-/// is the hero (four drills, the deepest content in the app), Chess Notation
+/// is the hero (eight drills, the deepest content in the app), Chess Notation
 /// and Opening Explorer share a secondary row. Piece Value used to live here
 /// as its own card; it is now a drill inside Chess Notation.
+///
+/// Opening Explorer is the one card that needs a chess engine. Every current
+/// target has one (native Stockfish, or Stockfish WASM on web), but the card
+/// stays gated on `kEngineAvailable`: on an engine-less target it would be
+/// dropped and Chess Notation would take the whole secondary row.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -115,11 +121,19 @@ class HomeScreen extends StatelessWidget {
                         title: l10n.chessVision,
                         subtitle: l10n.seeTheBoard,
                         badge: l10n.startHere,
-                        drills: [
-                          l10n.forksAndSkewers,
-                          l10n.knightSight,
-                          l10n.knightFlight,
-                          l10n.pawnAttack,
+                        drillRows: [
+                          [
+                            l10n.forksAndSkewers,
+                            l10n.knightSight,
+                            l10n.knightFlight,
+                            l10n.pawnAttack,
+                          ],
+                          [
+                            l10n.scanDrillChecks,
+                            l10n.scanDrillCaptures,
+                            l10n.scanDrillHanging,
+                            l10n.scanDrillMate,
+                          ],
                         ],
                         icon: Icons.visibility_rounded,
                         color: const Color(0xFF6A1B9A),
@@ -141,16 +155,20 @@ class HomeScreen extends StatelessWidget {
                               onTap: () => context.push('/file-rank-trainer'),
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _SecondaryTrainingCard(
-                              title: l10n.openingFundamentals,
-                              icon: Icons.castle_rounded,
-                              color: const Color(0xFFE65100),
-                              imagePath: 'assets/images/card_openings.png',
-                              onTap: () => context.push('/opening-trainer'),
+                          // Needs a chess engine — see kEngineAvailable in
+                          // stockfish_service.dart.
+                          if (kEngineAvailable) ...[
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _SecondaryTrainingCard(
+                                title: l10n.openingFundamentals,
+                                icon: Icons.castle_rounded,
+                                color: const Color(0xFFE65100),
+                                imagePath: 'assets/images/card_openings.png',
+                                onTap: () => context.push('/opening-trainer'),
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
@@ -174,12 +192,13 @@ List<Shadow> _titleGlow() => [
     ];
 
 /// The one card we want kids to tap first. Full width, badged, and it lists
-/// the drills waiting inside so the depth of the feature is visible up front.
+/// the drills waiting inside (one line per row of [drillRows]) so the depth
+/// of the feature is visible up front.
 class _HeroTrainingCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String badge;
-  final List<String> drills;
+  final List<List<String>> drillRows;
   final IconData icon;
   final Color color;
   final String? imagePath;
@@ -189,7 +208,7 @@ class _HeroTrainingCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.badge,
-    required this.drills,
+    required this.drillRows,
     required this.icon,
     required this.color,
     required this.onTap,
@@ -321,16 +340,22 @@ class _HeroTrainingCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   color: Colors.white.withValues(alpha: 0.88),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      drills.join('  •  '),
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final row in drillRows)
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            row.join('  •  '),
+                            style: TextStyle(
+                              color: color,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),

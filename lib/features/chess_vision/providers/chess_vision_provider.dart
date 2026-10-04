@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:developer' as dev;
 import 'dart:math';
 
 import 'package:dartchess/dartchess.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/audio/audio_service.dart';
 import '../../../core/services/analytics_service.dart';
+import '../../../core/services/personal_bests_service.dart';
 import '../../../core/services/puzzle_service.dart';
 import '../../../core/services/scan_position_service.dart';
 import '../models/chess_vision_state.dart';
@@ -14,95 +17,148 @@ import '../services/knight_engine.dart';
 import '../services/pawn_attack_engine.dart';
 import '../services/scan_engine.dart';
 
+/// Auto-disposed: a round never outlives its screen. Leaving the drill
+/// disposes the notifier, which cancels every timer, and the next visit
+/// starts from a fresh, neutral state. Personal bests live in the keep-alive
+/// [personalBestsProvider].
 final chessVisionProvider =
-    NotifierProvider<ChessVisionNotifier, ChessVisionState>(
+    NotifierProvider.autoDispose<ChessVisionNotifier, ChessVisionState>(
   ChessVisionNotifier.new,
 );
 
 class ChessVisionNotifier extends Notifier<ChessVisionState> {
+  /// Share of Forks & Skewers rounds (outside concentric) whose answer is
+  /// "None". Fixed, so the piece/target pairing doesn't decide it — rook vs
+  /// rook used to be about 70% None.
+  static const noneRoundChance = 0.15;
+
+  /// Length of a speed round's countdown.
+  static const speedRoundSeconds = 60;
+
+  /// Timed Pawn Attack climbs from 3 pawns to 8 (practice wraps back to 3).
+  static const pawnAttackFirstLevel = 3;
+  static const pawnAttackLastLevel = 8;
+
   final _random = Random();
   Timer? _flashTimer;
   Timer? _advanceTimer;
   Timer? _countdownTimer;
   Timer? _stopwatchTimer;
-  final Map<String, int> _personalBests = {};
-  List<Square> _filteredConcentricPath = [];
-  ScanPosition? _currentScanPosition;
 
-  // Bumped by every startGame; async asset loads bail out when a newer game
-  // superseded them mid-await.
+  /// Forks & Skewers answers for every target square, for this game's
+  /// piece/target pairing (computed once in [startGame]).
+  Map<Square, Set<Square>> _forkSolutions = const {};
+  Square? _lastForkTarget;
+  List<Square> _filteredConcentricPath = const [];
+  ScanPosition? _currentScanPosition;
+  bool _knightSightPickEdge = false;
+
+  // Bumped by every startGame and on dispose; an asset load that finishes
+  // after a newer game started (or after the screen closed) is dropped.
   int _gameGeneration = 0;
 
-  AudioService get _audio => ref.read(audioServiceProvider);
-  AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
-  ScanPositionService get _scanPositions =>
-      ref.read(scanPositionServiceProvider);
-  PuzzleService get _matePuzzles => ref.read(mateInOnePuzzleServiceProvider);
-
-  String get _bestKey {
-    final drill = state.drillType.name;
-    if (state.drillType == VisionDrillType.forksAndSkewers) {
-      return 'vision_${drill}_${state.whitePiece.name}_${state.targetPiece.name}_${state.mode.name}';
-    }
-    if (state.drillType == VisionDrillType.pawnAttack) {
-      return 'vision_${drill}_${state.whitePiece.name}_${state.mode.name}';
-    }
-    return 'vision_${drill}_${state.mode.name}';
-  }
-
-  int get personalBest => _personalBests[_bestKey] ?? 0;
+  // Read once in build(), so nothing that runs after an await or in a timer
+  // needs to go back through `ref`.
+  late AudioService _audio;
+  late AnalyticsService _analytics;
+  late ScanPositionService _scanPositions;
+  late PuzzleService _matePuzzles;
+  late PersonalBestsNotifier _bests;
 
   @override
   ChessVisionState build() {
+    _audio = ref.read(audioServiceProvider);
+    _analytics = ref.read(analyticsServiceProvider);
+    _scanPositions = ref.read(scanPositionServiceProvider);
+    _matePuzzles = ref.read(mateInOnePuzzleServiceProvider);
+    _bests = ref.read(personalBestsProvider.notifier);
     ref.onDispose(_dispose);
+    // Neutral until the screen calls startGame: `isLoading` blocks input and
+    // keeps the screen from drawing any drill's board or results.
     return const ChessVisionState(
       drillType: VisionDrillType.forksAndSkewers,
       mode: VisionMode.practice,
       whitePiece: WhitePiece.queen,
+      isLoading: true,
     );
   }
+
+  /// Personal-best key, e.g. `vision.forksAndSkewers_queen_rook_speed`.
+  String get _bestKey {
+    final drill = state.drillType.name;
+    final mode = state.mode.name;
+    return switch (state.drillType) {
+      VisionDrillType.forksAndSkewers =>
+        'vision.${drill}_${state.whitePiece.name}_${state.targetPiece.name}_$mode',
+      VisionDrillType.pawnAttack =>
+        'vision.${drill}_${state.whitePiece.name}_$mode',
+      _ => 'vision.${drill}_$mode',
+    };
+  }
+
+  /// Concentric and timed Pawn Attack run on a stopwatch and rank by time
+  /// (lower is better); speed rounds count down and rank by positions solved.
+  bool get _isTimedByStopwatch =>
+      state.mode == VisionMode.concentric ||
+      (state.drillType == VisionDrillType.pawnAttack &&
+          state.mode == VisionMode.speed);
+
+  static bool _usesPiece(VisionDrillType drill) =>
+      drill == VisionDrillType.forksAndSkewers ||
+      drill == VisionDrillType.pawnAttack;
 
   Future<void> startGame(
       VisionDrillType drillType, VisionMode mode, WhitePiece piece,
       {TargetPiece targetPiece = TargetPiece.rook}) async {
     _cancelTimers();
     final generation = ++_gameGeneration;
+    var effectiveMode = drillType.effectiveMode(mode);
 
-    final effectiveMode = (drillType == VisionDrillType.knightSight ||
-            drillType == VisionDrillType.knightFlight)
-        ? VisionMode.practice
-        : ((drillType == VisionDrillType.pawnAttack ||
-                    drillType.isScanDrill) &&
-                mode != VisionMode.practice)
-            ? VisionMode.speed
-            : mode;
-
-    if (effectiveMode == VisionMode.concentric) {
-      _filteredConcentricPath = concentricPath.where((target) {
-        return ForkSkewerEngine.computeValidSquares(
-          whitePiece: piece,
-          kingSquare: ChessVisionState.blackKingSquare,
-          targetSquare: target,
-          targetRole: targetPiece.role,
-        ).isNotEmpty;
-      }).toList();
-    } else {
-      _filteredConcentricPath = [];
+    _forkSolutions = const {};
+    _filteredConcentricPath = const [];
+    _lastForkTarget = null;
+    _currentScanPosition = null;
+    if (drillType == VisionDrillType.forksAndSkewers) {
+      _forkSolutions = {
+        for (final target in Square.values)
+          if (target != ChessVisionState.blackKingSquare)
+            target: ForkSkewerEngine.computeValidSquares(
+              whitePiece: piece,
+              kingSquare: ChessVisionState.blackKingSquare,
+              targetSquare: target,
+              targetRole: targetPiece.role,
+            ),
+      };
+      if (effectiveMode == VisionMode.concentric) {
+        _filteredConcentricPath = [
+          for (final target in concentricPath)
+            if (_forkSolutions[target]!.isNotEmpty) target,
+        ];
+        // A pairing with no fork or skewer anywhere (knight vs knight: the
+        // knights can always take each other) has no spiral to walk. Never a
+        // dead end — fall back to practice, where its rounds are None rounds.
+        if (_filteredConcentricPath.isEmpty) {
+          effectiveMode = VisionMode.practice;
+        }
+      }
     }
 
+    final usesCountdown = effectiveMode == VisionMode.speed &&
+        drillType != VisionDrillType.pawnAttack;
     state = ChessVisionState(
       drillType: drillType,
       mode: effectiveMode,
       whitePiece: piece,
       targetPiece: targetPiece,
-      timeRemainingSeconds: effectiveMode == VisionMode.speed ? 60 : null,
+      timeRemainingSeconds: usesCountdown ? speedRoundSeconds : null,
+      concentricTotal: _filteredConcentricPath.length,
       isLoading: drillType.isScanDrill,
     );
 
     _analytics.logVisionDrillStarted(
       drill: drillType.name,
       mode: effectiveMode.name,
-      piece: drillType.isScanDrill ? null : piece.name,
+      piece: _usesPiece(drillType) ? piece.name : null,
       target: drillType == VisionDrillType.forksAndSkewers
           ? targetPiece.name
           : null,
@@ -120,32 +176,59 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
       case VisionDrillType.findChecks:
       case VisionDrillType.findCaptures:
       case VisionDrillType.hangingPieces:
-        await _scanPositions.load(_scanKindFor(drillType));
-        if (generation != _gameGeneration) return;
-        state = state.copyWith(isLoading: false);
-        _loadNextScanPosition();
       case VisionDrillType.mateInOne:
-        await _matePuzzles.loadPuzzles();
-        if (generation != _gameGeneration) return;
+        final loaded = await _loadScanAssets(drillType);
+        // The screen may have closed, or a newer game started, meanwhile.
+        if (!ref.mounted || generation != _gameGeneration) return;
+        if (!loaded) {
+          state = state.copyWith(isLoading: false, loadFailed: true);
+          return;
+        }
         state = state.copyWith(isLoading: false);
-        _loadNextMatePuzzle();
+        if (drillType == VisionDrillType.mateInOne) {
+          _loadNextMatePuzzle();
+        } else {
+          _loadNextScanPosition();
+        }
     }
 
-    if (drillType == VisionDrillType.pawnAttack &&
-        effectiveMode == VisionMode.speed) {
+    if (_isTimedByStopwatch) {
       _startStopwatch();
-    } else if (effectiveMode == VisionMode.speed) {
+    } else if (usesCountdown) {
       _startCountdown();
-    } else if (effectiveMode == VisionMode.concentric) {
-      _startStopwatch();
+    }
+  }
+
+  /// Loads a scanning drill's curated set. False when it can't be read or
+  /// holds nothing playable — the screen then offers a retry instead of an
+  /// endless spinner.
+  Future<bool> _loadScanAssets(VisionDrillType drill) async {
+    try {
+      if (drill == VisionDrillType.mateInOne) {
+        await _matePuzzles.loadPuzzles();
+        return _matePuzzles.puzzleCount > 0;
+      }
+      await _scanPositions.load(_scanKindFor(drill));
+      return true;
+    } catch (e) {
+      dev.log('ChessVision: could not load the ${drill.name} set: $e');
+      return false;
     }
   }
 
   // --- Tap routing ---
 
+  /// False whenever the player's input must not count: before the game is
+  /// ready, between rounds, during a reveal, and after game over.
+  bool get _acceptingInput =>
+      !state.isLoading &&
+      !state.loadFailed &&
+      !state.isGameOver &&
+      !state.isRoundComplete &&
+      !state.showingRevealedAnswer;
+
   void handleBoardTap(Square square) {
-    if (state.isGameOver || state.isRoundComplete || state.isLoading) return;
-    if (state.showingRevealedAnswer) return;
+    if (!_acceptingInput) return;
 
     switch (state.drillType) {
       case VisionDrillType.forksAndSkewers:
@@ -165,7 +248,7 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     }
   }
 
-  // --- Forks & Skewers (existing) ---
+  // --- Forks & Skewers ---
 
   void _handleForksSkewersTap(Square square) {
     if (square == ChessVisionState.blackKingSquare ||
@@ -182,24 +265,57 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
   }
 
   void handleNoneTap() {
-    if (state.isGameOver || state.isRoundComplete) return;
-    if (state.showingRevealedAnswer) return;
+    if (state.drillType != VisionDrillType.forksAndSkewers) return;
+    if (!_acceptingInput) return;
 
     if (state.correctSquares.isEmpty) {
       _audio.playCorrect();
       _completeConfiguration(madeError: false);
     } else {
+      // Wrong: show the answer, cost the streak, count nothing.
       _audio.playIncorrect();
-      state = state.copyWith(
-        showingRevealedAnswer: true,
-        totalErrors: state.totalErrors + 1,
-        streak: 0,
-      );
-      _advanceTimer?.cancel();
-      _advanceTimer = Timer(const Duration(milliseconds: 1500), () {
-        _advanceToNextConfiguration(madeError: true);
-      });
+      _revealAndMoveOn();
     }
+  }
+
+  void _generateNextConfiguration() {
+    final Square target;
+
+    if (state.mode == VisionMode.concentric) {
+      if (state.concentricIndex >= _filteredConcentricPath.length) return;
+      target = _filteredConcentricPath[state.concentricIndex];
+      state = state.copyWith(concentricIndex: state.concentricIndex + 1);
+    } else {
+      target = _pickForkTarget();
+    }
+    _lastForkTarget = target;
+
+    state = state.copyWith(
+      targetSquare: target,
+      correctSquares: _forkSolutions[target] ?? const {},
+      foundSquares: const {},
+      incorrectFlashSquare: () => null,
+      showingRevealedAnswer: false,
+      hadErrorThisRound: false,
+      isRoundComplete: false,
+    );
+  }
+
+  /// A None round [noneRoundChance] of the time, otherwise a target with at
+  /// least one solution — never the previous round's target.
+  Square _pickForkTarget() {
+    final withSolutions = <Square>[];
+    final withoutSolutions = <Square>[];
+    _forkSolutions.forEach((target, solutions) {
+      if (target == _lastForkTarget) return;
+      (solutions.isEmpty ? withoutSolutions : withSolutions).add(target);
+    });
+    final wantNone = _random.nextDouble() < noneRoundChance;
+    final pool = (wantNone && withoutSolutions.isNotEmpty) ||
+            withSolutions.isEmpty
+        ? withoutSolutions
+        : withSolutions;
+    return pool[_random.nextInt(pool.length)];
   }
 
   // --- Knight Sight ---
@@ -209,19 +325,11 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     if (state.foundSquares.contains(square)) return;
 
     if (state.correctSquares.contains(square)) {
-      final newFound = {...state.foundSquares, square};
-      _audio.playCorrect();
-      state = state.copyWith(foundSquares: newFound);
-
-      if (newFound.length >= state.correctSquares.length) {
-        _completeConfiguration(madeError: state.hadErrorThisRound);
-      }
+      _handleCorrectTap(square);
     } else {
       _handleIncorrectTap(square);
     }
   }
-
-  bool _knightSightPickEdge = false;
 
   static const _centralSquares = [
     Square.c3, Square.c4, Square.c5, Square.c6,
@@ -295,6 +403,8 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
   }
 
   void retryFlight() {
+    if (state.drillType != VisionDrillType.knightFlight) return;
+    if (!_acceptingInput) return;
     if (!state.flightComplete || state.knightSquare == null) return;
     state = state.copyWith(
       flightPath: const [],
@@ -304,7 +414,11 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     );
   }
 
+  /// Accepts a non-optimal arrival and moves on (counted, streak reset). The
+  /// input gate makes a double tap on Skip count once.
   void skipFlight() {
+    if (state.drillType != VisionDrillType.knightFlight) return;
+    if (!_acceptingInput) return;
     if (!state.flightComplete) return;
     _completeConfiguration(madeError: true);
   }
@@ -332,6 +446,11 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     );
   }
 
+  Square _randomSquare({Square? exclude}) {
+    final candidates = Square.values.where((s) => s != exclude).toList();
+    return candidates[_random.nextInt(candidates.length)];
+  }
+
   // --- Pawn Attack ---
 
   void _handlePawnAttackTap(Square square) {
@@ -339,8 +458,9 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     if (from == null) return;
     if (square == from) return;
 
+    final role = state.whitePiece.role;
     final valid = PawnAttackEngine.validMoves(
-      role: state.whitePiece.role,
+      role: role,
       from: from,
       remainingPawns: state.remainingPawns,
     );
@@ -358,82 +478,82 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     final newPawns = isCapture
         ? ({...state.remainingPawns}..remove(square))
         : state.remainingPawns;
-    final newThreats =
-        isCapture ? PawnAttackEngine.pawnThreats(newPawns) : state.pawnThreatSquares;
 
     state = state.copyWith(
       pieceSquare: () => square,
       remainingPawns: newPawns,
-      pawnThreatSquares: newThreats,
+      pawnThreatSquares: isCapture
+          ? PawnAttackEngine.pawnThreats(newPawns)
+          : state.pawnThreatSquares,
       pawnAttackMoves: state.pawnAttackMoves + 1,
+      pawnAttackDeadEnd: !PawnAttackEngine.isSolvable(
+        role: role,
+        from: square,
+        pawns: newPawns,
+      ),
       incorrectFlashSquare: () => null,
     );
 
     if (newPawns.isEmpty) {
-      _completePawnAttackRound();
-    }
-  }
-
-  void _completePawnAttackRound() {
-    state = state.copyWith(isRoundComplete: true);
-
-    _advanceTimer?.cancel();
-    _advanceTimer = Timer(const Duration(milliseconds: 800), () {
-      _advancePawnAttack();
-    });
-  }
-
-  void _advancePawnAttack() {
-    if (state.isGameOver) return;
-
-    final newStreak = state.hadErrorThisRound ? 0 : state.streak + 1;
-    final newBestStreak = max(newStreak, state.bestStreak);
-
-    final nextDifficulty = state.pawnAttackDifficulty + 1;
-
-    if (state.mode == VisionMode.speed && nextDifficulty > 8) {
-      _cancelTimers();
-      state = state.copyWith(
-        isGameOver: true,
-        streak: newStreak,
-        bestStreak: newBestStreak,
-        configurationsCompleted: state.configurationsCompleted + 1,
+      _completeConfiguration(
+        madeError: state.hadErrorThisRound,
+        delay: const Duration(milliseconds: 800),
       );
-      _checkAndUpdatePersonalBest();
-      return;
     }
+  }
 
-    final wrappedDifficulty = nextDifficulty > 8 ? 3 : nextDifficulty;
-
-    state = state.copyWith(
-      streak: newStreak,
-      bestStreak: newBestStreak,
-      configurationsCompleted: state.configurationsCompleted + 1,
-      pawnAttackDifficulty: wrappedDifficulty,
-    );
-
-    _generatePawnAttackConfig();
+  /// Puts the current Pawn Attack board back the way it was dealt — the way
+  /// out of a position the player has trapped themselves in. It costs
+  /// nothing (errors already made still count); in timed mode the clock
+  /// keeps running.
+  void startOverPawnBoard() {
+    if (state.drillType != VisionDrillType.pawnAttack) return;
+    if (!_acceptingInput) return;
+    if (state.pawnAttackMoves == 0) return;
+    _setPawnBoard(state.pawnAttackStartPawns);
   }
 
   void _generatePawnAttackConfig() {
-    final darkOnly = state.whitePiece == WhitePiece.bishop;
     final pawns = PawnAttackEngine.generatePawns(
       state.pawnAttackDifficulty,
       _random,
-      darkSquaresOnly: darkOnly,
+      role: state.whitePiece.role,
     );
-    final threats = PawnAttackEngine.pawnThreats(pawns);
+    _setPawnBoard(pawns, newRound: true);
+  }
 
+  void _advancePawnLevel() {
+    final next = state.pawnAttackDifficulty + 1;
     state = state.copyWith(
-      pieceSquare: () => Square.a1,
+      pawnAttackDifficulty:
+          next > pawnAttackLastLevel ? pawnAttackFirstLevel : next,
+    );
+    _generatePawnAttackConfig();
+  }
+
+  /// Deals [pawns] with the piece back on its start square.
+  void _setPawnBoard(Set<Square> pawns, {bool newRound = false}) {
+    state = state.copyWith(
+      pieceSquare: () => PawnAttackEngine.startSquare,
       remainingPawns: pawns,
-      pawnThreatSquares: threats,
+      pawnAttackStartPawns: pawns,
+      pawnThreatSquares: PawnAttackEngine.pawnThreats(pawns),
       pawnAttackMoves: 0,
+      pawnAttackDeadEnd: !PawnAttackEngine.isSolvable(
+        role: state.whitePiece.role,
+        from: PawnAttackEngine.startSquare,
+        pawns: pawns,
+      ),
       incorrectFlashSquare: () => null,
-      hadErrorThisRound: false,
-      isRoundComplete: false,
+      hadErrorThisRound: newRound ? false : null,
+      isRoundComplete: newRound ? false : null,
     );
   }
+
+  /// Test hook: deals a specific Pawn Attack board for the current game.
+  @visibleForTesting
+  void debugSetPawnBoard(Set<Square> pawns) =>
+      _setPawnBoard(pawns, newRound: true);
 
   // --- Scanning drills (findChecks / findCaptures / hangingPieces / mateInOne) ---
 
@@ -491,6 +611,7 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
       scanDisplayFen: () => puzzle.position.fen,
       scanSideToMove: puzzle.sideToMove,
       mateFeedback: () => null,
+      matedPosition: () => null,
       correctSquares: const {},
       foundSquares: const {},
       incorrectFlashSquare: () => null,
@@ -515,53 +636,53 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
 
   /// Reveal-and-move-on escape hatch for the tap scanning drills: costs an
   /// error and the streak, counts nothing, shows the unfound targets for
-  /// 1.5 s (the forks "None"-wrong reveal mechanism reused).
+  /// 1.5 s (the same reveal as a wrong forks "None").
   void skipScanPosition() {
     if (!state.drillType.isTapScanDrill) return;
-    if (state.isGameOver || state.isRoundComplete || state.isLoading) return;
-    if (state.showingRevealedAnswer) return;
+    if (!_acceptingInput) return;
 
     _audio.playIncorrect();
-    state = state.copyWith(
-      showingRevealedAnswer: true,
-      streak: 0,
-      totalErrors: state.totalErrors + 1,
-    );
-    _advanceTimer?.cancel();
-    _advanceTimer = Timer(const Duration(milliseconds: 1500), () {
-      _advanceToNextConfiguration(madeError: true, countCompleted: false);
-    });
+    _revealAndMoveOn();
   }
 
   /// Mate in 1 verdict — judged by RESULT (any legal move that mates counts,
   /// not just the dataset answer).
   void handleMateMove(NormalMove move) {
-    if (state.isGameOver || state.isRoundComplete || state.isLoading) return;
+    if (state.drillType != VisionDrillType.mateInOne) return;
+    if (!_acceptingInput) return;
     final puzzle = state.currentMatePuzzle;
     if (puzzle == null) return;
 
     final isSpeed = state.mode == VisionMode.speed;
     final isMate = ScanEngine.isMatingMove(puzzle.position, move);
 
+    // Longer beats than the tap drills: there is something to absorb (a mated
+    // board + "Checkmate!", or a solution arrow to comprehend).
     if (isMate) {
       // Play the normalized form (handles either castling encoding); keep the
       // original move for feedback so the highlight shows the square the kid
       // actually chose.
-      final played = puzzle.position.normalizeMove(move);
+      final mated = puzzle.position.playUnchecked(
+        puzzle.position.normalizeMove(move),
+      );
       _audio.playCorrect();
       _audio.playCheckmateCall();
       state = state.copyWith(
-        scanDisplayFen: () => puzzle.position.playUnchecked(played).fen,
+        scanDisplayFen: () => mated.fen,
+        matedPosition: () => mated,
         mateFeedback: () => ScanMateFeedback(
           isCorrect: true,
           attemptedMove: move,
           solutionMove: puzzle.expectedMove,
         ),
-        isRoundComplete: true,
+      );
+      _completeConfiguration(
+        madeError: false,
+        delay: Duration(milliseconds: isSpeed ? 500 : 900),
       );
     } else {
       // Board FEN stays untouched, so the tried piece snaps back; the green
-      // solution arrow renders via mateFeedbackShapes.
+      // solution arrow renders via mateFeedbackShapes. Not counted.
       _audio.playIncorrect();
       state = state.copyWith(
         mateFeedback: () => ScanMateFeedback(
@@ -574,15 +695,8 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
         hadErrorThisRound: true,
         isRoundComplete: true,
       );
+      _scheduleNextRound(Duration(milliseconds: isSpeed ? 800 : 1500));
     }
-
-    // Longer beats than the tap drills: there is something to absorb (a mated
-    // board + "Checkmate!", or a solution arrow to comprehend).
-    final delayMs = isMate ? (isSpeed ? 500 : 900) : (isSpeed ? 800 : 1500);
-    _advanceTimer?.cancel();
-    _advanceTimer = Timer(Duration(milliseconds: delayMs), () {
-      _advanceToNextConfiguration(madeError: !isMate, countCompleted: isMate);
-    });
   }
 
   // --- Shared helpers ---
@@ -612,46 +726,56 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     });
   }
 
-  void _completeConfiguration({required bool madeError}) {
-    state = state.copyWith(isRoundComplete: true);
-
-    final delay = state.mode == VisionMode.speed
-        ? const Duration(milliseconds: 400)
-        : const Duration(milliseconds: 800);
-
-    _advanceTimer?.cancel();
-    _advanceTimer = Timer(delay, () {
-      _advanceToNextConfiguration(madeError: madeError);
-    });
+  /// A solved round, scored right away — so a solve in the last moments of a
+  /// speed round still counts if time runs out during the feedback beat —
+  /// with the next position after [delay] (default: 400 ms speed, 800 ms
+  /// otherwise).
+  void _completeConfiguration({required bool madeError, Duration? delay}) {
+    final streak = madeError ? 0 : state.streak + 1;
+    state = state.copyWith(
+      isRoundComplete: true,
+      streak: streak,
+      bestStreak: max(streak, state.bestStreak),
+      configurationsCompleted: state.configurationsCompleted + 1,
+    );
+    _scheduleNextRound(delay ??
+        (state.mode == VisionMode.speed
+            ? const Duration(milliseconds: 400)
+            : const Duration(milliseconds: 800)));
   }
 
-  void _advanceToNextConfiguration(
-      {required bool madeError, bool countCompleted = true}) {
-    if (state.isGameOver) return;
-
-    final newStreak = madeError ? 0 : state.streak + 1;
-    final newBestStreak = max(newStreak, state.bestStreak);
-
-    if (state.mode == VisionMode.concentric) {
-      if (state.concentricIndex >= _filteredConcentricPath.length) {
-        _cancelTimers();
-        state = state.copyWith(
-          isGameOver: true,
-          streak: newStreak,
-          bestStreak: newBestStreak,
-          configurationsCompleted: state.configurationsCompleted + 1,
-        );
-        _checkAndUpdatePersonalBest();
-        return;
-      }
-    }
-
+  /// A wrong "None" or a Skip: show the answer for a moment, cost an error
+  /// and the streak, and count nothing.
+  void _revealAndMoveOn() {
     state = state.copyWith(
-      streak: newStreak,
-      bestStreak: newBestStreak,
-      configurationsCompleted:
-          state.configurationsCompleted + (countCompleted ? 1 : 0),
+      showingRevealedAnswer: true,
+      totalErrors: state.totalErrors + 1,
+      streak: 0,
     );
+    _scheduleNextRound(const Duration(milliseconds: 1500));
+  }
+
+  /// Shows the next position after [delay]. When the round that just ended
+  /// was the last one (concentric spiral walked, timed pawn ladder topped),
+  /// the stopwatch stops now and the results follow after [delay].
+  void _scheduleNextRound(Duration delay) {
+    final isLast = _wasFinalRound;
+    if (isLast) _stopwatchTimer?.cancel();
+    _advanceTimer?.cancel();
+    _advanceTimer = Timer(delay, isLast ? _finishGame : _loadNextRound);
+  }
+
+  bool get _wasFinalRound {
+    if (state.mode == VisionMode.concentric) {
+      return state.concentricIndex >= _filteredConcentricPath.length;
+    }
+    return state.drillType == VisionDrillType.pawnAttack &&
+        state.mode == VisionMode.speed &&
+        state.pawnAttackDifficulty >= pawnAttackLastLevel;
+  }
+
+  void _loadNextRound() {
+    if (state.isGameOver) return;
 
     switch (state.drillType) {
       case VisionDrillType.forksAndSkewers:
@@ -661,7 +785,7 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
       case VisionDrillType.knightFlight:
         _generateKnightFlightConfig();
       case VisionDrillType.pawnAttack:
-        _generatePawnAttackConfig();
+        _advancePawnLevel();
       case VisionDrillType.findChecks:
       case VisionDrillType.findCaptures:
       case VisionDrillType.hangingPieces:
@@ -671,72 +795,16 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     }
   }
 
-  int get concentricTotal => _filteredConcentricPath.length;
-
-  void _generateNextConfiguration() {
-    final Square target;
-
-    if (state.mode == VisionMode.concentric) {
-      if (state.concentricIndex >= _filteredConcentricPath.length) return;
-      target = _filteredConcentricPath[state.concentricIndex];
-      state = state.copyWith(concentricIndex: state.concentricIndex + 1);
-    } else {
-      target = _randomTargetSquare();
-    }
-
-    final correct = ForkSkewerEngine.computeValidSquares(
-      whitePiece: state.whitePiece,
-      kingSquare: ChessVisionState.blackKingSquare,
-      targetSquare: target,
-      targetRole: state.targetPiece.role,
-    );
-
-    if (state.mode != VisionMode.concentric && correct.isEmpty) {
-      if (_random.nextDouble() > 0.25) {
-        _generateNextConfiguration();
-        return;
-      }
-    }
-
-    state = state.copyWith(
-      targetSquare: target,
-      correctSquares: correct,
-      foundSquares: const {},
-      incorrectFlashSquare: () => null,
-      showingRevealedAnswer: false,
-      hadErrorThisRound: false,
-      isRoundComplete: false,
-    );
-  }
-
-  Square _randomSquare({Square? exclude}) {
-    final candidates =
-        Square.values.where((s) => s != exclude).toList();
-    return candidates[_random.nextInt(candidates.length)];
-  }
-
-  Square _randomTargetSquare() {
-    final candidates = Square.values
-        .where((s) =>
-            s != ChessVisionState.blackKingSquare && s != state.targetSquare)
-        .toList();
-    return candidates[_random.nextInt(candidates.length)];
-  }
-
   void _startCountdown() {
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       final remaining = (state.timeRemainingSeconds ?? 0) - 1;
-      if (remaining <= 0) {
-        _cancelTimers();
-        state = state.copyWith(
-          timeRemainingSeconds: () => 0,
-          isGameOver: true,
-        );
-        _checkAndUpdatePersonalBest();
-        _audio.playGameOver();
-      } else {
+      if (remaining > 0) {
         state = state.copyWith(timeRemainingSeconds: () => remaining);
+        return;
       }
+      state = state.copyWith(timeRemainingSeconds: () => 0);
+      _finishGame();
+      _audio.playGameOver();
     });
   }
 
@@ -747,66 +815,35 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     });
   }
 
-  bool get isNewRecord {
-    if (state.drillType == VisionDrillType.pawnAttack &&
-        state.mode == VisionMode.speed) {
-      final best = _personalBests[_bestKey] ?? 0;
-      if (best == 0) return state.isGameOver;
-      return state.isGameOver && state.elapsedSeconds < best;
-    }
-    if (state.mode == VisionMode.speed) {
-      final best = _personalBests[_bestKey] ?? 0;
-      return state.configurationsCompleted > best &&
-          state.configurationsCompleted > 0;
-    }
-    if (state.mode == VisionMode.concentric) {
-      final best = _personalBests[_bestKey] ?? 0;
-      if (best == 0) return state.isGameOver;
-      return state.isGameOver && state.elapsedSeconds < best;
-    }
-    return false;
-  }
+  /// Ends the game: stops every timer, submits the personal best, and marks
+  /// a new record in state for the results card.
+  void _finishGame() {
+    _cancelTimers();
 
-  void _checkAndUpdatePersonalBest() {
-    bool newRecord = false;
-
-    if (state.drillType == VisionDrillType.pawnAttack &&
-        state.mode == VisionMode.speed &&
-        state.isGameOver) {
-      final current = _personalBests[_bestKey] ?? 0;
-      newRecord = current == 0 || state.elapsedSeconds < current;
-      if (newRecord) {
-        _personalBests[_bestKey] = state.elapsedSeconds;
-        _audio.playNewRecord();
-      }
+    final bool isNewRecord;
+    if (_isTimedByStopwatch) {
+      isNewRecord =
+          _bests.submit(_bestKey, state.elapsedSeconds, lowerIsBetter: true);
     } else if (state.mode == VisionMode.speed) {
-      final current = _personalBests[_bestKey] ?? 0;
-      newRecord = state.configurationsCompleted > current &&
-          state.configurationsCompleted > 0;
-      if (newRecord) {
-        _personalBests[_bestKey] = state.configurationsCompleted;
-        _audio.playNewRecord();
-      }
-    } else if (state.mode == VisionMode.concentric && state.isGameOver) {
-      final current = _personalBests[_bestKey] ?? 0;
-      newRecord = current == 0 || state.elapsedSeconds < current;
-      if (newRecord) {
-        _personalBests[_bestKey] = state.elapsedSeconds;
-        _audio.playNewRecord();
-      }
+      isNewRecord = _bests.submit(_bestKey, state.configurationsCompleted);
+    } else {
+      isNewRecord = false;
     }
+
+    state = state.copyWith(isGameOver: true, isNewRecord: isNewRecord);
+    if (isNewRecord) _audio.playNewRecord();
 
     _analytics.logVisionDrillCompleted(
       drill: state.drillType.name,
       mode: state.mode.name,
-      piece: state.drillType.isScanDrill ? null : state.whitePiece.name,
+      piece: _usesPiece(state.drillType) ? state.whitePiece.name : null,
       target: state.drillType == VisionDrillType.forksAndSkewers
           ? state.targetPiece.name
           : null,
       configurationsCompleted: state.configurationsCompleted,
       totalErrors: state.totalErrors,
       bestStreak: state.bestStreak,
-      isNewRecord: newRecord,
+      isNewRecord: isNewRecord,
       elapsedSeconds:
           state.elapsedSeconds > 0 ? state.elapsedSeconds : null,
     );
@@ -819,7 +856,10 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
     _stopwatchTimer?.cancel();
   }
 
+  /// The round ends with its screen: drop any asset load still in flight and
+  /// silence every timer.
   void _dispose() {
+    _gameGeneration++;
     _cancelTimers();
   }
 }

@@ -35,7 +35,9 @@ class ScanEngine {
       checkTargetDetails(position).keys.toSet();
 
   /// Destination square -> the piece that delivers check by moving there
-  /// (used for the faded ghost-piece feedback on found squares).
+  /// (used for the faded ghost-piece feedback on found squares). For a
+  /// promotion that's the promoted piece — the queen, or the knight when
+  /// only a knight promotion checks — not the pawn.
   ///
   /// Castling is skipped on both sides of the cross-language contract
   /// (dartchess encodes it king->rook, python-chess king->g1/c1 — no sane
@@ -63,7 +65,7 @@ class ScanEngine {
           for (final promo in _checkPromotionRoles) {
             final move = NormalMove(from: from, to: to, promotion: promo);
             if (position.playUnchecked(move).isCheck) {
-              result[to] = piece;
+              result[to] = Piece(color: piece.color, role: promo);
               break;
             }
           }

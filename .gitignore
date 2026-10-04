@@ -98,6 +98,14 @@ unlinked_spec.ds
 **/linux/flutter/generated_plugin_registrant.h
 **/linux/flutter/generated_plugins.cmake
 
+# Secrets — store credentials & upload config. NEVER commit.
+*.p8
+/private_keys/
+scripts/upload_ios.env
+scripts/build_ipa.env
+scripts/deploy_play.env
+play-service-account*.json
+
 # Coverage
 coverage/
 
@@ -117,3 +125,5 @@ app.*.map.json
 lichess_db_puzzle.csv*
 
 podfile.lock
+.firebase/
+firebase-debug.log

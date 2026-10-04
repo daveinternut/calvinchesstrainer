@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:chessground/chessground.dart';
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 import '../models/which_side_wins_state.dart';
 
 class PieceGroupPanel extends StatelessWidget {
@@ -8,13 +11,22 @@ class PieceGroupPanel extends StatelessWidget {
   final Color? backgroundColor;
   final bool enabled;
 
+  /// The group's point total, revealed during feedback so the child sees why
+  /// a side won ("9" vs "8"). Null hides it.
+  final int? total;
+
   const PieceGroupPanel({
     super.key,
     required this.pieces,
     required this.onTap,
     this.backgroundColor,
     this.enabled = true,
+    this.total,
   });
+
+  static const double _spacing = 6;
+  static const double _maxPieceSize = 150;
+  static const double _totalSlotHeight = 40;
 
   @override
   Widget build(BuildContext context) {
@@ -43,23 +55,33 @@ class PieceGroupPanel extends StatelessWidget {
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-            child: Center(
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 4,
-                runSpacing: 4,
-                children: pieces.map((piece) {
-                  final asset = PieceSet.cburnett.assets[piece.pieceKind];
-                  return SizedBox(
-                    width: _pieceSize(pieces.length),
-                    height: _pieceSize(pieces.length),
-                    child: asset != null
-                        ? Image(image: asset)
-                        : const SizedBox(),
-                  );
-                }).toList(),
-              ),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+            child: Column(
+              children: [
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) =>
+                        Center(child: _buildPieces(constraints)),
+                  ),
+                ),
+                // A fixed slot, so revealing the total never shifts the
+                // pieces.
+                SizedBox(
+                  height: _totalSlotHeight,
+                  child: Center(
+                    child: total == null
+                        ? null
+                        : Text(
+                            '$total',
+                            style: const TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -67,10 +89,45 @@ class PieceGroupPanel extends StatelessWidget {
     );
   }
 
-  double _pieceSize(int count) {
-    if (count <= 1) return 72;
-    if (count <= 2) return 60;
-    if (count <= 3) return 52;
-    return 44;
+  /// Lays the pieces out in whichever column count gives the biggest pieces
+  /// that fit the panel — large on an iPad, still tidy on a phone.
+  Widget _buildPieces(BoxConstraints constraints) {
+    final count = pieces.length;
+    if (count == 0) return const SizedBox.shrink();
+
+    var size = 0.0;
+    var columns = 1;
+    for (var c = 1; c <= count; c++) {
+      final rows = (count / c).ceil();
+      final fit = math.min(
+        (constraints.maxWidth - _spacing * (c - 1)) / c,
+        (constraints.maxHeight - _spacing * (rows - 1)) / rows,
+      );
+      if (fit > size) {
+        size = fit;
+        columns = c;
+      }
+    }
+    size = size.clamp(0.0, _maxPieceSize);
+
+    return SizedBox(
+      // Exactly `columns` pieces per row (plus a hair for rounding).
+      width: columns * size + (columns - 1) * _spacing + 0.5,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: _spacing,
+        runSpacing: _spacing,
+        children: [
+          for (final piece in pieces)
+            SizedBox.square(
+              dimension: size,
+              child: switch (PieceSet.cburnett.assets[piece.pieceKind]) {
+                final asset? => Image(image: asset),
+                null => const SizedBox(),
+              },
+            ),
+        ],
+      ),
+    );
   }
 }

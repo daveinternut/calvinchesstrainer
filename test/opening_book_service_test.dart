@@ -45,6 +45,13 @@ void main() {
     await book.load();
   });
 
+  test('concurrent loads share one load (no duplicated openings)', () async {
+    final fresh = OpeningBookService();
+    await Future.wait([fresh.load(), fresh.load(), fresh.load()]);
+    expect(fresh.getAllOpenings(), hasLength(book.getAllOpenings().length));
+    expect(fresh.getAllOpenings(), hasLength(3640));
+  });
+
   group('OpeningBookService (position-based)', () {
     // 1. e4 c6 2. Nc3 d5 — white to move (the Caro-Kann test position).
     late Position pos;

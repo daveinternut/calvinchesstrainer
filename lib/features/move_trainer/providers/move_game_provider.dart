@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as dev;
 import 'dart:math';
 
 import 'package:dartchess/dartchess.dart';
@@ -6,31 +7,40 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/audio/audio_service.dart';
 import '../../../core/services/analytics_service.dart';
+import '../../../core/services/personal_bests_service.dart';
 import '../../../core/services/puzzle_service.dart';
 import '../models/move_game_state.dart';
 
+/// Auto-disposed: a round never outlives its screen, so leaving mid-round
+/// cancels both timers (no late prompts, buzzes or "new record" cheers).
 final moveGameProvider =
-    NotifierProvider<MoveGameNotifier, MoveGameState>(MoveGameNotifier.new);
+    NotifierProvider.autoDispose<MoveGameNotifier, MoveGameState>(
+  MoveGameNotifier.new,
+);
 
 class MoveGameNotifier extends Notifier<MoveGameState> {
   Timer? _advanceTimer;
   Timer? _countdownTimer;
-  final Map<String, int> _personalBests = {};
+
+  /// Bumped by every [startGame]. A start whose puzzle load finishes after a
+  /// newer start (or after the screen closed) gives up instead of starting a
+  /// second countdown.
+  int _generation = 0;
 
   PuzzleService get _puzzles => ref.read(puzzleServiceProvider);
   AudioService get _audio => ref.read(audioServiceProvider);
   AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
 
-  String get _bestKey => '${state.mode.name}_${state.isHardMode}';
-  int get personalBest => _personalBests[_bestKey] ?? 0;
+  String get _bestKey => 'move.${state.mode.name}_${state.isHardMode}';
 
   @override
   MoveGameState build() {
-    ref.onDispose(_dispose);
+    ref.onDispose(_cancelTimers);
     return const MoveGameState(mode: MoveTrainerMode.practice);
   }
 
   Future<void> startGame(MoveTrainerMode mode, {bool isHardMode = false}) async {
+    final generation = ++_generation;
     _cancelTimers();
     state = MoveGameState(
       mode: mode,
@@ -44,7 +54,13 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
       hardMode: isHardMode,
     );
 
-    await _puzzles.loadPuzzles();
+    try {
+      await _puzzles.loadPuzzles();
+    } catch (e) {
+      dev.log('MoveGame: puzzles failed to load: $e');
+      return;
+    }
+    if (!ref.mounted || generation != _generation) return;
 
     state = state.copyWith(isLoading: false);
     _loadNextPuzzle();
@@ -61,7 +77,7 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
     if (puzzle == null) return;
 
     final expected = puzzle.expectedMove;
-    final isCorrect = move.from == expected.from && move.to == expected.to;
+    final isCorrect = puzzle.matches(move);
 
     final newStreak = isCorrect ? state.streak + 1 : 0;
     final newBestStreak = max(newStreak, state.bestStreak);
@@ -70,6 +86,8 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
       final newPosition = puzzle.position.playUnchecked(move);
       state = state.copyWith(
         displayFen: () => newPosition.fen,
+        sideToMove: () => newPosition.turn,
+        isCheck: newPosition.isCheck,
         streak: newStreak,
         bestStreak: newBestStreak,
         totalCorrect: state.totalCorrect + 1,
@@ -121,6 +139,7 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
       currentPuzzle: () => puzzle,
       displayFen: () => puzzle.position.fen,
       sideToMove: () => puzzle.sideToMove,
+      isCheck: puzzle.position.isCheck,
       lastSetupMove: () => puzzle.setupMove,
       lastFeedback: () => null,
       isWaitingForNext: false,
@@ -144,21 +163,40 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
   }
 
   void _startCountdown() {
+    _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       final remaining = (state.timeRemainingSeconds ?? 0) - 1;
       if (remaining <= 0) {
-        _cancelTimers();
-        state = state.copyWith(
-          timeRemainingSeconds: () => 0,
-          isGameOver: true,
-          isWaitingForNext: true,
-        );
-        _checkAndUpdatePersonalBest();
-        _audio.playGameOver();
+        _endRound();
       } else {
         state = state.copyWith(timeRemainingSeconds: () => remaining);
       }
     });
+  }
+
+  void _endRound() {
+    _cancelTimers();
+    final isNewRecord = state.mode == MoveTrainerMode.speed &&
+        ref.read(personalBestsProvider.notifier).submit(
+              _bestKey,
+              state.totalCorrect,
+            );
+    state = state.copyWith(
+      timeRemainingSeconds: () => 0,
+      isGameOver: true,
+      isWaitingForNext: true,
+      isNewRecord: isNewRecord,
+    );
+    if (isNewRecord) _audio.playNewRecord();
+    _analytics.logMoveDrillCompleted(
+      mode: state.mode.name,
+      hardMode: state.isHardMode,
+      totalCorrect: state.totalCorrect,
+      totalAttempts: state.totalAttempts,
+      bestStreak: state.bestStreak,
+      isNewRecord: isNewRecord,
+    );
+    _audio.playGameOver();
   }
 
   void _scheduleAdvance(Duration delay) {
@@ -169,36 +207,8 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
     });
   }
 
-  bool get isNewRecord {
-    if (state.mode != MoveTrainerMode.speed) return false;
-    final best = _personalBests[_bestKey] ?? 0;
-    return state.totalCorrect > best && state.totalCorrect > 0;
-  }
-
-  void _checkAndUpdatePersonalBest() {
-    if (state.mode != MoveTrainerMode.speed) return;
-    final newRecord = state.totalCorrect > (_personalBests[_bestKey] ?? 0) &&
-        state.totalCorrect > 0;
-    if (newRecord) {
-      _personalBests[_bestKey] = state.totalCorrect;
-      _audio.playNewRecord();
-    }
-    _analytics.logMoveDrillCompleted(
-      mode: state.mode.name,
-      hardMode: state.isHardMode,
-      totalCorrect: state.totalCorrect,
-      totalAttempts: state.totalAttempts,
-      bestStreak: state.bestStreak,
-      isNewRecord: newRecord,
-    );
-  }
-
   void _cancelTimers() {
     _advanceTimer?.cancel();
     _countdownTimer?.cancel();
-  }
-
-  void _dispose() {
-    _cancelTimers();
   }
 }

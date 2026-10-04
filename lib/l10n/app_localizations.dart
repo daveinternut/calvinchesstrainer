@@ -102,8 +102,8 @@ abstract class AppLocalizations {
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
-    Locale('de'),
     Locale('en'),
+    Locale('de'),
     Locale('es'),
     Locale('fr'),
     Locale('it'),
@@ -699,7 +699,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutWhatIsBody.
   ///
   /// In en, this message translates to:
-  /// **'A fun, interactive app that teaches chess fundamentals to kids. Learn files, ranks, squares, and piece moves through drills, quizzes, and timed challenges — all with audio feedback and streak tracking to keep you motivated!'**
+  /// **'A fun, interactive app that teaches chess fundamentals to kids. Chess Vision trains you to spot forks, skewers, knight moves, checks, captures and hanging pieces at a glance. Chess Notation teaches files, ranks, squares, piece letters, moves and piece values. The Opening Explorer lets you try openings with hints from a real chess engine. Audio feedback, streaks and saved personal bests keep you motivated!'**
   String get aboutWhatIsBody;
 
   /// No description provided for @aboutTrainingModes.
@@ -711,7 +711,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutTrainingModesBody.
   ///
   /// In en, this message translates to:
-  /// **'• Explore — learn at your own pace\n• Practice — quiz yourself and build streaks\n• Speed Round — 30 seconds, how many can you get?\n• Hard Mode — hide coordinates for a real challenge'**
+  /// **'• Explore — learn at your own pace\n• Practice — quiz yourself and build streaks\n• Speed Round — race the clock (30 or 60 seconds) and set a new record\n• Hard Mode — play from Black\'s side of the board'**
   String get aboutTrainingModesBody;
 
   /// No description provided for @aboutCredits.
@@ -827,30 +827,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tactics trainer coming soon'**
   String get tacticsComingSoon;
-
-  /// No description provided for @squareTrainer.
-  ///
-  /// In en, this message translates to:
-  /// **'Square Trainer'**
-  String get squareTrainer;
-
-  /// No description provided for @squareComingSoon.
-  ///
-  /// In en, this message translates to:
-  /// **'Square trainer coming soon'**
-  String get squareComingSoon;
-
-  /// No description provided for @moveTrainer.
-  ///
-  /// In en, this message translates to:
-  /// **'Move Trainer'**
-  String get moveTrainer;
-
-  /// No description provided for @moveComingSoon.
-  ///
-  /// In en, this message translates to:
-  /// **'Move trainer coming soon'**
-  String get moveComingSoon;
 
   /// No description provided for @promptSquare.
   ///
@@ -1247,6 +1223,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Black to play'**
   String get blackToPlay;
+
+  /// Opening trainer screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Opening Explorer'**
+  String get openingExplorer;
+
+  /// Opening picker sheet title and its toolbar tooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Start from an opening'**
+  String get startFromOpening;
+
+  /// Toolbar tooltip: flip the board
+  ///
+  /// In en, this message translates to:
+  /// **'Flip board'**
+  String get flipBoard;
+
+  /// Toolbar tooltip: show move scores
+  ///
+  /// In en, this message translates to:
+  /// **'Show scores'**
+  String get showScores;
+
+  /// Toolbar tooltip: hide move scores
+  ///
+  /// In en, this message translates to:
+  /// **'Hide scores'**
+  String get hideScores;
+
+  /// Opening picker search field hint
+  ///
+  /// In en, this message translates to:
+  /// **'Search openings…'**
+  String get searchOpenings;
+
+  /// Opening picker: search found nothing
+  ///
+  /// In en, this message translates to:
+  /// **'No openings found'**
+  String get noOpeningsFound;
+
+  /// Opening picker section heading
+  ///
+  /// In en, this message translates to:
+  /// **'Popular'**
+  String get popularOpenings;
+
+  /// Opening picker section heading
+  ///
+  /// In en, this message translates to:
+  /// **'Browse by category'**
+  String get browseByCategory;
+
+  /// ECO category A
+  ///
+  /// In en, this message translates to:
+  /// **'Flank Openings'**
+  String get ecoFlankOpenings;
+
+  /// ECO category B
+  ///
+  /// In en, this message translates to:
+  /// **'Semi-Open Games'**
+  String get ecoSemiOpenGames;
+
+  /// ECO category C
+  ///
+  /// In en, this message translates to:
+  /// **'Open Games'**
+  String get ecoOpenGames;
+
+  /// ECO category D
+  ///
+  /// In en, this message translates to:
+  /// **'Closed & Semi-Closed'**
+  String get ecoClosedGames;
+
+  /// ECO category E
+  ///
+  /// In en, this message translates to:
+  /// **'Indian Defenses'**
+  String get ecoIndianDefenses;
+
+  /// Shown when Stockfish fails to start; paired with the Retry button
+  ///
+  /// In en, this message translates to:
+  /// **'The chess engine didn\'t start.'**
+  String get engineUnavailable;
+
+  /// Forks & Skewers in-drill instruction
+  ///
+  /// In en, this message translates to:
+  /// **'Tap every square where your piece attacks the king and the other piece!'**
+  String get visionPromptForks;
+
+  /// Knight Sight in-drill instruction
+  ///
+  /// In en, this message translates to:
+  /// **'Tap every square your knight can jump to!'**
+  String get visionPromptKnightSight;
+
+  /// Knight Flight in-drill instruction
+  ///
+  /// In en, this message translates to:
+  /// **'Jump your knight to the ring in as few moves as you can!'**
+  String get visionPromptKnightFlight;
+
+  /// Pawn Attack in-drill instruction (shaded squares are the ones pawns attack)
+  ///
+  /// In en, this message translates to:
+  /// **'Capture every pawn — never stop on a shaded square!'**
+  String get visionPromptPawnAttack;
+
+  /// Button: reset the current board to its starting position
+  ///
+  /// In en, this message translates to:
+  /// **'Start over'**
+  String get startOver;
+
+  /// Shown when a drill could not load its puzzle file; paired with the Retry button
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the puzzles.'**
+  String get loadFailed;
+
+  /// Opening Explorer: the game ended in checkmate
+  ///
+  /// In en, this message translates to:
+  /// **'Checkmate!'**
+  String get checkmate;
+
+  /// Opening Explorer: the game ended in a draw (stalemate, repetition, etc.)
+  ///
+  /// In en, this message translates to:
+  /// **'Draw!'**
+  String get draw;
 }
 
 class _AppLocalizationsDelegate

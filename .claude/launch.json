@@ -8,10 +8,25 @@
         "run",
         "-d",
         "web-server",
+        "--wasm",
         "--web-port",
         "5317"
       ],
       "port": 5317
+    },
+    {
+      "name": "calvin-web-release",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5318",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "build/web"
+      ],
+      "port": 5318
     }
   ]
 }
