@@ -17,9 +17,9 @@ Target toolchain (matches the primary dev machine as of 2026-07-23):
 | Android NDK | **27.0.12077973** (required — Stockfish is native C++) |
 | CMake | 3.22.1 |
 | JDK | 21 (bundled with Android Studio — no separate install) |
-| Gradle | 8.12 (via wrapper, auto-downloaded) |
-| Android Gradle Plugin | 8.9.1 |
-| Kotlin | 2.1.0 |
+| Gradle | 8.14 (via wrapper, auto-downloaded) |
+| Android Gradle Plugin | 8.11.1 |
+| Kotlin | 2.2.20 (Gradle/AGP/Kotlin are the minimums Flutter 3.47 accepts — same as PassportsGo) |
 | iOS deployment target | 15.0 |
 
 Expect **~40 GB** of disk for Xcode + simulator runtimes + Android SDK + Flutter,

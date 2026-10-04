@@ -14,16 +14,25 @@
 #      "Release to production" if you'll push there).
 #   4. Upload the FIRST bundle MANUALLY through the Play Console UI. Google
 #      rejects API uploads for an app that has never had a manual release.
+#      (Full Play Console walkthrough: resources/store/android/PUBLISHING.md)
 #   5. cp scripts/deploy_play.env.example scripts/deploy_play.env
 #      and set PLAY_JSON_KEY to your key path.
 #
 # NOTE: every upload needs a HIGHER versionCode than anything previously
-# uploaded. Bump the "+N" in pubspec.yaml (version: 1.4.0+5) before each release.
+# uploaded. That is the "+N" in pubspec.yaml (version: X.Y.Z+N) — shared with
+# iOS, where scripts/build_ipa.sh bumps it. Bump it before each release.
+#
+# NEW PERSONAL PLAY ACCOUNTS: production stays locked until a CLOSED test has
+# had 12+ opted-in testers for 14 days in a row (the clock resets if it drops
+# below 12). Run that test on the "alpha" track, then Play Console -> Dashboard
+# -> Apply for production.
 # ---------------------------------------------------------------------------
 #
 # Usage:
-#   scripts/deploy_play.sh                      # build + upload to internal track
-#   scripts/deploy_play.sh --track beta         # closed testing
+#   scripts/deploy_play.sh                      # build + upload to Internal testing
+#   scripts/deploy_play.sh --track alpha        # CLOSED testing (Play's default
+#                                               #   "Closed testing - Alpha" track)
+#   scripts/deploy_play.sh --track beta         # OPEN testing — public, anyone can join
 #   scripts/deploy_play.sh --track production   # live (careful!)
 #   scripts/deploy_play.sh --no-build           # reuse the existing .aab
 #   scripts/deploy_play.sh --validate           # upload + validate, do NOT release
@@ -99,10 +108,17 @@ cmd=(fastlane supply
      --skip_upload_changelogs true)
 [ "$VALIDATE" = 1 ] && cmd+=(--validate_only true)
 
-if [ "$TRACK" = "production" ] && [ "$VALIDATE" = 0 ] && [ "$DRY_RUN" = 0 ]; then
-  echo ""
-  read -r -p "!! This publishes to PRODUCTION with status '$STATUS'. Type 'yes' to continue: " ok
-  [ "$ok" = "yes" ] || { echo "aborted."; exit 1; }
+if [ "$VALIDATE" = 0 ] && [ "$DRY_RUN" = 0 ]; then
+  case "$TRACK" in
+    production) warning="PRODUCTION (live on Google Play)" ;;
+    beta)       warning="OPEN testing (public — anyone can join; for a closed test use --track alpha)" ;;
+    *)          warning="" ;;
+  esac
+  if [ -n "$warning" ]; then
+    echo ""
+    read -r -p "!! This publishes to $warning with status '$STATUS'. Type 'yes' to continue: " ok
+    [ "$ok" = "yes" ] || { echo "aborted."; exit 1; }
+  fi
 fi
 
 echo "▸ Uploading to Google Play…"
