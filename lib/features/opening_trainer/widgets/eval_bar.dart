@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 import '../../../core/services/stockfish_service.dart';
 
 class EvalBar extends StatelessWidget {
@@ -30,7 +32,7 @@ class EvalBar extends StatelessWidget {
       height: 28,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: AppColors.line),
       ),
       clipBehavior: Clip.antiAlias,
       child: LayoutBuilder(
@@ -49,7 +51,7 @@ class EvalBar extends StatelessWidget {
                     color: Colors.white,
                   ),
                   Expanded(
-                    child: Container(color: Colors.grey.shade800),
+                    child: Container(color: AppColors.ink),
                   ),
                 ],
               ),

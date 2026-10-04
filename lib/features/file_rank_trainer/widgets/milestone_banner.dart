@@ -4,6 +4,7 @@ import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/audio/audio_service.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/trainer_layout.dart';
 
 /// The streak celebration: a banner that rises at every multiple of 5, with
@@ -105,20 +106,6 @@ class _MilestoneBannerState extends ConsumerState<MilestoneBanner>
     };
   }
 
-  Color get _gradientStart {
-    if (_displayStreak >= 20) return const Color(0xFFAB47BC);
-    if (_displayStreak >= 15) return const Color(0xFFEF5350);
-    if (_displayStreak >= 10) return const Color(0xFFFF7043);
-    return const Color(0xFFFFB300);
-  }
-
-  Color get _gradientEnd {
-    if (_displayStreak >= 20) return const Color(0xFF7C4DFF);
-    if (_displayStreak >= 15) return const Color(0xFFFF7043);
-    if (_displayStreak >= 10) return const Color(0xFFFFCA28);
-    return const Color(0xFFFFA000);
-  }
-
   @override
   Widget build(BuildContext context) {
     if (!_visible) return const SizedBox.shrink();
@@ -180,20 +167,18 @@ class _MilestoneBannerState extends ConsumerState<MilestoneBanner>
   }
 
   Widget _buildBanner(AppLocalizations l10n) {
+    // Deeper green as the streak grows.
+    final color = _displayStreak >= 15 ? AppColors.brandDeep : AppColors.brand;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [_gradientStart, _gradientEnd],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
+        color: color,
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: _gradientStart.withValues(alpha: 0.45),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: color.withValues(alpha: 0.35),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -201,7 +186,7 @@ class _MilestoneBannerState extends ConsumerState<MilestoneBanner>
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star_rounded, color: Colors.white, size: 26),
+          const Icon(Icons.star_rounded, color: AppColors.amber, size: 26),
           const SizedBox(width: 10),
           Flexible(
             child: Column(
@@ -211,10 +196,10 @@ class _MilestoneBannerState extends ConsumerState<MilestoneBanner>
                   l10n.streakMilestone(_displayStreak),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
+                    fontFamily: AppFonts.ui,
                     fontSize: 18,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: Colors.white,
-                    letterSpacing: 0.5,
                     height: 1.2,
                   ),
                 ),
@@ -222,9 +207,10 @@ class _MilestoneBannerState extends ConsumerState<MilestoneBanner>
                   _milestoneLabel(l10n),
                   textAlign: TextAlign.center,
                   style: TextStyle(
+                    fontFamily: AppFonts.ui,
                     fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white.withValues(alpha: 0.85),
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.88),
                     height: 1.3,
                   ),
                 ),
@@ -232,7 +218,7 @@ class _MilestoneBannerState extends ConsumerState<MilestoneBanner>
             ),
           ),
           const SizedBox(width: 10),
-          const Icon(Icons.star_rounded, color: Colors.white, size: 26),
+          const Icon(Icons.star_rounded, color: AppColors.amber, size: 26),
         ],
       ),
     );

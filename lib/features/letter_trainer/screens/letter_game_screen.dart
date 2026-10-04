@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/audio/audio_service.dart';
+import '../../../core/ui/components.dart';
+import '../../drills/warmup_actions.dart';
 import '../../file_rank_trainer/widgets/milestone_banner.dart';
 import '../../file_rank_trainer/widgets/results_card.dart';
 import '../../file_rank_trainer/widgets/streak_counter.dart';
@@ -17,10 +18,14 @@ class LetterGameScreen extends ConsumerStatefulWidget {
   final LetterTrainerMode mode;
   final bool isHardMode;
 
+  /// A step of the daily warm-up (the results then move on to the next).
+  final bool warmup;
+
   const LetterGameScreen({
     super.key,
     required this.mode,
     this.isHardMode = false,
+    this.warmup = false,
   });
 
   @override
@@ -40,11 +45,13 @@ class _LetterGameScreenState extends ConsumerState<LetterGameScreen> {
   void initState() {
     super.initState();
     _audioService = ref.read(audioServiceProvider);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(letterGameProvider.notifier)
-          .startGame(widget.mode, isHardMode: widget.isHardMode);
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startGame());
+  }
+
+  void _startGame() {
+    ref
+        .read(letterGameProvider.notifier)
+        .startGame(widget.mode, isHardMode: widget.isHardMode);
   }
 
   @override
@@ -55,36 +62,16 @@ class _LetterGameScreenState extends ConsumerState<LetterGameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final gameState = ref.watch(letterGameProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: FittedBox(fit: BoxFit.scaleDown, child: Text(_title)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          if (gameState.mode != LetterTrainerMode.explore)
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Center(
-                child: Text(
-                  '${gameState.totalCorrect}/${gameState.totalAttempts}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
       body: SafeArea(
         child: Stack(
           children: [
             LayoutBuilder(
               builder: (context, constraints) =>
-                  _buildContent(gameState, constraints),
+                  _buildContent(gameState, constraints, l10n),
             ),
             if (gameState.mode != LetterTrainerMode.explore)
               MilestoneBanner(
@@ -92,24 +79,30 @@ class _LetterGameScreenState extends ConsumerState<LetterGameScreen> {
                 alignToTrainerLayout: false,
               ),
             if (gameState.isGameOver)
-              Container(
-                color: Colors.black54,
-                child: ResultsCard(
-                  totalCorrect: gameState.totalCorrect,
-                  totalAttempts: gameState.totalAttempts,
-                  bestStreak: gameState.bestStreak,
-                  isNewRecord: gameState.isNewRecord,
-                  onPlayAgain: () {
-                    ref
-                        .read(letterGameProvider.notifier)
-                        .startGame(widget.mode, isHardMode: widget.isHardMode);
-                  },
-                  onBack: () => context.pop(),
-                ),
-              ),
+              Positioned.fill(child: _results(gameState)),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _results(LetterGameState gameState) {
+    final actions = roundActions(
+      context,
+      ref,
+      warmup: widget.warmup,
+      score: gameState.totalCorrect,
+      onPlayAgain: _startGame,
+    );
+    return ResultsCard(
+      totalCorrect: gameState.totalCorrect,
+      totalAttempts: gameState.totalAttempts,
+      bestStreak: gameState.bestStreak,
+      isNewRecord: gameState.isNewRecord,
+      primaryLabel: actions.primaryLabel,
+      onPlayAgain: actions.onPrimary,
+      secondaryLabel: actions.secondaryLabel,
+      onBack: actions.onSecondary,
     );
   }
 
@@ -117,9 +110,22 @@ class _LetterGameScreenState extends ConsumerState<LetterGameScreen> {
   /// the tiles across the screen. When the window is too short for the fixed
   /// prompt, streak and timer plus the tiles, the whole page scrolls instead
   /// of overflowing.
-  Widget _buildContent(LetterGameState gameState, BoxConstraints constraints) {
+  Widget _buildContent(
+    LetterGameState gameState,
+    BoxConstraints constraints,
+    AppLocalizations l10n,
+  ) {
     final isExplore = gameState.mode == LetterTrainerMode.explore;
     final header = <Widget>[
+      PlayTopBar(
+        title: l10n.drillPieceLetters,
+        subtitle: warmupSubtitle(ref, l10n, widget.warmup) ?? _subtitle(l10n),
+        onClose: () => closeDrill(context),
+        closeTooltip: l10n.endDrill,
+        trailing: isExplore
+            ? null
+            : Text('${gameState.totalCorrect}/${gameState.totalAttempts}'),
+      ),
       const SizedBox(height: 12),
       LetterPromptDisplay(gameState: gameState),
       const SizedBox(height: 12),
@@ -176,13 +182,12 @@ class _LetterGameScreenState extends ConsumerState<LetterGameScreen> {
     );
   }
 
-  String get _title {
-    final l10n = AppLocalizations.of(context)!;
+  String _subtitle(AppLocalizations l10n) {
     final mode = switch (widget.mode) {
       LetterTrainerMode.explore => l10n.explore,
       LetterTrainerMode.practice => l10n.practice,
       LetterTrainerMode.speed => l10n.speedRound,
     };
-    return l10n.titleFileRankGame(l10n.letters, mode);
+    return widget.isHardMode ? '$mode · ${l10n.playAsBlack}' : mode;
   }
 }

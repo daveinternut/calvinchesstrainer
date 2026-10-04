@@ -15,25 +15,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get about => 'Info';
 
   @override
-  String get calvinChessTrainer => 'Calvin Chess\nTrainer';
-
-  @override
-  String get masterTheFundamentals => 'Padroneggia i fondamentali!';
-
-  @override
-  String get chessNotation => 'Notazione Scacchistica';
-
-  @override
   String get learnTheBoard => 'Impara la scacchiera!';
-
-  @override
-  String get chessVision => 'Visione Scacchistica';
-
-  @override
-  String get seeTheBoard => 'Vedi la scacchiera!';
-
-  @override
-  String get startHere => 'INIZIA QUI';
 
   @override
   String get comingSoon => 'PROSSIMAMENTE';
@@ -42,19 +24,10 @@ class AppLocalizationsIt extends AppLocalizations {
   String get start => 'Inizia';
 
   @override
-  String get menu => 'Menu';
-
-  @override
   String get playAgain => 'Gioca ancora';
 
   @override
   String get newRecord => 'Nuovo record!';
-
-  @override
-  String get whatToPractice => 'Cosa praticare?';
-
-  @override
-  String get chooseAMode => 'Scegli una modalità';
 
   @override
   String get files => 'Colonne';
@@ -89,15 +62,6 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get speedRoundDesc => '30 secondi — quanti riesci a risolverne?';
-
-  @override
-  String get hardMode => 'MODALITÀ DIFFICILE';
-
-  @override
-  String get hardModeBlack => 'Il giocatore controlla il nero!';
-
-  @override
-  String get hardModeFlipped => 'Scacchiera capovolta — prospettiva del nero!';
 
   @override
   String get timesUp => 'Tempo scaduto!';
@@ -161,9 +125,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get hurry => 'Sbrigati!';
 
   @override
-  String get drillType => 'Tipo di esercizio';
-
-  @override
   String get forksAndSkewers => 'Forchette e Infilate';
 
   @override
@@ -174,12 +135,6 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get knightFlight => 'Volo del Cavallo';
-
-  @override
-  String get chooseYourPiece => 'Scegli il tuo pezzo';
-
-  @override
-  String get targetPiece => 'Pezzo bersaglio';
 
   @override
   String get queen => 'Donna';
@@ -198,9 +153,6 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get speedRound60Desc => '60 secondi — risolvine il più possibile!';
-
-  @override
-  String get concentricDrill => 'Esercizio Concentrico';
 
   @override
   String get concentricDrillDesc =>
@@ -265,11 +217,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get found => 'Trovate';
 
   @override
-  String foundOfTotal(int found, int total) {
-    return '$found di $total';
-  }
-
-  @override
   String get drillComplete => 'Esercizio completato!';
 
   @override
@@ -287,26 +234,6 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String solvedCount(int count) {
     return '$count risolti';
-  }
-
-  @override
-  String titleForksAndSkewers(String piece, String mode) {
-    return '$piece — $mode';
-  }
-
-  @override
-  String titlePawnAttack(String piece, String mode) {
-    return 'Attacco di Pedone — $piece $mode';
-  }
-
-  @override
-  String titleMovesGame(String mode) {
-    return 'Mosse - $mode';
-  }
-
-  @override
-  String titleFileRankGame(String subject, String mode) {
-    return '$subject - $mode';
   }
 
   @override
@@ -419,9 +346,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get promptRank => 'traversa';
 
   @override
-  String get openingFundamentals => 'Esploratore\nDi Aperture';
-
-  @override
   String get playTheOpening => 'Esplora le aperture!';
 
   @override
@@ -510,13 +434,6 @@ class AppLocalizationsIt extends AppLocalizations {
   String get knowYourPieces => 'Know your pieces!';
 
   @override
-  String get whichSideWins => 'Quale lato vince?';
-
-  @override
-  String get whichSideWinsDesc =>
-      'Confronta gruppi di pezzi — tocca il lato che vale di più!';
-
-  @override
   String get tapTheSideWorthMore => 'Tocca il lato che vale di più';
 
   @override
@@ -531,9 +448,6 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get pawn => 'Pedone';
-
-  @override
-  String get hardModeBlackPieces => 'Si mostrano i pezzi neri!';
 
   @override
   String get tapPieceToLearnLetter =>
@@ -690,4 +604,203 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get draw => 'Patta!';
+
+  @override
+  String get homeWarmupKicker => 'Riscaldamento quotidiano · 5 min';
+
+  @override
+  String get homeWarmupTitle => 'Allena ciò che i puzzle trascurano';
+
+  @override
+  String get homeWarmupBody =>
+      'Cinque esercizi veloci: scacchi, pezzi indifesi, forchette, case dal lato del nero e un matto in una mossa.';
+
+  @override
+  String get homeWarmupStart => 'Inizia il riscaldamento';
+
+  @override
+  String get homeContinue => 'Continua';
+
+  @override
+  String get homeStartHere => 'Inizia qui';
+
+  @override
+  String homeResume(String drill) {
+    return 'Riprendi: $drill';
+  }
+
+  @override
+  String get homeOpenings => 'Aperture';
+
+  @override
+  String get homeOpeningExplorerDesc =>
+      'Gioca le aperture con i suggerimenti di Stockfish';
+
+  @override
+  String get sectionVision => 'Visione';
+
+  @override
+  String get sectionVisionDesc =>
+      'Le abitudini di scansione della scacchiera che quasi nessuno allena';
+
+  @override
+  String get sectionNotation => 'Notazione';
+
+  @override
+  String get sectionNotationDesc => 'Leggi e trova case e mosse senza pensarci';
+
+  @override
+  String sectionAllDrills(int count) {
+    return 'Tutti i $count esercizi';
+  }
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String drillBest(String value) {
+    return 'Record $value';
+  }
+
+  @override
+  String get groupScan => 'Scansiona la scacchiera';
+
+  @override
+  String get groupGeometry => 'Geometria';
+
+  @override
+  String get groupFinish => 'Colpo finale';
+
+  @override
+  String get groupBoard => 'La scacchiera';
+
+  @override
+  String get groupPieces => 'Pezzi';
+
+  @override
+  String get drillFilesRanks => 'Colonne e traverse';
+
+  @override
+  String get drillReadMoves => 'Lettura delle mosse';
+
+  @override
+  String get drillPieceLetters => 'Lettere dei pezzi';
+
+  @override
+  String get drillPieceValues => 'Valore dei pezzi';
+
+  @override
+  String get drillDescFindChecks => 'Ogni scacco in una posizione reale';
+
+  @override
+  String get drillDescFindCaptures => 'Trova tutte le catture sulla scacchiera';
+
+  @override
+  String get drillDescHanging => 'Individua ogni pezzo indifeso';
+
+  @override
+  String get drillDescForks => 'Case di doppio attacco';
+
+  @override
+  String get drillDescKnightSight => 'Ogni casa raggiungibile dal cavallo';
+
+  @override
+  String get drillDescKnightFlight => 'Al bersaglio con meno mosse possibile';
+
+  @override
+  String get drillDescPawnAttack => 'Sguscia oltre un muro di pedoni';
+
+  @override
+  String get drillDescMate => '400 posizioni, una mossa per il matto';
+
+  @override
+  String get drillDescSquares => 'Trova la casa, in fretta';
+
+  @override
+  String get drillDescFilesRanks => 'Riconosci ogni colonna e traversa';
+
+  @override
+  String get drillDescReadMoves => 'Leggi una mossa, poi giocala';
+
+  @override
+  String get drillDescLetters => 'K, Q, R, B, N a colpo d\'occhio';
+
+  @override
+  String get drillDescValues => 'Quale lato è in vantaggio?';
+
+  @override
+  String get setupYourPiece => 'Il tuo pezzo';
+
+  @override
+  String get setupForkTarget => 'Forchetta a re e…';
+
+  @override
+  String get setupMode => 'Modalità';
+
+  @override
+  String get setupBoardSide => 'Lato della scacchiera';
+
+  @override
+  String get setupLines => 'Linee';
+
+  @override
+  String get setupYourBest => 'Il tuo record';
+
+  @override
+  String get setupNoBest => 'Ancora nessun record';
+
+  @override
+  String get setupKnightPracticeOnly => 'Senza timer. Fai con calma.';
+
+  @override
+  String warmupStep(int current, int total) {
+    return 'Riscaldamento · $current di $total';
+  }
+
+  @override
+  String warmupNext(String drill) {
+    return 'Prossimo: $drill';
+  }
+
+  @override
+  String get warmupFinish => 'Termina il riscaldamento';
+
+  @override
+  String get warmupEnd => 'Esci dal riscaldamento';
+
+  @override
+  String get warmupDoneTitle => 'Riscaldamento completato';
+
+  @override
+  String get warmupDoneBody => 'Cinque esercizi fatti. Domani alla stessa ora?';
+
+  @override
+  String get resultsMissed => 'Mancate';
+
+  @override
+  String get endDrill => 'Esci dall\'esercizio';
+
+  @override
+  String get promptTitleChecks => 'Trova tutti gli scacchi';
+
+  @override
+  String get promptTitleCaptures => 'Trova tutte le catture';
+
+  @override
+  String get promptTitleHanging => 'Trova ogni pezzo indifeso';
+
+  @override
+  String get promptTitleForks => 'Trova tutte le forchette';
+
+  @override
+  String get promptTitleKnightSight => 'Ogni salto del cavallo';
+
+  @override
+  String get promptTitleKnightFlight => 'Raggiungi l\'anello';
+
+  @override
+  String get promptTitlePawnAttack => 'Cattura tutti i pedoni';
+
+  @override
+  String get promptTitleMate => 'Scacco matto in una mossa';
 }

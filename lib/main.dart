@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
@@ -61,25 +60,20 @@ void main() {
         debugPrint('Saved bests unavailable; keeping them in memory: $e');
       }
 
-      // Holds on iPhone. iPad ignores it: the app supports multitasking, and
-      // iPadOS 26 refuses programmatic orientation changes, so every screen
-      // also lays out for landscape (see TrainerLayout).
-      try {
-        await SystemChrome.setPreferredOrientations([
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-        ]);
-      } catch (e) {
-        debugPrint('Orientation lock skipped: $e');
-      }
+      // No orientation lock here. Phones stay portrait natively (iPhone in
+      // Info.plist, Android phones in MainActivity), and tablets rotate, so
+      // every screen also lays out for landscape (see TrainerLayout). A
+      // SystemChrome lock would override MainActivity on Android tablets.
 
-      // Inter ships in assets/google_fonts/; never download fonts at runtime.
-      GoogleFonts.config.allowRuntimeFetching = false;
+      // The bundled fonts (see pubspec.yaml) ship under the SIL OFL.
       LicenseRegistry.addLicense(() async* {
-        final license = await rootBundle.loadString(
-          'assets/google_fonts/OFL.txt',
-        );
-        yield LicenseEntryWithLineBreaks(['Inter font'], license);
+        for (final (name, file) in const [
+          ('Bricolage Grotesque font', 'OFL-BricolageGrotesque.txt'),
+          ('Geist Mono font', 'OFL-GeistMono.txt'),
+        ]) {
+          final license = await rootBundle.loadString('assets/licenses/$file');
+          yield LicenseEntryWithLineBreaks([name], license);
+        }
       });
 
       FlutterNativeSplash.remove();

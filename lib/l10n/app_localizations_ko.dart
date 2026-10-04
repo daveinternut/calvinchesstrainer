@@ -15,25 +15,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get about => '소개';
 
   @override
-  String get calvinChessTrainer => 'Calvin Chess\nTrainer';
-
-  @override
-  String get masterTheFundamentals => '기본기를 마스터하세요!';
-
-  @override
-  String get chessNotation => '체스 기보법';
-
-  @override
   String get learnTheBoard => '체스판을 배우세요!';
-
-  @override
-  String get chessVision => '체스 비전';
-
-  @override
-  String get seeTheBoard => '체스판을 보세요!';
-
-  @override
-  String get startHere => '여기서 시작!';
 
   @override
   String get comingSoon => '출시 예정';
@@ -42,19 +24,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get start => '시작';
 
   @override
-  String get menu => '메뉴';
-
-  @override
   String get playAgain => '다시 플레이';
 
   @override
   String get newRecord => '새 기록!';
-
-  @override
-  String get whatToPractice => '무엇을 연습할까요?';
-
-  @override
-  String get chooseAMode => '모드 선택';
 
   @override
   String get files => '파일';
@@ -88,15 +61,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get speedRoundDesc => '30초 — 몇 개나 맞출 수 있을까요?';
-
-  @override
-  String get hardMode => '하드 모드';
-
-  @override
-  String get hardModeBlack => '플레이어가 흑을 조작합니다!';
-
-  @override
-  String get hardModeFlipped => '보드 뒤집기 — 흑의 관점!';
 
   @override
   String get timesUp => '시간 종료!';
@@ -160,9 +124,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get hurry => '서두르세요!';
 
   @override
-  String get drillType => '훈련 유형';
-
-  @override
   String get forksAndSkewers => '포크와 스큐어';
 
   @override
@@ -173,12 +134,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get knightFlight => '나이트 비행';
-
-  @override
-  String get chooseYourPiece => '기물 선택';
-
-  @override
-  String get targetPiece => '대상 기물';
 
   @override
   String get queen => '퀸';
@@ -197,9 +152,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get speedRound60Desc => '60초 — 최대한 많이 풀어보세요!';
-
-  @override
-  String get concentricDrill => '동심원 훈련';
 
   @override
   String get concentricDrillDesc => '모든 위치를 완성하세요 — 기록을 갱신하세요!';
@@ -262,11 +214,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get found => '발견';
 
   @override
-  String foundOfTotal(int found, int total) {
-    return '$found/$total';
-  }
-
-  @override
   String get drillComplete => '훈련 완료!';
 
   @override
@@ -284,26 +231,6 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String solvedCount(int count) {
     return '$count개 해결';
-  }
-
-  @override
-  String titleForksAndSkewers(String piece, String mode) {
-    return '$piece — $mode';
-  }
-
-  @override
-  String titlePawnAttack(String piece, String mode) {
-    return '폰 공격 — $piece $mode';
-  }
-
-  @override
-  String titleMovesGame(String mode) {
-    return '수 - $mode';
-  }
-
-  @override
-  String titleFileRankGame(String subject, String mode) {
-    return '$subject - $mode';
   }
 
   @override
@@ -415,9 +342,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get promptRank => '랭크';
 
   @override
-  String get openingFundamentals => '오프닝\n탐색기';
-
-  @override
   String get playTheOpening => '오프닝을 탐색하세요!';
 
   @override
@@ -504,12 +428,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get knowYourPieces => 'Know your pieces!';
 
   @override
-  String get whichSideWins => '어느 쪽이 이길까?';
-
-  @override
-  String get whichSideWinsDesc => '기물 그룹을 비교하고 더 가치 있는 쪽을 탭하세요!';
-
-  @override
   String get tapTheSideWorthMore => '더 가치 있는 쪽을 탭하세요';
 
   @override
@@ -523,9 +441,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get pawn => '폰';
-
-  @override
-  String get hardModeBlackPieces => '검은 기물로 출제됩니다!';
 
   @override
   String get tapPieceToLearnLetter => '기물을 탭하여 글자를 배우세요!';
@@ -675,4 +590,201 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get draw => '무승부!';
+
+  @override
+  String get homeWarmupKicker => '매일 워밍업 · 5분';
+
+  @override
+  String get homeWarmupTitle => '퍼즐이 놓치는 것을 훈련하세요';
+
+  @override
+  String get homeWarmupBody =>
+      '빠른 훈련 5가지: 체크, 무방비 기물, 포크, 흑의 시점에서 본 칸, 그리고 1수 메이트.';
+
+  @override
+  String get homeWarmupStart => '워밍업 시작';
+
+  @override
+  String get homeContinue => '이어서 하기';
+
+  @override
+  String get homeStartHere => '여기서 시작';
+
+  @override
+  String homeResume(String drill) {
+    return '$drill 이어하기';
+  }
+
+  @override
+  String get homeOpenings => '오프닝';
+
+  @override
+  String get homeOpeningExplorerDesc => 'Stockfish 힌트로 오프닝을 둬 보세요';
+
+  @override
+  String get sectionVision => '체스 비전';
+
+  @override
+  String get sectionVisionDesc => '대부분이 훈련하지 않는 체스판 훑어보기 습관';
+
+  @override
+  String get sectionNotation => '기보법';
+
+  @override
+  String get sectionNotationDesc => '생각하지 않고도 칸과 수를 읽고 찾기';
+
+  @override
+  String sectionAllDrills(int count) {
+    return '전체 훈련 $count개';
+  }
+
+  @override
+  String get navHome => '홈';
+
+  @override
+  String drillBest(String value) {
+    return '최고 $value';
+  }
+
+  @override
+  String get groupScan => '체스판 훑어보기';
+
+  @override
+  String get groupGeometry => '기하학';
+
+  @override
+  String get groupFinish => '마무리';
+
+  @override
+  String get groupBoard => '체스판';
+
+  @override
+  String get groupPieces => '기물';
+
+  @override
+  String get drillFilesRanks => '파일과 랭크';
+
+  @override
+  String get drillReadMoves => '기보 읽기';
+
+  @override
+  String get drillPieceLetters => '기물 글자';
+
+  @override
+  String get drillPieceValues => '기물 가치';
+
+  @override
+  String get drillDescFindChecks => '실전 포지션의 모든 체크';
+
+  @override
+  String get drillDescFindCaptures => '체스판 위의 모든 캡처 찾기';
+
+  @override
+  String get drillDescHanging => '지켜지지 않는 기물 모두 찾기';
+
+  @override
+  String get drillDescForks => '두 기물을 동시에 노리는 칸';
+
+  @override
+  String get drillDescKnightSight => '나이트가 갈 수 있는 모든 칸';
+
+  @override
+  String get drillDescKnightFlight => '최소한의 수로 목표까지';
+
+  @override
+  String get drillDescPawnAttack => '폰의 벽을 빠져나가기';
+
+  @override
+  String get drillDescMate => '400개 포지션, 한 수로 메이트';
+
+  @override
+  String get drillDescSquares => '칸을 빠르게 찾기';
+
+  @override
+  String get drillDescFilesRanks => '모든 파일과 랭크 이름 맞히기';
+
+  @override
+  String get drillDescReadMoves => '기보를 읽고 그 수를 두기';
+
+  @override
+  String get drillDescLetters => 'K, Q, R, B, N을 한눈에';
+
+  @override
+  String get drillDescValues => '어느 쪽이 유리할까?';
+
+  @override
+  String get setupYourPiece => '내 기물';
+
+  @override
+  String get setupForkTarget => '포크: 킹과…';
+
+  @override
+  String get setupMode => '모드';
+
+  @override
+  String get setupBoardSide => '보드 방향';
+
+  @override
+  String get setupLines => '라인';
+
+  @override
+  String get setupYourBest => '내 최고 기록';
+
+  @override
+  String get setupNoBest => '아직 기록 없음';
+
+  @override
+  String get setupKnightPracticeOnly => '타이머 없음. 천천히 하세요.';
+
+  @override
+  String warmupStep(int current, int total) {
+    return '워밍업 · $current/$total';
+  }
+
+  @override
+  String warmupNext(String drill) {
+    return '다음: $drill';
+  }
+
+  @override
+  String get warmupFinish => '워밍업 마치기';
+
+  @override
+  String get warmupEnd => '워밍업 종료';
+
+  @override
+  String get warmupDoneTitle => '워밍업 완료';
+
+  @override
+  String get warmupDoneBody => '훈련 5개 완료. 내일 같은 시간에 할까요?';
+
+  @override
+  String get resultsMissed => '놓침';
+
+  @override
+  String get endDrill => '훈련 종료';
+
+  @override
+  String get promptTitleChecks => '모든 체크를 찾으세요';
+
+  @override
+  String get promptTitleCaptures => '모든 캡처를 찾으세요';
+
+  @override
+  String get promptTitleHanging => '무방비 기물을 모두 찾으세요';
+
+  @override
+  String get promptTitleForks => '모든 포크를 찾으세요';
+
+  @override
+  String get promptTitleKnightSight => '나이트의 모든 점프';
+
+  @override
+  String get promptTitleKnightFlight => '링에 도착하세요';
+
+  @override
+  String get promptTitlePawnAttack => '폰을 모두 잡으세요';
+
+  @override
+  String get promptTitleMate => '한 수 만에 체크메이트';
 }

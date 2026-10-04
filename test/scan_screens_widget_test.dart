@@ -4,7 +4,6 @@ import 'package:calvinchesstrainer/core/services/puzzle_service.dart';
 import 'package:calvinchesstrainer/core/services/scan_position_service.dart';
 import 'package:calvinchesstrainer/features/chess_vision/models/chess_vision_state.dart';
 import 'package:calvinchesstrainer/features/chess_vision/screens/chess_vision_game_screen.dart';
-import 'package:calvinchesstrainer/features/chess_vision/screens/chess_vision_menu_screen.dart';
 import 'package:calvinchesstrainer/features/chess_vision/widgets/found_progress_indicator.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:chessground/chessground.dart' show Chessboard;
@@ -54,41 +53,6 @@ void _expectSideToPlayBadge(WidgetTester tester) {
 }
 
 void main() {
-  group('ChessVisionMenuScreen', () {
-    testWidgets('shows all 8 drill chips; scan drills get mode cards',
-        (tester) async {
-      await tester.pumpWidget(_wrap(const ChessVisionMenuScreen()));
-      await tester.pumpAndSettle();
-
-      for (final label in [
-        'Forks & Skewers',
-        'Pawn Attack',
-        'Knight Sight',
-        'Knight Flight',
-        'Find Checks',
-        'Find Captures',
-        'Hanging Pieces',
-        'Mate in 1',
-      ]) {
-        expect(find.text(label), findsOneWidget, reason: 'chip "$label"');
-      }
-
-      // Mate in 1 -> Blitz-labeled speed card + its description.
-      await tester.tap(find.text('Mate in 1'));
-      await tester.pumpAndSettle();
-      expect(find.text('Blitz'), findsOneWidget);
-      expect(find.text('60 seconds — how many mates can you find?'),
-          findsOneWidget);
-      expect(find.text('Practice'), findsOneWidget);
-
-      // Tap drills -> regular Speed Round card, no piece pickers.
-      await tester.tap(find.text('Hanging Pieces'));
-      await tester.pumpAndSettle();
-      expect(find.text('Speed Round'), findsOneWidget);
-      expect(find.text('Choose Your Piece'), findsNothing);
-    });
-  });
-
   group('ChessVisionGameScreen (scanning)', () {
     late ScanPositionService scanService;
     late PuzzleService mateService;

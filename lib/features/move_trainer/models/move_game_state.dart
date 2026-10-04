@@ -1,10 +1,9 @@
-import 'dart:ui' show Color;
-
 import 'package:chessground/chessground.dart';
 import 'package:dartchess/dartchess.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
 import '../../../core/services/puzzle_service.dart';
+import '../../../core/theme/app_theme.dart';
 
 enum MoveTrainerMode { practice, speed }
 
@@ -51,6 +50,9 @@ class MoveGameState {
   /// Set at game over when the round beat the saved personal best.
   final bool isNewRecord;
 
+  /// The moves answered wrong this round, in notation (shown on results).
+  final List<String> missed;
+
   const MoveGameState({
     required this.mode,
     this.isHardMode = false,
@@ -69,6 +71,7 @@ class MoveGameState {
     this.isWaitingForNext = false,
     this.isLoading = true,
     this.isNewRecord = false,
+    this.missed = const [],
   });
 
   MoveGameState copyWith({
@@ -89,6 +92,7 @@ class MoveGameState {
     bool? isWaitingForNext,
     bool? isLoading,
     bool? isNewRecord,
+    List<String>? missed,
   }) {
     return MoveGameState(
       mode: mode ?? this.mode,
@@ -113,6 +117,7 @@ class MoveGameState {
       isWaitingForNext: isWaitingForNext ?? this.isWaitingForNext,
       isLoading: isLoading ?? this.isLoading,
       isNewRecord: isNewRecord ?? this.isNewRecord,
+      missed: missed ?? this.missed,
     );
   }
 
@@ -123,7 +128,7 @@ class MoveGameState {
     if (feedback.result == MoveFeedbackResult.incorrect) {
       return ISet({
         Arrow(
-          color: const Color(0xCC4CAF50),
+          color: AppColors.found.withValues(alpha: 0.8),
           orig: feedback.correctMove.from,
           dest: feedback.correctMove.to,
         ),
@@ -142,7 +147,7 @@ class MoveGameState {
     if (feedback.result == MoveFeedbackResult.correct) {
       final highlight = SquareHighlight(
         details: HighlightDetails(
-          solidColor: const Color(0x994CAF50),
+          solidColor: AppColors.found.withValues(alpha: 0.6),
         ),
       );
       return IMap({

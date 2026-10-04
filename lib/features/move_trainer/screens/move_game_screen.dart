@@ -4,12 +4,15 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/audio/audio_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/board_theme.dart';
+import '../../../core/ui/board_frame.dart';
+import '../../../core/ui/components.dart';
 import '../../../core/widgets/square_name_overlay.dart';
 import '../../../core/widgets/trainer_layout.dart';
+import '../../drills/warmup_actions.dart';
 import '../../file_rank_trainer/widgets/milestone_banner.dart';
 import '../../file_rank_trainer/widgets/streak_counter.dart';
 import '../../file_rank_trainer/widgets/timer_bar.dart';
@@ -22,10 +25,14 @@ class MoveGameScreen extends ConsumerStatefulWidget {
   final MoveTrainerMode mode;
   final bool isHardMode;
 
+  /// A step of the daily warm-up (the results then move on to the next).
+  final bool warmup;
+
   const MoveGameScreen({
     super.key,
     required this.mode,
     this.isHardMode = false,
+    this.warmup = false,
   });
 
   @override
@@ -39,12 +46,14 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
   void initState() {
     super.initState();
     _audioService = ref.read(audioServiceProvider);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(moveGameProvider.notifier).startGame(
-            widget.mode,
-            isHardMode: widget.isHardMode,
-          );
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startGame());
+  }
+
+  void _startGame() {
+    ref.read(moveGameProvider.notifier).startGame(
+          widget.mode,
+          isHardMode: widget.isHardMode,
+        );
   }
 
   @override
@@ -55,77 +64,88 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final gameState = ref.watch(moveGameProvider);
+    final orientation = widget.isHardMode ? Side.black : Side.white;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_title),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(
-              child: Text(
-                '${gameState.totalCorrect}/${gameState.totalAttempts}',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Stack(
           children: [
             TrainerLayout(
+              topBar: PlayTopBar(
+                title: l10n.drillReadMoves,
+                subtitle: warmupSubtitle(ref, l10n, widget.warmup) ??
+                    _subtitle(l10n),
+                onClose: () => closeDrill(context),
+                closeTooltip: l10n.endDrill,
+                trailing: Text(
+                  '${gameState.totalCorrect}/${gameState.totalAttempts}',
+                ),
+              ),
               header: [
-                const SizedBox(height: 12),
+                const SizedBox(height: 4),
                 MovePromptDisplay(gameState: gameState),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 StreakCounter(
                   streak: gameState.streak,
                   bestStreak: gameState.bestStreak,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
               ],
-              board: (context, size) => _buildBoard(gameState, size),
+              // Coordinates stay hidden: reading the square is the drill.
+              board: (context, size) => BoardFrame(
+                size: size,
+                orientation: orientation,
+                showCoordinates: false,
+                builder: (context, boardSize) =>
+                    _buildBoard(gameState, boardSize),
+              ),
               footer: [
                 if (gameState.mode == MoveTrainerMode.speed &&
                     gameState.timeRemainingSeconds != null) ...[
                   const SizedBox(height: 12),
-                  TimerBar(
-                    remainingSeconds: gameState.timeRemainingSeconds!,
-                  ),
+                  TimerBar(remainingSeconds: gameState.timeRemainingSeconds!),
                 ],
                 const SizedBox(height: 16),
               ],
             ),
             MilestoneBanner(streak: gameState.streak),
             if (gameState.isGameOver)
-              Container(
-                color: Colors.black54,
-                child: ResultsCard(
-                  totalCorrect: gameState.totalCorrect,
-                  totalAttempts: gameState.totalAttempts,
-                  bestStreak: gameState.bestStreak,
-                  isNewRecord: gameState.isNewRecord,
-                  onPlayAgain: () {
-                    ref.read(moveGameProvider.notifier).startGame(
-                          widget.mode,
-                          isHardMode: widget.isHardMode,
-                        );
-                  },
-                  onBack: () => context.pop(),
-                ),
-              ),
+              Positioned.fill(child: _results(gameState)),
           ],
         ),
       ),
     );
+  }
+
+  Widget _results(MoveGameState gameState) {
+    final actions = roundActions(
+      context,
+      ref,
+      warmup: widget.warmup,
+      score: gameState.totalCorrect,
+      onPlayAgain: _startGame,
+    );
+    return ResultsCard(
+      totalCorrect: gameState.totalCorrect,
+      totalAttempts: gameState.totalAttempts,
+      bestStreak: gameState.bestStreak,
+      isNewRecord: gameState.isNewRecord,
+      missed: gameState.missed.toSet().take(8).toList(),
+      primaryLabel: actions.primaryLabel,
+      onPlayAgain: actions.onPrimary,
+      secondaryLabel: actions.secondaryLabel,
+      onBack: actions.onSecondary,
+    );
+  }
+
+  String _subtitle(AppLocalizations l10n) {
+    final mode = switch (widget.mode) {
+      MoveTrainerMode.practice => l10n.practice,
+      MoveTrainerMode.speed => l10n.speedRound,
+    };
+    return widget.isHardMode ? '$mode · ${l10n.playAsBlack}' : mode;
   }
 
   Widget _buildBoard(MoveGameState gameState, double boardSize) {
@@ -154,13 +174,9 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
       orientation: orientation,
       fen: fen,
       lastMove: gameState.lastFeedback == null ? gameState.lastSetupMove : null,
-      settings: ChessboardSettings(
-        enableCoordinates: false,
-        colorScheme: ChessboardColorScheme.green,
-        pieceAssets: PieceSet.cburnett.assets,
+      settings: AppBoard.settings(
         animationDuration: const Duration(milliseconds: 250),
         showValidMoves: isInteractive,
-        showLastMove: true,
         autoQueenPromotion: true,
       ),
       game: GameData(
@@ -210,7 +226,7 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
         file: feedback.correctMove.to.file,
         rank: feedback.correctMove.to.rank,
         name: feedback.correctMove.to.name,
-        color: AppColors.correctGreen.withValues(alpha: 0.85),
+        color: AppColors.correctGreen.withValues(alpha: 0.9),
       ));
     } else {
       if (feedback.attemptedMove != null &&
@@ -219,26 +235,17 @@ class _MoveGameScreenState extends ConsumerState<MoveGameScreen> {
           file: feedback.attemptedMove!.to.file,
           rank: feedback.attemptedMove!.to.rank,
           name: feedback.attemptedMove!.to.name,
-          color: AppColors.incorrectRed.withValues(alpha: 0.85),
+          color: AppColors.incorrectRed.withValues(alpha: 0.9),
         ));
       }
       labels.add(SquareLabel(
         file: feedback.correctMove.to.file,
         rank: feedback.correctMove.to.rank,
         name: feedback.correctMove.to.name,
-        color: AppColors.correctGreen.withValues(alpha: 0.85),
+        color: AppColors.correctGreen.withValues(alpha: 0.9),
       ));
     }
 
     return labels;
-  }
-
-  String get _title {
-    final l10n = AppLocalizations.of(context)!;
-    final mode = switch (widget.mode) {
-      MoveTrainerMode.practice => l10n.practice,
-      MoveTrainerMode.speed => l10n.speedRound,
-    };
-    return l10n.titleMovesGame(mode);
   }
 }

@@ -6,8 +6,10 @@ import 'core/services/analytics_service.dart'
     show AnalyticsService, ScreenViewObserver;
 import 'core/services/stockfish_service.dart' show kEngineAvailable;
 import 'core/theme/app_theme.dart';
+import 'features/drills/models/drill.dart';
+import 'features/drills/screens/drill_section_screen.dart';
+import 'features/drills/screens/warmup_done_screen.dart';
 import 'features/home/screens/home_screen.dart';
-import 'features/file_rank_trainer/screens/file_rank_menu_screen.dart';
 import 'features/file_rank_trainer/screens/file_rank_game_screen.dart';
 import 'features/file_rank_trainer/models/file_rank_game_state.dart';
 import 'features/move_trainer/screens/move_game_screen.dart';
@@ -16,8 +18,6 @@ import 'features/letter_trainer/screens/letter_game_screen.dart';
 import 'features/letter_trainer/models/letter_game_state.dart';
 import 'features/tactics_trainer/screens/tactics_trainer_screen.dart';
 import 'features/about/screens/about_screen.dart';
-import 'features/move_trainer/screens/move_menu_screen.dart';
-import 'features/chess_vision/screens/chess_vision_menu_screen.dart';
 import 'features/chess_vision/screens/chess_vision_game_screen.dart';
 import 'features/chess_vision/models/chess_vision_state.dart';
 import 'package:dartchess/dartchess.dart' show Side;
@@ -43,27 +43,20 @@ final _router = GoRouter(
     GoRoute(
       path: '/file-rank-trainer',
       name: 'file_rank_menu',
-      builder: (context, state) {
-        final subjectParam = state.uri.queryParameters['subject'];
-        final modeParam = state.uri.queryParameters['mode'];
-        final hardModeParam = state.uri.queryParameters['hardMode'];
-
-        return FileRankMenuScreen(
-          initialSubject: subjectParam != null
-              ? TrainerSubject.values.firstWhere(
-                  (s) => s.name == subjectParam,
-                  orElse: () => TrainerSubject.files,
-                )
-              : TrainerSubject.files,
-          initialMode: modeParam != null
-              ? TrainerMode.values.firstWhere(
-                  (m) => m.name == modeParam,
-                  orElse: () => TrainerMode.explore,
-                )
-              : TrainerMode.explore,
-          initialHardMode: hardModeParam == 'true',
-        );
-      },
+      // The Notation section. `?drill=` selects a drill; the old
+      // `?subject=` links still land on the matching one.
+      builder: (context, state) => DrillSectionScreen(
+        section: DrillSection.notation,
+        initialDrill: _drillParam(state.uri) ??
+            switch (state.uri.queryParameters['subject']) {
+              'squares' => DrillId.squares,
+              'files' || 'ranks' => DrillId.filesRanks,
+              'moves' => DrillId.readMoves,
+              'letters' => DrillId.pieceLetters,
+              'pieceValue' => DrillId.pieceValues,
+              _ => null,
+            },
+      ),
     ),
     GoRoute(
       path: '/file-rank-trainer/game',
@@ -86,26 +79,17 @@ final _router = GoRouter(
           subject: subject,
           mode: mode,
           isHardMode: hardModeParam == 'true',
+          warmup: _isWarmup(state.uri),
         );
       },
     ),
     GoRoute(
       path: '/move-trainer',
       name: 'move_menu',
-      builder: (context, state) {
-        final modeParam = state.uri.queryParameters['mode'];
-        final hardModeParam = state.uri.queryParameters['hardMode'];
-
-        return MoveMenuScreen(
-          initialMode: modeParam != null
-              ? MoveTrainerMode.values.firstWhere(
-                  (m) => m.name == modeParam,
-                  orElse: () => MoveTrainerMode.practice,
-                )
-              : MoveTrainerMode.practice,
-          initialHardMode: hardModeParam == 'true',
-        );
-      },
+      builder: (context, state) => const DrillSectionScreen(
+        section: DrillSection.notation,
+        initialDrill: DrillId.readMoves,
+      ),
     ),
     GoRoute(
       path: '/move-trainer/game',
@@ -119,7 +103,11 @@ final _router = GoRouter(
           orElse: () => MoveTrainerMode.practice,
         );
 
-        return MoveGameScreen(mode: mode, isHardMode: hardModeParam == 'true');
+        return MoveGameScreen(
+          mode: mode,
+          isHardMode: hardModeParam == 'true',
+          warmup: _isWarmup(state.uri),
+        );
       },
     ),
     GoRoute(
@@ -137,44 +125,18 @@ final _router = GoRouter(
         return LetterGameScreen(
           mode: mode,
           isHardMode: hardModeParam == 'true',
+          warmup: _isWarmup(state.uri),
         );
       },
     ),
     GoRoute(
       path: '/chess-vision',
       name: 'chess_vision_menu',
-      builder: (context, state) {
-        final drillParam = state.uri.queryParameters['drill'];
-        final pieceParam = state.uri.queryParameters['piece'];
-        final modeParam = state.uri.queryParameters['mode'];
-
-        return ChessVisionMenuScreen(
-          initialDrill: drillParam != null
-              ? VisionDrillType.values.firstWhere(
-                  (d) => d.name == drillParam,
-                  orElse: () => VisionDrillType.forksAndSkewers,
-                )
-              : VisionDrillType.forksAndSkewers,
-          initialPiece: pieceParam != null
-              ? WhitePiece.values.firstWhere(
-                  (p) => p.name == pieceParam,
-                  orElse: () => WhitePiece.queen,
-                )
-              : WhitePiece.queen,
-          initialTarget: state.uri.queryParameters['target'] != null
-              ? TargetPiece.values.firstWhere(
-                  (t) => t.name == state.uri.queryParameters['target'],
-                  orElse: () => TargetPiece.rook,
-                )
-              : TargetPiece.rook,
-          initialMode: modeParam != null
-              ? VisionMode.values.firstWhere(
-                  (m) => m.name == modeParam,
-                  orElse: () => VisionMode.practice,
-                )
-              : VisionMode.practice,
-        );
-      },
+      // The Vision section; `?drill=` selects a drill.
+      builder: (context, state) => DrillSectionScreen(
+        section: DrillSection.vision,
+        initialDrill: _drillParam(state.uri),
+      ),
     ),
     GoRoute(
       path: '/chess-vision/game',
@@ -208,6 +170,7 @@ final _router = GoRouter(
           piece: piece,
           target: target,
           mode: mode,
+          warmup: _isWarmup(state.uri),
         );
       },
     ),
@@ -237,8 +200,13 @@ final _router = GoRouter(
           (m) => m.name == modeParam,
           orElse: () => WhichSideWinsMode.practice,
         );
-        return WhichSideWinsScreen(mode: mode);
+        return WhichSideWinsScreen(mode: mode, warmup: _isWarmup(state.uri));
       },
+    ),
+    GoRoute(
+      path: '/warm-up/done',
+      name: 'warmup_done',
+      builder: (context, state) => const WarmupDoneScreen(),
     ),
     GoRoute(
       path: '/tactics-trainer',
@@ -252,6 +220,19 @@ final _router = GoRouter(
     ),
   ],
 );
+
+/// `?drill=` as a drill: its catalog name, or a Chess Vision drill's name.
+DrillId? _drillParam(Uri uri) {
+  final name = uri.queryParameters['drill'];
+  if (name == null) return null;
+  for (final d in DrillId.values) {
+    if (d.name == name) return d;
+  }
+  return null;
+}
+
+/// Whether a game route is a step of the daily warm-up.
+bool _isWarmup(Uri uri) => uri.queryParameters['warmup'] == '1';
 
 class CalvinChessTrainerApp extends StatelessWidget {
   const CalvinChessTrainerApp({super.key});

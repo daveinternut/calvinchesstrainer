@@ -15,25 +15,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get about => '关于';
 
   @override
-  String get calvinChessTrainer => 'Calvin Chess\nTrainer';
-
-  @override
-  String get masterTheFundamentals => '掌握基础！';
-
-  @override
-  String get chessNotation => '国际象棋记谱';
-
-  @override
   String get learnTheBoard => '认识棋盘！';
-
-  @override
-  String get chessVision => '棋盘视觉';
-
-  @override
-  String get seeTheBoard => '看清棋盘！';
-
-  @override
-  String get startHere => '从这里开始';
 
   @override
   String get comingSoon => '即将推出';
@@ -42,19 +24,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get start => '开始';
 
   @override
-  String get menu => '菜单';
-
-  @override
   String get playAgain => '再玩一次';
 
   @override
   String get newRecord => '新纪录！';
-
-  @override
-  String get whatToPractice => '练习什么？';
-
-  @override
-  String get chooseAMode => '选择模式';
 
   @override
   String get files => '列';
@@ -88,15 +61,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get speedRoundDesc => '30秒 — 你能答对多少？';
-
-  @override
-  String get hardMode => '困难模式';
-
-  @override
-  String get hardModeBlack => '用户执黑！';
-
-  @override
-  String get hardModeFlipped => '棋盘翻转 — 黑方视角！';
 
   @override
   String get timesUp => '时间到！';
@@ -160,9 +124,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get hurry => '快！';
 
   @override
-  String get drillType => '练习类型';
-
-  @override
   String get forksAndSkewers => '双攻与串击';
 
   @override
@@ -173,12 +134,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get knightFlight => '马的飞行';
-
-  @override
-  String get chooseYourPiece => '选择你的棋子';
-
-  @override
-  String get targetPiece => '目标棋子';
 
   @override
   String get queen => '后';
@@ -197,9 +152,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get speedRound60Desc => '60秒 — 尽可能多地解题！';
-
-  @override
-  String get concentricDrill => '同心圆练习';
 
   @override
   String get concentricDrillDesc => '完成所有位置 — 超越你的时间！';
@@ -262,11 +214,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get found => '已找到';
 
   @override
-  String foundOfTotal(int found, int total) {
-    return '$found/$total';
-  }
-
-  @override
   String get drillComplete => '练习完成！';
 
   @override
@@ -284,26 +231,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String solvedCount(int count) {
     return '已解$count题';
-  }
-
-  @override
-  String titleForksAndSkewers(String piece, String mode) {
-    return '$piece — $mode';
-  }
-
-  @override
-  String titlePawnAttack(String piece, String mode) {
-    return '兵的攻击 — $piece $mode';
-  }
-
-  @override
-  String titleMovesGame(String mode) {
-    return '着法 - $mode';
-  }
-
-  @override
-  String titleFileRankGame(String subject, String mode) {
-    return '$subject - $mode';
   }
 
   @override
@@ -414,9 +341,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get promptRank => '行';
 
   @override
-  String get openingFundamentals => '开局\n探索器';
-
-  @override
   String get playTheOpening => '探索开局！';
 
   @override
@@ -503,12 +427,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get knowYourPieces => 'Know your pieces!';
 
   @override
-  String get whichSideWins => '哪一方赢？';
-
-  @override
-  String get whichSideWinsDesc => '比较两组棋子——点击价值更高的一方！';
-
-  @override
   String get tapTheSideWorthMore => '点击价值更高的一方';
 
   @override
@@ -522,9 +440,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pawn => '兵';
-
-  @override
-  String get hardModeBlackPieces => '显示黑方棋子！';
 
   @override
   String get tapPieceToLearnLetter => '点击任意棋子，学习它的字母！';
@@ -674,4 +589,200 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get draw => '和棋！';
+
+  @override
+  String get homeWarmupKicker => '每日热身 · 5分钟';
+
+  @override
+  String get homeWarmupTitle => '练习谜题练不到的能力';
+
+  @override
+  String get homeWarmupBody => '五项快速练习：将军、无保护棋子、双攻、黑方视角的格子，以及一步杀。';
+
+  @override
+  String get homeWarmupStart => '开始热身';
+
+  @override
+  String get homeContinue => '继续';
+
+  @override
+  String get homeStartHere => '从这里开始';
+
+  @override
+  String homeResume(String drill) {
+    return '继续$drill';
+  }
+
+  @override
+  String get homeOpenings => '开局';
+
+  @override
+  String get homeOpeningExplorerDesc => '借助Stockfish提示走一遍开局';
+
+  @override
+  String get sectionVision => '棋盘视觉';
+
+  @override
+  String get sectionVisionDesc => '大多数棋手从不练习的扫视棋盘习惯';
+
+  @override
+  String get sectionNotation => '记谱';
+
+  @override
+  String get sectionNotationDesc => '不假思索地读懂并找到格子和着法';
+
+  @override
+  String sectionAllDrills(int count) {
+    return '全部$count项练习';
+  }
+
+  @override
+  String get navHome => '首页';
+
+  @override
+  String drillBest(String value) {
+    return '最佳 $value';
+  }
+
+  @override
+  String get groupScan => '扫视棋盘';
+
+  @override
+  String get groupGeometry => '几何';
+
+  @override
+  String get groupFinish => '绝杀';
+
+  @override
+  String get groupBoard => '棋盘';
+
+  @override
+  String get groupPieces => '棋子';
+
+  @override
+  String get drillFilesRanks => '列与行';
+
+  @override
+  String get drillReadMoves => '读谱';
+
+  @override
+  String get drillPieceLetters => '棋子字母';
+
+  @override
+  String get drillPieceValues => '棋子价值';
+
+  @override
+  String get drillDescFindChecks => '实战局面中的所有将军';
+
+  @override
+  String get drillDescFindCaptures => '找出棋盘上所有的吃子';
+
+  @override
+  String get drillDescHanging => '找出每一个无保护的棋子';
+
+  @override
+  String get drillDescForks => '同时攻击两个目标的格子';
+
+  @override
+  String get drillDescKnightSight => '马能到达的所有格子';
+
+  @override
+  String get drillDescKnightFlight => '用最少的步数到达目标';
+
+  @override
+  String get drillDescPawnAttack => '穿过一堵兵墙';
+
+  @override
+  String get drillDescMate => '400个局面，一步将杀';
+
+  @override
+  String get drillDescSquares => '快速找到格子';
+
+  @override
+  String get drillDescFilesRanks => '说出每一列和每一行';
+
+  @override
+  String get drillDescReadMoves => '读懂着法，然后走出来';
+
+  @override
+  String get drillDescLetters => '一眼认出K、Q、R、B、N';
+
+  @override
+  String get drillDescValues => '哪一方占优？';
+
+  @override
+  String get setupYourPiece => '你的棋子';
+
+  @override
+  String get setupForkTarget => '双攻：王和…';
+
+  @override
+  String get setupMode => '模式';
+
+  @override
+  String get setupBoardSide => '棋盘视角';
+
+  @override
+  String get setupLines => '方向';
+
+  @override
+  String get setupYourBest => '个人最佳';
+
+  @override
+  String get setupNoBest => '暂无记录';
+
+  @override
+  String get setupKnightPracticeOnly => '不限时，慢慢来。';
+
+  @override
+  String warmupStep(int current, int total) {
+    return '热身 · $current/$total';
+  }
+
+  @override
+  String warmupNext(String drill) {
+    return '下一项：$drill';
+  }
+
+  @override
+  String get warmupFinish => '完成热身';
+
+  @override
+  String get warmupEnd => '退出热身';
+
+  @override
+  String get warmupDoneTitle => '热身完成';
+
+  @override
+  String get warmupDoneBody => '五项练习已完成。明天同一时间见？';
+
+  @override
+  String get resultsMissed => '遗漏';
+
+  @override
+  String get endDrill => '退出练习';
+
+  @override
+  String get promptTitleChecks => '找出所有将军';
+
+  @override
+  String get promptTitleCaptures => '找出所有吃子';
+
+  @override
+  String get promptTitleHanging => '找出所有无保护棋子';
+
+  @override
+  String get promptTitleForks => '找出所有双攻';
+
+  @override
+  String get promptTitleKnightSight => '马的所有跳法';
+
+  @override
+  String get promptTitleKnightFlight => '到达圆圈';
+
+  @override
+  String get promptTitlePawnAttack => '吃掉所有兵';
+
+  @override
+  String get promptTitleMate => '一步将杀';
 }

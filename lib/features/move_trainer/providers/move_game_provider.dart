@@ -31,7 +31,11 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
   AudioService get _audio => ref.read(audioServiceProvider);
   AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
 
-  String get _bestKey => 'move.${state.mode.name}_${state.isHardMode}';
+  /// Personal-best key, e.g. `move.speed_false`.
+  static String bestKeyFor(MoveTrainerMode mode, bool isHardMode) =>
+      'move.${mode.name}_$isHardMode';
+
+  String get _bestKey => bestKeyFor(state.mode, state.isHardMode);
 
   @override
   MoveGameState build() {
@@ -106,6 +110,7 @@ class MoveGameNotifier extends Notifier<MoveGameState> {
         streak: 0,
         bestStreak: newBestStreak,
         totalAttempts: state.totalAttempts + 1,
+        missed: [...state.missed, puzzle.san],
         isWaitingForNext: true,
         lastFeedback: () => MoveFeedback(
           result: MoveFeedbackResult.incorrect,

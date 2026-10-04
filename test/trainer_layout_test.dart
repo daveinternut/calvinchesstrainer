@@ -58,7 +58,7 @@ void main() {
       reason: 'the panel sits to the right of the board',
     );
     expect(footer.top, greaterThan(header.bottom));
-    expect(board, 820 - 24, reason: 'full height minus the vertical padding');
+    expect(board, 820 - 32, reason: 'full height minus the vertical padding');
     expect(tester.takeException(), isNull);
   });
 
@@ -72,6 +72,20 @@ void main() {
       final boardRect = tester.getRect(find.byKey(const Key('board')));
       expect(header.bottom, lessThanOrEqualTo(boardRect.top), reason: '$size');
       expect(board, greaterThanOrEqualTo(0));
+      expect(tester.takeException(), isNull, reason: '$size');
+    }
+  });
+
+  testWidgets('short landscape windows put the board left, even under 600 wide', (
+    tester,
+  ) async {
+    for (final size in const [Size(750, 369), Size(592, 336), Size(568, 320)]) {
+      late double board;
+      await pumpAt(tester, size, (s) => board = s);
+      final boardRect = tester.getRect(find.byKey(const Key('board')));
+      final header = tester.getRect(find.byKey(const Key('header')));
+      expect(header.left, greaterThan(boardRect.right), reason: '$size');
+      expect(board, greaterThan(200), reason: '$size');
       expect(tester.takeException(), isNull, reason: '$size');
     }
   });

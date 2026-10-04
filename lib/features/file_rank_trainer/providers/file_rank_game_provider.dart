@@ -23,8 +23,16 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
   AudioService get _audio => ref.read(audioServiceProvider);
   AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
 
+  /// Personal-best key, e.g. `fileRank.squares_speed_true`.
+  static String bestKeyFor(
+    TrainerSubject subject,
+    TrainerMode mode,
+    bool isHardMode,
+  ) =>
+      'fileRank.${subject.name}_${mode.name}_$isHardMode';
+
   String get _bestKey =>
-      'fileRank.${state.subject.name}_${state.mode.name}_${state.isHardMode}';
+      bestKeyFor(state.subject, state.mode, state.isHardMode);
 
   @override
   FileRankGameState build() {
@@ -125,6 +133,7 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
       bestStreak: newBestStreak,
       totalCorrect: isCorrect ? state.totalCorrect + 1 : state.totalCorrect,
       totalAttempts: state.totalAttempts + 1,
+      missed: isCorrect ? null : [...state.missed, ?state.currentPrompt],
       isWaitingForNext: true,
       lastFeedback: () => AnswerFeedback(
         result: isCorrect ? AnswerResult.correct : AnswerResult.incorrect,
@@ -165,6 +174,7 @@ class FileRankGameNotifier extends Notifier<FileRankGameState> {
       bestStreak: newBestStreak,
       totalCorrect: isCorrect ? state.totalCorrect + 1 : state.totalCorrect,
       totalAttempts: state.totalAttempts + 1,
+      missed: isCorrect ? null : [...state.missed, ?state.currentPrompt],
       isWaitingForNext: true,
       lastFeedback: () => AnswerFeedback(
         result: isCorrect ? AnswerResult.correct : AnswerResult.incorrect,

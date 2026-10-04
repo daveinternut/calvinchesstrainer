@@ -10,9 +10,32 @@ The app follows a **feature-based folder structure** with Riverpod for state man
 
 **State management**: We use `Notifier<T>` from `flutter_riverpod` (not the deprecated StateNotifier or StateProvider). Each game's notifier is provided via **`NotifierProvider.autoDispose`**, so a round — its timers, engine work and pending audio — ends when its screen closes; every notifier cancels its timers in `ref.onDispose` and checks `ref.mounted` after each `await`. State that must outlive a screen lives in app-lifetime providers: the audio service, the engine service, and `personalBestsProvider` (personal bests, saved with shared_preferences). Before this split, every game provider lived for the whole app, so an abandoned speed round kept counting down off-screen and finished on its own — playing "New record!" on another screen and saving a best for a round nobody finished.
 
-**Layout**: board screens arrange themselves with `TrainerLayout` (`core/widgets/trainer_layout.dart`) — a column in portrait, board-left/panel-right in landscape. iPad ignores the app's portrait lock (see the iPad note in CLAUDE.md), so every screen must work both ways.
+**Layout**: board screens arrange themselves with `TrainerLayout` (`core/widgets/trainer_layout.dart`) — a column in portrait, board-left/panel-right in landscape (and in any window shorter than 360 pt, like the web app on a phone held sideways). Tablets rotate and phones stay portrait (see the orientation note in CLAUDE.md), so every screen must work both ways.
 
-**Routing**: GoRouter with flat routes (not nested/shell routes). The file-rank trainer passes game configuration via query parameters. Each training mode will follow the same pattern: menu screen → game screen with params.
+**Routing**: GoRouter with flat routes (not nested/shell routes). Every drill follows the same path: home or a section screen → the drill's setup panel → its game route, with the configuration in query parameters (built by the drill catalog's `location()`).
+
+## Design System
+
+The look was rebuilt from scratch in October 2026 (v1.6). The earlier UI mixed three styles: a cartoon display face (BradBunR), AI-generated card art with English baked into the images (so the 10-language app could never translate its own home screen), and stock Material controls. It also used colour without meaning: purple/green/orange cards, and a "selected" state that was green, grey, blue or purple depending on the control. The rules now:
+
+- **One accent, with meaning.** Brand green (`AppColors.brand`) is for actions and "found / correct". Amber marks targets (Knight Flight's goal, the forks preview square). Vermilion marks misses and loose pieces. Everything else is a cool, near-neutral ground, so the board and the feedback carry the screen.
+- **A pale sage board** (`AppColors.boardLight/boardDark`, via `AppBoard.colorScheme`). On a green board, green "found" highlights would disappear; on sage, green, amber and vermilion all read.
+- **Coordinates outside the board.** `BoardFrame` draws rank numbers down the left and files along the bottom, in Geist Mono, flipped with the board, like a precision instrument. Chessground's own in-square coordinates are off everywhere (`AppBoard.settings`). Drills that *test* coordinates (squares, files & ranks, read moves) pass `showCoordinates: false`, and the board then takes the whole square.
+- **Type.** Bricolage Grotesque for display and UI. Geist Mono only for notation: "e3", "Nf3", "Bxf7+", the piece letters, board coordinates and the found-answer chips. Scores, streaks and timers use Bricolage with tabular figures (`AppText.number`), because Geist Mono's slashed zero reads as "Ø" in a big "0". Both fonts are bundled (`pubspec.yaml` `fonts:`, static instances from the Google Fonts API) and never downloaded; google_fonts was removed. Neither has Cyrillic or CJK, so those locales render in the platform font, as CJK always did.
+- **Glyphs, not illustrations.** Each drill's icon is a `DrillGlyph`: its idea drawn on a 5×5 corner of a real board (two arrows into a king for Find Checks, a knight's eight dots for Knight Sight, a dotted route to an amber square for Knight Flight). They use the app's own pieces and colours and contain no words, so nothing needs translating. The app mark (`LogoMark`) is a knight's L-move on a 3×3 grid; the launcher icon is unchanged.
+- **Components** live in `core/ui/`: pill buttons, the `SegmentedPicker` (a grey well; the choice lifts out as a white chip with a green ring), hairline `SurfaceCard`s, `StatTile`, `NotationChip` (found / missed / empty), `PlayTopBar`. Screens compose these instead of styling Material widgets one by one.
+
+## Drills, Home & the Warm-up
+
+**One catalog.** `features/drills/drill_catalog.dart` describes all 13 drills once: name, description, glyph, modes (and what each mode is called for that drill — Pawn Attack's speed mode is "Timed", Mate in 1's is "Blitz"), options, how a choice is coerced (`normalize`), where it plays (`location`) and where its best is kept (`bestKey`). Home, the section screens, Continue and the warm-up all read from it, so a drill can't be described two ways. The best keys come from each provider's public static `bestKeyFor`, the same function the provider saves under.
+
+**Sections and setup.** The two section screens replace the old form-style menus (drill, then piece, then target, then mode, then Start). The list groups drills by skill (Scan the board / Geometry / Finish; The board / Moves / Pieces). On an iPad (≥ 760 pt) the selected drill's **setup panel** sits beside the list at full height. A large glyph preview is shown only when every option still fits above Start; otherwise a smaller glyph sits beside the title. On a phone the panel slides up as a sheet. The panel opens on **the setup used last time** (`drillPrefsProvider`, saved as `drill_prefs_v1`), so most visits are one tap on Start. Each drill keeps its own setup: switching from Forks (Concentric) to Pawn Attack does not carry the mode over.
+
+**Continue.** Starting a drill from a setup panel, or from Continue itself, records it as `lastPlayed`; home's Continue card resumes it with one tap. Before the first drill, the card suggests Find Checks ("Start here"). Warm-up steps don't overwrite Continue.
+
+**The daily warm-up** (`warmupProvider`) is five timed rounds, about five minutes: Find Checks, Hanging Pieces, Forks & Skewers (its piece rotates by weekday), Squares from Black's side, and Mate in 1 — the habits puzzles take for granted. Each step is an ordinary game route with `warmup=1`. The game screen shows "Warm-up · N of 5" in its top bar, and its results offer **Next: {drill}** (or **Finish warm-up**) and **End warm-up** (`roundActions`). Steps replace each other on the navigation stack (`pushReplacement`), so Back from any step returns home. The last step opens `/warm-up/done`, which lists every step's score.
+
+**Missed answers.** The squares/files/ranks and read-moves trainers record what was answered wrong (`state.missed`), and their speed-round results list it as chips.
 
 ## Plugin-First Architecture
 
@@ -40,20 +63,20 @@ We use lichess's `chessground` package for all board rendering. No custom board 
 ### How We Wire It
 
 ```dart
-Chessboard.fixed(
-  size: boardSize,                            // from LayoutBuilder
+BoardFrame(                                   // coordinates outside the board
+  size: size,                                 // from TrainerLayout
   orientation: Side.white,
-  fen: kInitialBoardFEN,                      // dartchess constant
-  settings: ChessboardSettings(
-    enableCoordinates: !isHardMode,           // toggles a-h / 1-8 labels
-    colorScheme: ChessboardColorScheme.green,
-    pieceAssets: PieceSet.cburnett.assets,     // 28 sets available
-    animationDuration: Duration(milliseconds: 200),
+  showCoordinates: false,                     // naming squares IS this drill
+  builder: (context, boardSize) => Chessboard.fixed(
+    size: boardSize,                          // the board inside the frame
+    orientation: Side.white,
+    fen: kInitialBoardFEN,                    // dartchess constant
+    settings: AppBoard.settings(),            // sage scheme, cburnett, rounded
+    squareHighlights: gameState.allHighlights, // IMap<Square, SquareHighlight>
+    onTouchedSquare: (square) {
+      handleBoardTap(square.file, square.rank); // File/Rank are ints 0-7
+    },
   ),
-  squareHighlights: gameState.allHighlights,  // IMap<Square, SquareHighlight>
-  onTouchedSquare: (square) {
-    handleBoardTap(square.file, square.rank);  // File/Rank are ints 0-7
-  },
 )
 ```
 
@@ -110,7 +133,7 @@ The `FileRankGameState.allHighlights` getter produces the feedback highlights (g
 
 ### Key Difference from Custom Board
 
-chessground renders coordinates inside the edge squares (lichess-style), not as separate labels outside the grid. The board requires an explicit `size` in logical pixels — we compute this via `LayoutBuilder` using `min(constraints.maxWidth, constraints.maxHeight)`.
+chessground can render coordinates inside the edge squares (lichess-style); we turn that off (`AppBoard.settings`) and draw them outside the grid with `BoardFrame`. The board requires an explicit `size` in logical pixels — `TrainerLayout` computes it, and `BoardFrame.boardSizeFor` gives the board's side inside the frame (overlays like `SquareNameOverlay` must use that inner size).
 
 ## Audio System
 
@@ -153,13 +176,13 @@ Then extract segments with `ffmpeg -ss START -to END`.
 
 ## File & Rank Trainer
 
-The menu covers six **subjects** — `files`, `ranks`, `squares`, `letters`, `moves`, `pieceValue` — selected as chips. Only files/ranks/squares run in this feature; the other three chips route away and are **never handled by `FileRankGameNotifier`**: `letters` → `/letter-trainer/game`, `moves` → `/move-trainer/game`, `pieceValue` → `/the-pieces/which-side-wins`. There is **no "reverse" mode, no answer buttons, and no "both" subject** — all input is by tapping the board.
+The Notation section offers five drills. Two run in this feature — **Squares** and **Files & Ranks** (one kind of line at a time: subject `files` or `ranks`) — and the other three run elsewhere: Piece Letters → `/letter-trainer/game`, Read Moves → `/move-trainer/game`, Piece Values → `/the-pieces/which-side-wins`. `TrainerSubject` still lists `letters`, `moves` and `pieceValue`, but `FileRankGameNotifier` never handles them. There is **no "reverse" mode, no answer buttons, and no "both" subject** — all input is by tapping the board.
 
 ### Why Piece Value lives here
 
-Piece value ("Which Side Wins?") used to be its own home-screen card, **The Pieces**, with its own menu screen. It was a single drill sitting next to features that each hold four or more, so it was pulled in here as a subject chip and the home screen was re-ranked around Chess Vision. The `lib/features/pieces/` folder is untouched — only its entry point moved. `PiecesMenuScreen` and the `/the-pieces` route were deleted, since the notation menu's mode cards now do that job.
+Piece value ("Which Side Wins?") used to be its own home-screen card, **The Pieces**, with its own menu screen. It was a single drill sitting next to features that each hold four or more, so it became part of Notation — today the **Piece Values** drill. The `lib/features/pieces/` folder is untouched; only its entry point moved.
 
-Piece Value is a **quiz-only** subject, like `moves`: `_subjectHasExplore()` hides Explore mode (there is nothing to tap around and discover), and it also hides the Hard Mode toggle, because Which Side Wins has no hard variant. Its `TrainerMode` is mapped down to `WhichSideWinsMode` on the way out — `speed` → `speed`, anything else → `practice`. Selecting the chip also swaps the Practice blurb for the piece-value one and shows a "Which Side Wins?" banner, so the handoff to a differently-shaped drill isn't a surprise.
+Piece Values is **quiz-only**, like Read Moves: the catalog gives it no Explore mode (there is nothing to tap around and discover) and no Board side option, because Which Side Wins has no hard variant. Its practice blurb explains the rising difficulty.
 
 ### Game Modes
 
@@ -167,7 +190,7 @@ Piece Value is a **quiz-only** subject, like `moves`: `_subjectHasExplore()` hid
 
 **Practice**: App prompts a random file/rank/square via audio + text; the user taps the board. Streak-based scoring tracks consecutive correct answers, with a milestone celebration (visual banner + haptic) at every multiple of 5. No timer, no end condition — so practice **never logs a completion event and never updates a personal best**.
 
-**Speed Round**: Same as Practice but with a 30-second countdown (hardcoded in the provider). Results card overlay at game end showing total correct, accuracy %, best streak, and a new-record badge if applicable. The badge reads `state.isNewRecord`, set at game over from `personalBestsProvider.submit` — it used to be a notifier getter evaluated on the next frame, after the new best had already been saved, so it compared the score with itself and never showed.
+**Speed Round**: Same as Practice but with a 30-second countdown (hardcoded in the provider). Results card overlay at game end showing total correct, accuracy %, best streak, the prompts that were **missed** (`state.missed`), and a new-record badge if applicable. The badge reads `state.isNewRecord`, set at game over from `personalBestsProvider.submit` — it used to be a notifier getter evaluated on the next frame, after the new best had already been saved, so it compared the score with itself and never showed.
 
 **Feedback delays** (correct / incorrect, in ms):
 
@@ -211,7 +234,7 @@ Or use Xcode: open `ios/Runner.xcworkspace`, select device, Product > Run.
 
 **iOS deployment target**: 15.0 (set in both Podfile and project.pbxproj; originally required by cloud_firestore, which has since been removed).
 
-**Display name and orientations**: `CFBundleDisplayName` is "Calvin Chess" (it was the generated "Calvinchesstrainer"). iPhone is portrait-only; iPad declares all four orientations without `UIRequiresFullScreen`, so it supports multitasking — which means iPadOS ignores the app's portrait lock (and iPadOS 26 refuses programmatic orientation changes outright, logging *"The current windowing mode does not allow for programmatic changes to interface orientation"*). Apple deprecated `UIRequiresFullScreen` in iPadOS 26 (TN3192), so the app supports landscape instead of opting out.
+**Display name and orientations**: `CFBundleDisplayName` is "Calvin Chess" (it was the generated "Calvinchesstrainer"). iPhone is portrait-only; iPad declares all four orientations without `UIRequiresFullScreen`, so it supports multitasking — which means iPadOS ignores any programmatic orientation lock (iPadOS 26 refuses programmatic orientation changes outright, logging *"The current windowing mode does not allow for programmatic changes to interface orientation"*). Apple deprecated `UIRequiresFullScreen` in iPadOS 26 (TN3192), so the app supports landscape instead of opting out. Android matches: `MainActivity.kt` holds phones (smallest width under 600 dp) in portrait and lets tablets rotate; the Dart side sets no orientation at all.
 
 **Open-file limit**: `AppDelegate.swift` raises the process's soft `RLIMIT_NOFILE` from iOS's default 256 to 4096 at launch, because the `stockfish` plugin leaks four descriptors per engine start (see Opening Trainer → Engine lifecycle).
 
@@ -479,7 +502,7 @@ The most algorithm-heavy feature. **Eight drills run through one state class, on
 
 ### The eight drills
 
-- **Forks & Skewers**: a black king (fixed on **d5**) and a target piece sit on the board; tap every square where placing the chosen white piece wins the target by fork or skewer. A **None** button handles positions with no solution — **15% of rounds** by design (a wrong None reveals the answer and is not counted). Knight vs knight is blocked in the menu: a knight attacking a knight is always captured back, so that pairing has no solutions anywhere. Modes: practice / speed / concentric.
+- **Forks & Skewers**: a black king (fixed on **d5**) and a target piece sit on the board; tap every square where placing the chosen white piece wins the target by fork or skewer. A **None** button handles positions with no solution — **15% of rounds** by design (a wrong None reveals the answer and is not counted). Knight vs knight is blocked in the setup panel: a knight attacking a knight is always captured back, so that pairing has no solutions anywhere. Modes: practice / speed / concentric.
 - **Knight Sight**: tap all squares a lone knight attacks. Configs alternate between central and edge knight squares.
 - **Knight Flight**: move a knight to a target square in the fewest hops. Arriving on a non-optimal path offers **retry / skip**.
 - **Pawn Attack**: navigate a piece to capture all black pawns without landing on a pawn-attacked square. Difficulty climbs **3 → 8** pawns. Modes: practice (endless cycle) / timed. Every board is dealt **solvable for the piece that plays it**, and a **Start over** button resets the current board (it turns amber when the piece has no safe move left) — about 1–3% of knight boards used to leave the knight with no legal first move, and there was no way out.

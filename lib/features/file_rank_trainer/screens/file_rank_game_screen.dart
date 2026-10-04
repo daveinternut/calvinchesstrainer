@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:chessground/chessground.dart';
 import 'package:dartchess/dartchess.dart';
 import '../../../core/audio/audio_service.dart';
 import '../../../core/constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/board_theme.dart';
+import '../../../core/ui/board_frame.dart';
+import '../../../core/ui/components.dart';
 import '../../../core/widgets/square_name_overlay.dart';
 import '../../../core/widgets/trainer_layout.dart';
+import '../../drills/warmup_actions.dart';
 import '../models/file_rank_game_state.dart';
 import '../providers/file_rank_game_provider.dart';
 import '../widgets/prompt_display.dart';
@@ -22,11 +25,15 @@ class FileRankGameScreen extends ConsumerStatefulWidget {
   final TrainerMode mode;
   final bool isHardMode;
 
+  /// A step of the daily warm-up (the results then move on to the next).
+  final bool warmup;
+
   const FileRankGameScreen({
     super.key,
     required this.subject,
     required this.mode,
     this.isHardMode = false,
+    this.warmup = false,
   });
 
   @override
@@ -40,13 +47,15 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
   void initState() {
     super.initState();
     _audioService = ref.read(audioServiceProvider);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(fileRankGameProvider.notifier).startGame(
-            widget.subject,
-            widget.mode,
-            isHardMode: widget.isHardMode,
-          );
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startGame());
+  }
+
+  void _startGame() {
+    ref.read(fileRankGameProvider.notifier).startGame(
+          widget.subject,
+          widget.mode,
+          isHardMode: widget.isHardMode,
+        );
   }
 
   @override
@@ -57,85 +66,80 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final gameState = ref.watch(fileRankGameProvider);
+    final isExplore = gameState.mode == TrainerMode.explore;
 
     return Scaffold(
-      appBar: AppBar(
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(_title),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          if (gameState.mode != TrainerMode.explore)
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Center(
-                child: Text(
-                  '${gameState.totalCorrect}/${gameState.totalAttempts}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ),
-            ),
-        ],
-      ),
       body: SafeArea(
         child: Stack(
           children: [
             TrainerLayout(
+              topBar: PlayTopBar(
+                title: _title(l10n),
+                subtitle: warmupSubtitle(ref, l10n, widget.warmup) ??
+                    _subtitle(l10n),
+                onClose: () => closeDrill(context),
+                closeTooltip: l10n.endDrill,
+                trailing: isExplore
+                    ? null
+                    : Text('${gameState.totalCorrect}/${gameState.totalAttempts}'),
+              ),
               header: [
-                const SizedBox(height: 12),
+                const SizedBox(height: 4),
                 PromptDisplay(gameState: gameState),
-                const SizedBox(height: 12),
-                if (gameState.mode != TrainerMode.explore) ...[
+                const SizedBox(height: 8),
+                if (!isExplore) ...[
                   StreakCounter(
                     streak: gameState.streak,
                     bestStreak: gameState.bestStreak,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                 ],
               ],
-              board: (context, boardSize) =>
-                  _buildBoard(gameState, boardSize),
+              // Coordinates stay hidden: naming the squares is the drill.
+              board: (context, size) => BoardFrame(
+                size: size,
+                orientation: widget.isHardMode ? Side.black : Side.white,
+                showCoordinates: false,
+                builder: (context, boardSize) =>
+                    _buildBoard(gameState, boardSize),
+              ),
               footer: [
                 if (gameState.mode == TrainerMode.speed &&
                     gameState.timeRemainingSeconds != null) ...[
                   const SizedBox(height: 12),
-                  TimerBar(
-                    remainingSeconds: gameState.timeRemainingSeconds!,
-                  ),
+                  TimerBar(remainingSeconds: gameState.timeRemainingSeconds!),
                 ],
                 const SizedBox(height: 16),
               ],
             ),
-            if (gameState.mode != TrainerMode.explore)
-              MilestoneBanner(streak: gameState.streak),
-            if (gameState.isGameOver)
-              Container(
-                color: Colors.black54,
-                child: ResultsCard(
-                  totalCorrect: gameState.totalCorrect,
-                  totalAttempts: gameState.totalAttempts,
-                  bestStreak: gameState.bestStreak,
-                  isNewRecord: gameState.isNewRecord,
-                  onPlayAgain: () {
-                    ref.read(fileRankGameProvider.notifier).startGame(
-                          widget.subject,
-                          widget.mode,
-                          isHardMode: widget.isHardMode,
-                        );
-                  },
-                  onBack: () => context.pop(),
-                ),
-              ),
+            if (!isExplore) MilestoneBanner(streak: gameState.streak),
+            if (gameState.isGameOver) Positioned.fill(child: _results(gameState)),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _results(FileRankGameState gameState) {
+    final actions = roundActions(
+      context,
+      ref,
+      warmup: widget.warmup,
+      score: gameState.totalCorrect,
+      onPlayAgain: _startGame,
+    );
+    return ResultsCard(
+      totalCorrect: gameState.totalCorrect,
+      totalAttempts: gameState.totalAttempts,
+      bestStreak: gameState.bestStreak,
+      isNewRecord: gameState.isNewRecord,
+      missed: gameState.missed.toSet().take(8).toList(),
+      primaryLabel: actions.primaryLabel,
+      onPlayAgain: actions.onPrimary,
+      secondaryLabel: actions.secondaryLabel,
+      onBack: actions.onSecondary,
     );
   }
 
@@ -145,12 +149,7 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
       size: boardSize,
       orientation: orientation,
       fen: kInitialBoardFEN,
-      settings: ChessboardSettings(
-        enableCoordinates: false,
-        colorScheme: ChessboardColorScheme.green,
-        pieceAssets: PieceSet.cburnett.assets,
-        animationDuration: const Duration(milliseconds: 200),
-      ),
+      settings: AppBoard.settings(),
       squareHighlights: gameState.allHighlights,
       onTouchedSquare: (square) {
         ref.read(fileRankGameProvider.notifier).handleBoardTap(
@@ -193,8 +192,8 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
         feedback.tappedRankIndex!,
       ),
       color: isCorrect
-          ? AppColors.correctGreen.withValues(alpha: 0.85)
-          : AppColors.incorrectRed.withValues(alpha: 0.85),
+          ? AppColors.correctGreen.withValues(alpha: 0.9)
+          : AppColors.incorrectRed.withValues(alpha: 0.9),
     ));
 
     if (!isCorrect && feedback.correctRankIndex != null) {
@@ -205,28 +204,28 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
           feedback.correctIndex,
           feedback.correctRankIndex!,
         ),
-        color: AppColors.correctGreen.withValues(alpha: 0.85),
+        color: AppColors.correctGreen.withValues(alpha: 0.9),
       ));
     }
 
     return labels;
   }
 
-  String get _title {
-    final l10n = AppLocalizations.of(context)!;
-    final subject = switch (widget.subject) {
-      TrainerSubject.files => l10n.files,
-      TrainerSubject.ranks => l10n.ranks,
-      TrainerSubject.squares => l10n.squares,
-      TrainerSubject.moves => l10n.moves,
-      TrainerSubject.letters => l10n.letters,
-      TrainerSubject.pieceValue => l10n.pieceValue,
-    };
+  String _title(AppLocalizations l10n) => switch (widget.subject) {
+        TrainerSubject.files => l10n.files,
+        TrainerSubject.ranks => l10n.ranks,
+        TrainerSubject.squares => l10n.squares,
+        TrainerSubject.moves => l10n.moves,
+        TrainerSubject.letters => l10n.letters,
+        TrainerSubject.pieceValue => l10n.pieceValue,
+      };
+
+  String _subtitle(AppLocalizations l10n) {
     final mode = switch (widget.mode) {
       TrainerMode.explore => l10n.explore,
       TrainerMode.practice => l10n.practice,
       TrainerMode.speed => l10n.speedRound,
     };
-    return l10n.titleFileRankGame(subject, mode);
+    return widget.isHardMode ? '$mode · ${l10n.playAsBlack}' : mode;
   }
 }

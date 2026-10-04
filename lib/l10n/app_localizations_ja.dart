@@ -15,25 +15,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get about => 'このアプリについて';
 
   @override
-  String get calvinChessTrainer => 'Calvin Chess\nTrainer';
-
-  @override
-  String get masterTheFundamentals => '基礎をマスターしよう！';
-
-  @override
-  String get chessNotation => 'チェスの棋譜記号';
-
-  @override
   String get learnTheBoard => '盤面を覚えよう！';
-
-  @override
-  String get chessVision => 'チェスビジョン';
-
-  @override
-  String get seeTheBoard => '盤面を見よう！';
-
-  @override
-  String get startHere => 'ここから！';
 
   @override
   String get comingSoon => '近日公開';
@@ -42,19 +24,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get start => 'スタート';
 
   @override
-  String get menu => 'メニュー';
-
-  @override
   String get playAgain => 'もう一度';
 
   @override
   String get newRecord => '新記録！';
-
-  @override
-  String get whatToPractice => '何を練習する？';
-
-  @override
-  String get chooseAMode => 'モードを選ぶ';
 
   @override
   String get files => 'ファイル';
@@ -88,15 +61,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get speedRoundDesc => '30秒 — いくつ解ける？';
-
-  @override
-  String get hardMode => 'ハードモード';
-
-  @override
-  String get hardModeBlack => 'プレイヤーが黒を操作！';
-
-  @override
-  String get hardModeFlipped => '盤面反転 — 黒の視点！';
 
   @override
   String get timesUp => '時間切れ！';
@@ -160,9 +124,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get hurry => '急いで！';
 
   @override
-  String get drillType => 'ドリルの種類';
-
-  @override
   String get forksAndSkewers => 'フォークとスキュワー';
 
   @override
@@ -173,12 +134,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get knightFlight => 'ナイトフライト';
-
-  @override
-  String get chooseYourPiece => '駒を選ぶ';
-
-  @override
-  String get targetPiece => 'ターゲット駒';
 
   @override
   String get queen => 'クイーン';
@@ -197,9 +152,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get speedRound60Desc => '60秒 — できるだけ多く解こう！';
-
-  @override
-  String get concentricDrill => '同心円ドリル';
 
   @override
   String get concentricDrillDesc => '全ポジションを完了 — タイムを更新しよう！';
@@ -262,11 +214,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get found => '発見';
 
   @override
-  String foundOfTotal(int found, int total) {
-    return '$found/$total';
-  }
-
-  @override
   String get drillComplete => 'ドリル完了！';
 
   @override
@@ -284,26 +231,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String solvedCount(int count) {
     return '$count問解答';
-  }
-
-  @override
-  String titleForksAndSkewers(String piece, String mode) {
-    return '$piece — $mode';
-  }
-
-  @override
-  String titlePawnAttack(String piece, String mode) {
-    return 'ポーンアタック — $piece $mode';
-  }
-
-  @override
-  String titleMovesGame(String mode) {
-    return '手 - $mode';
-  }
-
-  @override
-  String titleFileRankGame(String subject, String mode) {
-    return '$subject - $mode';
   }
 
   @override
@@ -415,9 +342,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get promptRank => 'ランク';
 
   @override
-  String get openingFundamentals => 'オープニング\nエクスプローラー';
-
-  @override
   String get playTheOpening => '序盤を探索しよう！';
 
   @override
@@ -504,12 +428,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get knowYourPieces => 'Know your pieces!';
 
   @override
-  String get whichSideWins => 'どっちが勝つ？';
-
-  @override
-  String get whichSideWinsDesc => '駒のグループを比べて、価値が高いほうをタップしよう！';
-
-  @override
   String get tapTheSideWorthMore => '価値が高いほうをタップ';
 
   @override
@@ -523,9 +441,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get pawn => 'ポーン';
-
-  @override
-  String get hardModeBlackPieces => '黒の駒で出題！';
 
   @override
   String get tapPieceToLearnLetter => '駒をタップして文字を覚えよう！';
@@ -675,4 +590,200 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get draw => '引き分け！';
+
+  @override
+  String get homeWarmupKicker => '毎日のウォームアップ · 5分';
+
+  @override
+  String get homeWarmupTitle => 'パズルでは身につかない力を鍛えよう';
+
+  @override
+  String get homeWarmupBody => '5つのミニドリル：チェック、無防備の駒、フォーク、黒側から見たマス、1手でメイト。';
+
+  @override
+  String get homeWarmupStart => 'ウォームアップを始める';
+
+  @override
+  String get homeContinue => '続きから';
+
+  @override
+  String get homeStartHere => 'ここから始めよう';
+
+  @override
+  String homeResume(String drill) {
+    return '「$drill」を再開';
+  }
+
+  @override
+  String get homeOpenings => 'オープニング';
+
+  @override
+  String get homeOpeningExplorerDesc => 'Stockfishのヒントでオープニングを指してみよう';
+
+  @override
+  String get sectionVision => 'チェスビジョン';
+
+  @override
+  String get sectionVisionDesc => 'ほとんどの人が練習しない、盤面を見渡す習慣';
+
+  @override
+  String get sectionNotation => '棋譜記号';
+
+  @override
+  String get sectionNotationDesc => 'マスと手を瞬時に読んで見つける';
+
+  @override
+  String sectionAllDrills(int count) {
+    return '全$countドリル';
+  }
+
+  @override
+  String get navHome => 'ホーム';
+
+  @override
+  String drillBest(String value) {
+    return '最高 $value';
+  }
+
+  @override
+  String get groupScan => '盤面を見渡す';
+
+  @override
+  String get groupGeometry => '幾何学';
+
+  @override
+  String get groupFinish => 'とどめの一手';
+
+  @override
+  String get groupBoard => '盤面';
+
+  @override
+  String get groupPieces => '駒';
+
+  @override
+  String get drillFilesRanks => 'ファイルとランク';
+
+  @override
+  String get drillReadMoves => '棋譜を読む';
+
+  @override
+  String get drillPieceLetters => '駒の文字';
+
+  @override
+  String get drillPieceValues => '駒の価値';
+
+  @override
+  String get drillDescFindChecks => '実戦局面のチェックをすべて探す';
+
+  @override
+  String get drillDescFindCaptures => '盤上の駒取りをすべて見つける';
+
+  @override
+  String get drillDescHanging => '守られていない駒をすべて見抜く';
+
+  @override
+  String get drillDescForks => '2つの駒を同時に狙うマス';
+
+  @override
+  String get drillDescKnightSight => 'ナイトが跳べるマスすべて';
+
+  @override
+  String get drillDescKnightFlight => '最小手数でターゲットへ';
+
+  @override
+  String get drillDescPawnAttack => 'ポーンの壁をすり抜けよう';
+
+  @override
+  String get drillDescMate => '400局面、1手でメイト';
+
+  @override
+  String get drillDescSquares => 'すばやくマスを見つけよう';
+
+  @override
+  String get drillDescFilesRanks => 'ファイルとランクの名前を全部覚える';
+
+  @override
+  String get drillDescReadMoves => '棋譜を読んで、その手を指そう';
+
+  @override
+  String get drillDescLetters => 'K, Q, R, B, Nをひと目で';
+
+  @override
+  String get drillDescValues => 'どっちが有利？';
+
+  @override
+  String get setupYourPiece => '自分の駒';
+
+  @override
+  String get setupForkTarget => 'フォーク: キングと…';
+
+  @override
+  String get setupMode => 'モード';
+
+  @override
+  String get setupBoardSide => '盤の向き';
+
+  @override
+  String get setupLines => 'ライン';
+
+  @override
+  String get setupYourBest => '自己ベスト';
+
+  @override
+  String get setupNoBest => 'まだ記録なし';
+
+  @override
+  String get setupKnightPracticeOnly => 'タイマーなし。じっくり考えよう。';
+
+  @override
+  String warmupStep(int current, int total) {
+    return 'ウォームアップ · $current/$total';
+  }
+
+  @override
+  String warmupNext(String drill) {
+    return '次: $drill';
+  }
+
+  @override
+  String get warmupFinish => 'ウォームアップを完了';
+
+  @override
+  String get warmupEnd => 'ウォームアップを終了';
+
+  @override
+  String get warmupDoneTitle => 'ウォームアップ完了';
+
+  @override
+  String get warmupDoneBody => '5つのドリル完了。明日も同じ時間に？';
+
+  @override
+  String get resultsMissed => '見逃し';
+
+  @override
+  String get endDrill => 'ドリルを終了';
+
+  @override
+  String get promptTitleChecks => 'チェックを全部探そう';
+
+  @override
+  String get promptTitleCaptures => '駒取りを全部探そう';
+
+  @override
+  String get promptTitleHanging => '無防備の駒を全部探そう';
+
+  @override
+  String get promptTitleForks => 'フォークを全部探そう';
+
+  @override
+  String get promptTitleKnightSight => 'ナイトの跳び先すべて';
+
+  @override
+  String get promptTitleKnightFlight => 'リングを目指そう';
+
+  @override
+  String get promptTitlePawnAttack => 'ポーンを全部取ろう';
+
+  @override
+  String get promptTitleMate => '1手でチェックメイト';
 }

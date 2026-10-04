@@ -5,7 +5,6 @@ import 'package:calvinchesstrainer/core/services/scan_position_service.dart';
 import 'package:calvinchesstrainer/features/chess_vision/models/chess_vision_state.dart';
 import 'package:calvinchesstrainer/features/chess_vision/providers/chess_vision_provider.dart';
 import 'package:calvinchesstrainer/features/chess_vision/screens/chess_vision_game_screen.dart';
-import 'package:calvinchesstrainer/features/chess_vision/screens/chess_vision_menu_screen.dart';
 import 'package:calvinchesstrainer/features/chess_vision/services/pawn_attack_engine.dart';
 import 'package:calvinchesstrainer/features/chess_vision/services/scan_engine.dart';
 import 'package:calvinchesstrainer/features/file_rank_trainer/widgets/milestone_banner.dart';
@@ -15,10 +14,10 @@ import 'package:dartchess/dartchess.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 
-/// Screen-level checks for Chess Vision: the menu's guards and layout, and
-/// the game screen's mode, prompts, layouts, error state and results.
+/// Screen-level checks for the Chess Vision game screen: its mode, prompts,
+/// layouts, error state and results. (Drill setup is covered by
+/// drill_section_screen_test.dart.)
 class _SilentAudio implements AudioService {
   @override
   dynamic noSuchMethod(Invocation invocation) => Future<void>.value();
@@ -69,26 +68,6 @@ void _setSize(WidgetTester tester, Size logicalSize) {
   addTearDown(tester.view.reset);
 }
 
-/// The menu inside a router that records the game route it pushes.
-Widget _menuApp(void Function(Uri uri) onGame, {Locale? locale}) {
-  final router = GoRouter(routes: [
-    GoRoute(path: '/', builder: (_, _) => const ChessVisionMenuScreen()),
-    GoRoute(
-      path: '/chess-vision/game',
-      builder: (_, state) {
-        onGame(state.uri);
-        return const SizedBox();
-      },
-    ),
-  ]);
-  return MaterialApp.router(
-    routerConfig: router,
-    locale: locale,
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
-    supportedLocales: AppLocalizations.supportedLocales,
-  );
-}
-
 Future<void> _pumpGame(WidgetTester tester, ProviderContainer container,
     VisionDrillType drill, VisionMode mode,
     {WhitePiece piece = WhitePiece.queen,
@@ -108,73 +87,6 @@ Future<void> _leave(WidgetTester tester, ProviderContainer container) async {
 }
 
 void main() {
-  group('ChessVisionMenuScreen', () {
-    testWidgets('a knight cannot pick the knight target', (tester) async {
-      _setSize(tester, const Size(820, 1180));
-      Uri? pushed;
-      await tester.pumpWidget(_menuApp((uri) => pushed = uri));
-      await tester.pumpAndSettle();
-
-      // Piece row first, target row second: both have a 'Knight' chip.
-      await tester.tap(find.byTooltip('Knight').last); // target: knight
-      await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Knight').first); // piece: knight
-      await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Knight').last); // disabled now
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Start'));
-      await tester.pumpAndSettle();
-
-      expect(pushed!.queryParameters['piece'], 'knight');
-      expect(pushed!.queryParameters['target'], 'rook');
-    });
-
-    testWidgets('concentric, then Pawn Attack: the timed mode starts',
-        (tester) async {
-      _setSize(tester, const Size(820, 1180));
-      Uri? pushed;
-      await tester.pumpWidget(_menuApp((uri) => pushed = uri));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Concentric Drill'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Pawn Attack'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Start'));
-      await tester.pumpAndSettle();
-
-      expect(pushed!.queryParameters['drill'], 'pawnAttack');
-      expect(pushed!.queryParameters['mode'], 'speed');
-    });
-
-    for (final locale in const ['en', 'de', 'es', 'fr', 'it', 'pt', 'ru']) {
-      testWidgets('drill chips fit a phone in "$locale"', (tester) async {
-        _setSize(tester, const Size(360, 780));
-        await tester.pumpWidget(_menuApp((_) {}, locale: Locale(locale)));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-      });
-    }
-
-    testWidgets('works in a landscape iPad window', (tester) async {
-      _setSize(tester, const Size(1180, 820));
-      Uri? pushed;
-      await tester.pumpWidget(_menuApp((uri) => pushed = uri));
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-
-      // Content is a centred column, not stretched edge to edge.
-      final chip = tester.getRect(find.text('Forks & Skewers'));
-      expect(chip.left, greaterThan(200));
-
-      await tester.scrollUntilVisible(find.text('Concentric Drill'), 100);
-      await tester.tap(find.text('Concentric Drill'));
-      await tester.tap(find.text('Start'));
-      await tester.pumpAndSettle();
-      expect(pushed!.queryParameters['mode'], 'concentric');
-    });
-  });
-
   group('ChessVisionGameScreen', () {
     testWidgets('reads the mode the game really runs in (pawn + concentric '
         'link runs Timed)', (tester) async {
@@ -183,7 +95,8 @@ void main() {
       await _pumpGame(
           tester, container, VisionDrillType.pawnAttack, VisionMode.concentric);
 
-      expect(find.text('Pawn Attack — Queen Timed'), findsOneWidget);
+      expect(find.text('Pawn Attack'), findsOneWidget);
+      expect(find.text('Queen · Timed'), findsOneWidget);
       expect(find.textContaining('Position'), findsNothing);
       expect(find.text('0/6'), findsOneWidget);
       expect(find.text('Level 3 of 8'), findsWidgets);
@@ -238,6 +151,38 @@ void main() {
         await _leave(tester, container);
       }
     });
+
+    // Phones stay portrait, but the web app on a phone held sideways (and a
+    // short desktop window) is this shape.
+    for (final size in const [Size(750, 369), Size(568, 320)]) {
+      testWidgets('every drill fits a short landscape window ($size)',
+          (tester) async {
+        _setSize(tester, size);
+        final scans = ScanPositionService();
+        final mates =
+            PuzzleService(assetPath: 'assets/puzzles/mate_in_one_puzzles.json');
+        await tester.runAsync(() async {
+          for (final kind in ScanSetKind.values) {
+            await scans.load(kind);
+          }
+          await mates.loadPuzzles();
+        });
+        for (final drill in VisionDrillType.values) {
+          final container = _container([
+            scanPositionServiceProvider.overrideWithValue(scans),
+            mateInOnePuzzleServiceProvider.overrideWithValue(mates),
+          ]);
+          await _pumpGame(tester, container, drill, VisionMode.practice);
+          await tester.pump(const Duration(milliseconds: 50));
+          expect(tester.takeException(), isNull, reason: drill.name);
+          expect(find.byType(Chessboard), findsOneWidget, reason: drill.name);
+          final board = tester.getRect(find.byType(Chessboard));
+          final close = tester.getRect(find.byTooltip('End drill'));
+          expect(close.left, greaterThan(board.right), reason: drill.name);
+          await _leave(tester, container);
+        }
+      });
+    }
 
     testWidgets('landscape: the streak banner stays off the board',
         (tester) async {

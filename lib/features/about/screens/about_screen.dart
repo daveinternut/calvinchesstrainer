@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../../core/services/feedback_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/ui/logo_mark.dart';
 
 class AboutScreen extends ConsumerStatefulWidget {
   const AboutScreen({super.key});
@@ -28,11 +29,13 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
   @override
   void initState() {
     super.initState();
-    PackageInfo.fromPlatform().then((info) {
-      if (mounted) setState(() => _version = info.version);
-    }).catchError((Object e) {
-      debugPrint('App version unavailable: $e');
-    });
+    PackageInfo.fromPlatform()
+        .then((info) {
+          if (mounted) setState(() => _version = info.version);
+        })
+        .catchError((Object e) {
+          debugPrint('App version unavailable: $e');
+        });
   }
 
   @override
@@ -44,16 +47,17 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
   Future<void> _submitFeedback(AppLocalizations l10n) async {
     final message = _feedbackController.text.trim();
     if (message.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.feedbackEmpty)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.feedbackEmpty)));
       return;
     }
 
     setState(() => _isSending = true);
 
-    final success =
-        await ref.read(feedbackServiceProvider).sendFeedback(message);
+    final success = await ref
+        .read(feedbackServiceProvider)
+        .sendFeedback(message);
 
     if (!mounted) return;
     setState(() => _isSending = false);
@@ -81,115 +85,100 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.about),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: Column(
-          children: [
-            const SizedBox(height: 16),
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: Image.asset(
-                  'assets/images/internut_logo.png',
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => Icon(
-                    Icons.castle_rounded,
-                    size: 64,
-                    color: AppColors.primary,
-                  ),
+      appBar: AppBar(title: Text(l10n.about)),
+      body: Center(
+        child: ConstrainedBox(
+          // Readable line lengths on an iPad.
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+                const LogoMark(size: 88),
+                const SizedBox(height: 20),
+                Text(
+                  l10n.appTitle,
+                  style: AppText.display.copyWith(fontSize: 30),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              l10n.appTitle,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            if (_version != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                l10n.aboutVersion(_version!),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                if (_version != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.aboutVersion(_version!),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.textSecondary,
                     ),
-              ),
-            ],
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                l10n.aboutByInternut,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.brandSoft,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    l10n.aboutByInternut,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w600,
                     ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            _buildSection(
-              context,
-              icon: Icons.school_rounded,
-              title: l10n.aboutWhatIs,
-              body: l10n.aboutWhatIsBody,
-            ),
-            const SizedBox(height: 16),
-            _buildSection(
-              context,
-              icon: Icons.sports_esports_rounded,
-              title: l10n.aboutTrainingModes,
-              body: l10n.aboutTrainingModesBody,
-            ),
-            const SizedBox(height: 16),
-            _buildSection(
-              context,
-              icon: Icons.favorite_rounded,
-              title: l10n.aboutCredits,
-              body: l10n.aboutCreditsBody,
-            ),
-            const SizedBox(height: 16),
-            _buildSection(
-              context,
-              icon: Icons.menu_book_rounded,
-              title: l10n.aboutInspired,
-              body: l10n.aboutInspiredBody,
-            ),
-            const SizedBox(height: 16),
-            _buildSection(
-              context,
-              icon: Icons.info_outline_rounded,
-              title: l10n.aboutInternut,
-              body: l10n.aboutInternutBody,
-            ),
-            const SizedBox(height: 24),
-            _buildFeedbackSection(context, l10n),
-            const SizedBox(height: 32),
-            Text(
-              l10n.aboutFooter,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  ),
+                ),
+                const SizedBox(height: 32),
+                _buildSection(
+                  context,
+                  icon: Icons.school_rounded,
+                  title: l10n.aboutWhatIs,
+                  body: l10n.aboutWhatIsBody,
+                ),
+                const SizedBox(height: 16),
+                _buildSection(
+                  context,
+                  icon: Icons.sports_esports_rounded,
+                  title: l10n.aboutTrainingModes,
+                  body: l10n.aboutTrainingModesBody,
+                ),
+                const SizedBox(height: 16),
+                _buildSection(
+                  context,
+                  icon: Icons.favorite_rounded,
+                  title: l10n.aboutCredits,
+                  body: l10n.aboutCreditsBody,
+                ),
+                const SizedBox(height: 16),
+                _buildSection(
+                  context,
+                  icon: Icons.menu_book_rounded,
+                  title: l10n.aboutInspired,
+                  body: l10n.aboutInspiredBody,
+                ),
+                const SizedBox(height: 16),
+                _buildSection(
+                  context,
+                  icon: Icons.info_outline_rounded,
+                  title: l10n.aboutInternut,
+                  body: l10n.aboutInternutBody,
+                ),
+                const SizedBox(height: 24),
+                _buildFeedbackSection(context, l10n),
+                const SizedBox(height: 32),
+                Text(
+                  l10n.aboutFooter,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
                     fontStyle: FontStyle.italic,
                   ),
-              textAlign: TextAlign.center,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+              ],
             ),
-            const SizedBox(height: 24),
-          ],
+          ),
         ),
       ),
     );
@@ -200,25 +189,28 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.chat_bubble_outline_rounded,
-                  color: AppColors.primary, size: 22),
+              Icon(
+                Icons.chat_bubble_outline_rounded,
+                color: AppColors.primary,
+                size: 22,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   l10n.feedbackTitle,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
             ],
@@ -227,9 +219,9 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
           Text(
             l10n.feedbackBody,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 16),
           if (_sent)
@@ -242,8 +234,11 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               ),
               child: Column(
                 children: [
-                  Icon(Icons.check_circle_rounded,
-                      color: AppColors.correctGreen, size: 32),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: AppColors.correctGreen,
+                    size: 32,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     l10n.feedbackThanks,
@@ -269,21 +264,8 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
                 hintText: l10n.feedbackHint,
-                hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.6)),
-                filled: true,
-                fillColor: Colors.grey.shade50,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.primary, width: 1.5),
-                ),
+                hintStyle: AppText.caption,
+                fillColor: AppColors.ground,
                 contentPadding: const EdgeInsets.all(14),
               ),
             ),
@@ -302,12 +284,8 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
                         ),
                       )
                     : const Icon(Icons.send_rounded, size: 18),
-                label: Text(_isSending ? l10n.feedbackSending : l10n.feedbackSend),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                label: Text(
+                  _isSending ? l10n.feedbackSending : l10n.feedbackSend,
                 ),
               ),
             ),
@@ -327,9 +305,9 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,9 +320,9 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
                 child: Text(
                   title,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
             ],
@@ -353,9 +331,9 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
           Text(
             body,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                  height: 1.5,
-                ),
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
           ),
         ],
       ),

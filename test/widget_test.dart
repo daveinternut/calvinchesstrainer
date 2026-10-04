@@ -11,8 +11,9 @@ void main() {
       ),
     );
 
-    expect(find.text('Calvin Chess\nTrainer'), findsOneWidget);
-    expect(find.text('Master the fundamentals!'), findsOneWidget);
-    expect(find.text('Chess Notation'), findsOneWidget);
+    expect(find.text('Calvin Chess Trainer'), findsOneWidget);
+    expect(find.text('Train what puzzles skip'), findsOneWidget);
+    expect(find.text('Vision'), findsOneWidget);
+    expect(find.text('Notation'), findsOneWidget);
   });
 }

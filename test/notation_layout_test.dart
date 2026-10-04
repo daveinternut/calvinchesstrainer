@@ -6,12 +6,13 @@ import 'package:calvinchesstrainer/core/services/analytics_service.dart';
 import 'package:calvinchesstrainer/core/services/puzzle_service.dart';
 import 'package:calvinchesstrainer/features/file_rank_trainer/models/file_rank_game_state.dart';
 import 'package:calvinchesstrainer/features/file_rank_trainer/screens/file_rank_game_screen.dart';
-import 'package:calvinchesstrainer/features/file_rank_trainer/screens/file_rank_menu_screen.dart';
+import 'package:calvinchesstrainer/features/drills/models/drill.dart';
+import 'package:calvinchesstrainer/features/drills/screens/drill_section_screen.dart';
+import 'package:calvinchesstrainer/features/home/screens/home_screen.dart';
 import 'package:calvinchesstrainer/features/letter_trainer/models/letter_game_state.dart';
 import 'package:calvinchesstrainer/features/letter_trainer/screens/letter_game_screen.dart';
 import 'package:calvinchesstrainer/features/move_trainer/models/move_game_state.dart';
 import 'package:calvinchesstrainer/features/move_trainer/screens/move_game_screen.dart';
-import 'package:calvinchesstrainer/features/move_trainer/screens/move_menu_screen.dart';
 import 'package:calvinchesstrainer/features/pieces/models/which_side_wins_state.dart';
 import 'package:calvinchesstrainer/features/pieces/screens/which_side_wins_screen.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
@@ -30,8 +31,8 @@ class _NoopAnalytics implements AnalyticsService {
 }
 
 /// Window sizes the notation screens must lay out in without overflowing:
-/// iPads both ways (iPad ignores the portrait lock), a small Stage Manager
-/// window, and phones.
+/// tablets both ways, a small Stage Manager window, phones, and short
+/// landscape windows (the web app on a phone held sideways).
 const _sizes = {
   'iPad portrait': Size(820, 1180),
   'iPad landscape': Size(1180, 820),
@@ -40,6 +41,9 @@ const _sizes = {
   'small landscape window': Size(700, 500),
   'phone': Size(375, 812),
   'small phone': Size(320, 568),
+  'phone browser on its side': Size(750, 369),
+  'short narrow window': Size(592, 336),
+  'small phone browser on its side': Size(568, 320),
 };
 
 final _screens = <String, Widget Function()>{
@@ -55,8 +59,10 @@ final _screens = <String, Widget Function()>{
       const WhichSideWinsScreen(mode: WhichSideWinsMode.practice),
   'which side wins speed': () =>
       const WhichSideWinsScreen(mode: WhichSideWinsMode.speed),
-  'notation menu': () => const FileRankMenuScreen(),
-  'moves menu': () => const MoveMenuScreen(),
+  'home': () => const HomeScreen(),
+  'notation section': () =>
+      const DrillSectionScreen(section: DrillSection.notation),
+  'vision section': () => const DrillSectionScreen(section: DrillSection.vision),
 };
 
 void main() {

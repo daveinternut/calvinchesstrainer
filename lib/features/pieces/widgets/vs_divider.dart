@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 class VsDivider extends StatelessWidget {
   const VsDivider({super.key});
 
@@ -8,25 +10,18 @@ class VsDivider extends StatelessWidget {
     return Container(
       width: 44,
       height: 44,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.grey.shade800,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.ink,
       ),
       child: const Center(
         child: Text(
           'VS',
           style: TextStyle(
-            fontFamily: 'BradBunR',
-            fontSize: 18,
+            fontFamily: AppFonts.ui,
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
             color: Colors.white,
-            fontWeight: FontWeight.bold,
           ),
         ),
       ),

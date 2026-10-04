@@ -84,24 +84,37 @@ class ChessVisionNotifier extends Notifier<ChessVisionState> {
   }
 
   /// Personal-best key, e.g. `vision.forksAndSkewers_queen_rook_speed`.
-  String get _bestKey {
-    final drill = state.drillType.name;
-    final mode = state.mode.name;
-    return switch (state.drillType) {
+  /// Public so the drill catalog can show a drill's best before it is played.
+  static String bestKeyFor(
+    VisionDrillType drillType,
+    VisionMode mode,
+    WhitePiece piece,
+    TargetPiece target,
+  ) {
+    final drill = drillType.name;
+    return switch (drillType) {
       VisionDrillType.forksAndSkewers =>
-        'vision.${drill}_${state.whitePiece.name}_${state.targetPiece.name}_$mode',
-      VisionDrillType.pawnAttack =>
-        'vision.${drill}_${state.whitePiece.name}_$mode',
-      _ => 'vision.${drill}_$mode',
+        'vision.${drill}_${piece.name}_${target.name}_${mode.name}',
+      VisionDrillType.pawnAttack => 'vision.${drill}_${piece.name}_${mode.name}',
+      _ => 'vision.${drill}_${mode.name}',
     };
   }
 
+  String get _bestKey => bestKeyFor(
+        state.drillType,
+        state.mode,
+        state.whitePiece,
+        state.targetPiece,
+      );
+
   /// Concentric and timed Pawn Attack run on a stopwatch and rank by time
   /// (lower is better); speed rounds count down and rank by positions solved.
+  static bool isTimedByStopwatchFor(VisionDrillType drill, VisionMode mode) =>
+      mode == VisionMode.concentric ||
+      (drill == VisionDrillType.pawnAttack && mode == VisionMode.speed);
+
   bool get _isTimedByStopwatch =>
-      state.mode == VisionMode.concentric ||
-      (state.drillType == VisionDrillType.pawnAttack &&
-          state.mode == VisionMode.speed);
+      isTimedByStopwatchFor(state.drillType, state.mode);
 
   static bool _usesPiece(VisionDrillType drill) =>
       drill == VisionDrillType.forksAndSkewers ||

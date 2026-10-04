@@ -2,6 +2,7 @@ import 'package:calvinchesstrainer/core/audio/audio_service.dart';
 import 'package:calvinchesstrainer/core/services/analytics_service.dart';
 import 'package:calvinchesstrainer/core/services/opening_book_service.dart';
 import 'package:calvinchesstrainer/core/services/stockfish_service.dart';
+import 'package:calvinchesstrainer/core/widgets/trainer_layout.dart';
 import 'package:calvinchesstrainer/features/opening_trainer/models/opening_game_state.dart';
 import 'package:calvinchesstrainer/features/opening_trainer/models/uci_move.dart';
 import 'package:calvinchesstrainer/features/opening_trainer/providers/opening_game_provider.dart';
@@ -117,6 +118,8 @@ void main() {
     'small Stage Manager window': Size(700, 500),
     'narrow Stage Manager window': Size(500, 640),
     'short landscape window': Size(640, 400),
+    'phone browser on its side': Size(750, 369),
+    'small phone browser on its side': Size(568, 320),
   };
 
   for (final MapEntry(key: name, value: size) in sizes.entries) {
@@ -138,7 +141,7 @@ void main() {
 
       final board = tester.getRect(find.byType(Chessboard));
       final evalBar = tester.getRect(find.byType(EvalBar));
-      final landscape = size.width >= 600 && size.width > size.height * 1.15;
+      final landscape = TrainerLayout.isLandscape(BoxConstraints.loose(size));
       if (landscape) {
         expect(evalBar.left, greaterThanOrEqualTo(board.right),
             reason: 'board left, panel right');

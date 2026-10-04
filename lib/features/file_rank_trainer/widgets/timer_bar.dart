@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 class TimerBar extends StatefulWidget {
   final int remainingSeconds;
   final int totalSeconds;
@@ -69,52 +71,60 @@ class _TimerBarState extends State<TimerBar>
         : 0.0;
     final color = _timerColor(widget.remainingSeconds);
     final isUrgent = widget.remainingSeconds <= 5;
+    final seconds = widget.remainingSeconds.clamp(0, 5999);
+    final clock = '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
 
     return ScaleTransition(
       scale: isUrgent ? _pulseAnimation : const AlwaysStoppedAnimation(1.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${widget.remainingSeconds}s',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-              if (isUrgent)
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
                 Text(
-                  l10n.hurry,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: color,
+                  clock,
+                  style: AppText.number.copyWith(
+                    fontSize: 36,
+                    height: 1.1,
+                    color: isUrgent ? color : AppColors.ink,
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: fraction,
-              backgroundColor: Colors.grey.shade200,
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-              minHeight: 10,
+                const Spacer(),
+                if (isUrgent)
+                  Text(
+                    l10n.hurry,
+                    style: AppText.label.copyWith(color: color),
+                  ),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: fraction,
+                backgroundColor: AppColors.well,
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+                minHeight: 6,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Color _timerColor(int seconds) {
-    if (seconds > 20) return const Color(0xFF4CAF50);
-    if (seconds > 10) return const Color(0xFFFFC107);
-    return const Color(0xFFE53935);
+    if (seconds > 10) return AppColors.brand;
+    if (seconds > 5) return AppColors.amber;
+    return AppColors.verm;
   }
 }

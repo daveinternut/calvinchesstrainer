@@ -37,22 +37,14 @@ class PieceGroupPanel extends StatelessWidget {
           duration: const Duration(milliseconds: 300),
           margin: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: backgroundColor ?? Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            color: backgroundColor ?? AppColors.surface,
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: backgroundColor != null
                   ? backgroundColor!.withValues(alpha: 0.6)
-                  : Colors.grey.shade300,
-              width: 2,
+                  : AppColors.line,
+              width: 1.5,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: (backgroundColor ?? Colors.grey)
-                    .withValues(alpha: 0.15),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
           ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
@@ -73,11 +65,7 @@ class PieceGroupPanel extends StatelessWidget {
                         ? null
                         : Text(
                             '$total',
-                            style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.textPrimary,
-                            ),
+                            style: AppText.number.copyWith(fontSize: 30),
                           ),
                   ),
                 ),

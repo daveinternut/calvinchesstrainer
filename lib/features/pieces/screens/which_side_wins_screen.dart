@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/audio/audio_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/ui/components.dart';
+import '../../drills/warmup_actions.dart';
 import '../../file_rank_trainer/widgets/streak_counter.dart';
 import '../../file_rank_trainer/widgets/timer_bar.dart';
 import '../../file_rank_trainer/widgets/results_card.dart';
@@ -15,9 +16,13 @@ import '../widgets/vs_divider.dart';
 class WhichSideWinsScreen extends ConsumerStatefulWidget {
   final WhichSideWinsMode mode;
 
+  /// A step of the daily warm-up (the results then move on to the next).
+  final bool warmup;
+
   const WhichSideWinsScreen({
     super.key,
     required this.mode,
+    this.warmup = false,
   });
 
   @override
@@ -39,10 +44,11 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
   void initState() {
     super.initState();
     _audioService = ref.read(audioServiceProvider);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(whichSideWinsProvider.notifier).startGame(widget.mode);
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startGame());
   }
+
+  void _startGame() =>
+      ref.read(whichSideWinsProvider.notifier).startGame(widget.mode);
 
   @override
   void dispose() {
@@ -56,29 +62,6 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
     final gameState = ref.watch(whichSideWinsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(_title(l10n)),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(
-              child: Text(
-                '${gameState.totalCorrect}/${gameState.totalAttempts}',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Stack(
           children: [
@@ -87,24 +70,30 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
                   _buildContent(gameState, constraints, l10n),
             ),
             if (gameState.isGameOver)
-              Container(
-                color: Colors.black54,
-                child: ResultsCard(
-                  totalCorrect: gameState.totalCorrect,
-                  totalAttempts: gameState.totalAttempts,
-                  bestStreak: gameState.bestStreak,
-                  isNewRecord: gameState.isNewRecord,
-                  onPlayAgain: () {
-                    ref
-                        .read(whichSideWinsProvider.notifier)
-                        .startGame(widget.mode);
-                  },
-                  onBack: () => context.pop(),
-                ),
-              ),
+              Positioned.fill(child: _results(gameState)),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _results(WhichSideWinsState gameState) {
+    final actions = roundActions(
+      context,
+      ref,
+      warmup: widget.warmup,
+      score: gameState.totalCorrect,
+      onPlayAgain: _startGame,
+    );
+    return ResultsCard(
+      totalCorrect: gameState.totalCorrect,
+      totalAttempts: gameState.totalAttempts,
+      bestStreak: gameState.bestStreak,
+      isNewRecord: gameState.isNewRecord,
+      primaryLabel: actions.primaryLabel,
+      onPlayAgain: actions.onPrimary,
+      secondaryLabel: actions.secondaryLabel,
+      onBack: actions.onSecondary,
     );
   }
 
@@ -116,12 +105,20 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
     AppLocalizations l10n,
   ) {
     final header = <Widget>[
-      const SizedBox(height: 8),
+      PlayTopBar(
+        title: l10n.drillPieceValues,
+        subtitle: warmupSubtitle(ref, l10n, widget.warmup) ??
+            (widget.mode == WhichSideWinsMode.speed
+                ? l10n.speedRound
+                : l10n.practice),
+        onClose: () => closeDrill(context),
+        closeTooltip: l10n.endDrill,
+        trailing: Text('${gameState.totalCorrect}/${gameState.totalAttempts}'),
+      ),
+      const SizedBox(height: 12),
       Text(
         l10n.tapTheSideWorthMore,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppColors.textSecondary,
-            ),
+        style: AppText.display.copyWith(fontSize: 28),
         textAlign: TextAlign.center,
       ),
       const SizedBox(height: 8),
@@ -254,20 +251,10 @@ class _WhichSideWinsScreenState extends ConsumerState<WhichSideWinsScreen> {
           margin: const EdgeInsets.symmetric(horizontal: 3),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: active
-                ? const Color(0xFF0277BD)
-                : Colors.grey.shade300,
+            color: active ? AppColors.brand : AppColors.line2,
           ),
         );
       }),
     );
-  }
-
-  String _title(AppLocalizations l10n) {
-    final mode = switch (widget.mode) {
-      WhichSideWinsMode.practice => l10n.practice,
-      WhichSideWinsMode.speed => l10n.speedRound,
-    };
-    return '${l10n.whichSideWins} — $mode';
   }
 }

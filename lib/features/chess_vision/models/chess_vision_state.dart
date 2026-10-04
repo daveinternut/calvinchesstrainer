@@ -357,6 +357,30 @@ class ChessVisionState {
 
   int get totalFound => foundSquares.length;
   int get totalCorrect => correctSquares.length;
+
+  /// How a found square reads in the Found list: the checking move in
+  /// notation for Find Checks ("Rf6+", "e5+"), otherwise the square ("d5").
+  String foundLabel(Square square) {
+    final pos = scanPosition;
+    if (drillType == VisionDrillType.findChecks && pos != null) {
+      final ghost = checkGhosts[square];
+      for (final entry in pos.legalMoves.entries) {
+        if (!entry.value.has(square)) continue;
+        final role = pos.board.roleAt(entry.key);
+        if (ghost != null && role != ghost.role) continue;
+        final promotes = role == Role.pawn &&
+            (square.rank == Rank.first || square.rank == Rank.eighth);
+        final move = NormalMove(
+          from: entry.key,
+          to: square,
+          promotion: promotes ? Role.queen : null,
+        );
+        if (!pos.isLegal(move) || !pos.play(move).isCheck) continue;
+        return pos.makeSan(move).$2;
+      }
+    }
+    return square.name;
+  }
   bool get allFound =>
       correctSquares.isNotEmpty && foundSquares.length >= correctSquares.length;
 

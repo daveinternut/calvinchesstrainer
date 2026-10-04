@@ -24,7 +24,10 @@ class WhichSideWinsNotifier extends Notifier<WhichSideWinsState> {
   AudioService get _audio => ref.read(audioServiceProvider);
   AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
 
-  String get _bestKey => 'pieces.${state.mode.name}';
+  /// Personal-best key, e.g. `pieces.speed`.
+  static String bestKeyFor(WhichSideWinsMode mode) => 'pieces.${mode.name}';
+
+  String get _bestKey => bestKeyFor(state.mode);
 
   @override
   WhichSideWinsState build() {

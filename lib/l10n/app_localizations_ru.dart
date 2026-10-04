@@ -15,25 +15,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get about => 'О приложении';
 
   @override
-  String get calvinChessTrainer => 'Calvin Chess\nTrainer';
-
-  @override
-  String get masterTheFundamentals => 'Освой основы!';
-
-  @override
-  String get chessNotation => 'Шахматная нотация';
-
-  @override
   String get learnTheBoard => 'Изучи доску!';
-
-  @override
-  String get chessVision => 'Шахматное зрение';
-
-  @override
-  String get seeTheBoard => 'Смотри на доску!';
-
-  @override
-  String get startHere => 'НАЧНИ ЗДЕСЬ';
 
   @override
   String get comingSoon => 'СКОРО';
@@ -42,19 +24,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get start => 'Начать';
 
   @override
-  String get menu => 'Меню';
-
-  @override
   String get playAgain => 'Играть снова';
 
   @override
   String get newRecord => 'Новый рекорд!';
-
-  @override
-  String get whatToPractice => 'Что тренировать?';
-
-  @override
-  String get chooseAMode => 'Выбери режим';
 
   @override
   String get files => 'Вертикали';
@@ -88,15 +61,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get speedRoundDesc => '30 секунд — сколько решишь?';
-
-  @override
-  String get hardMode => 'СЛОЖНЫЙ РЕЖИМ';
-
-  @override
-  String get hardModeBlack => 'Игрок за чёрных!';
-
-  @override
-  String get hardModeFlipped => 'Доска перевёрнута — вид со стороны чёрных!';
 
   @override
   String get timesUp => 'Время вышло!';
@@ -161,9 +125,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get hurry => 'Быстрее!';
 
   @override
-  String get drillType => 'Тип упражнения';
-
-  @override
   String get forksAndSkewers => 'Вилки и линейные удары';
 
   @override
@@ -174,12 +135,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get knightFlight => 'Полёт коня';
-
-  @override
-  String get chooseYourPiece => 'Выбери фигуру';
-
-  @override
-  String get targetPiece => 'Целевая фигура';
 
   @override
   String get queen => 'Ферзь';
@@ -199,9 +154,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get speedRound60Desc => '60 секунд — реши как можно больше!';
-
-  @override
-  String get concentricDrill => 'Концентрическое упражнение';
 
   @override
   String get concentricDrillDesc => 'Пройди все позиции — побей своё время!';
@@ -265,11 +217,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get found => 'Найдено';
 
   @override
-  String foundOfTotal(int found, int total) {
-    return '$found из $total';
-  }
-
-  @override
   String get drillComplete => 'Упражнение завершено!';
 
   @override
@@ -287,26 +234,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String solvedCount(int count) {
     return '$count решено';
-  }
-
-  @override
-  String titleForksAndSkewers(String piece, String mode) {
-    return '$piece — $mode';
-  }
-
-  @override
-  String titlePawnAttack(String piece, String mode) {
-    return 'Атака пешкой — $piece $mode';
-  }
-
-  @override
-  String titleMovesGame(String mode) {
-    return 'Ходы - $mode';
-  }
-
-  @override
-  String titleFileRankGame(String subject, String mode) {
-    return '$subject - $mode';
   }
 
   @override
@@ -418,9 +345,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get promptRank => 'горизонталь';
 
   @override
-  String get openingFundamentals => 'Обозреватель\nДебютов';
-
-  @override
   String get playTheOpening => 'Исследуйте дебюты!';
 
   @override
@@ -509,13 +433,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get knowYourPieces => 'Know your pieces!';
 
   @override
-  String get whichSideWins => 'Какая сторона сильнее?';
-
-  @override
-  String get whichSideWinsDesc =>
-      'Сравни группы фигур — нажми на ту сторону, что ценнее!';
-
-  @override
   String get tapTheSideWorthMore => 'Нажми на более ценную сторону';
 
   @override
@@ -530,9 +447,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get pawn => 'Пешка';
-
-  @override
-  String get hardModeBlackPieces => 'Показаны чёрные фигуры!';
 
   @override
   String get tapPieceToLearnLetter => 'Нажми на фигуру, чтобы узнать её букву!';
@@ -689,4 +603,204 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get draw => 'Ничья!';
+
+  @override
+  String get homeWarmupKicker => 'Ежедневная разминка · 5 мин';
+
+  @override
+  String get homeWarmupTitle => 'Тренируй то, чего нет в задачах';
+
+  @override
+  String get homeWarmupBody =>
+      'Пять коротких упражнений: шахи, незащищённые фигуры, вилки, поля со стороны чёрных и мат в один ход.';
+
+  @override
+  String get homeWarmupStart => 'Начать разминку';
+
+  @override
+  String get homeContinue => 'Продолжить';
+
+  @override
+  String get homeStartHere => 'Начни здесь';
+
+  @override
+  String homeResume(String drill) {
+    return 'Продолжить: $drill';
+  }
+
+  @override
+  String get homeOpenings => 'Дебюты';
+
+  @override
+  String get homeOpeningExplorerDesc =>
+      'Разыгрывай дебюты с подсказками Stockfish';
+
+  @override
+  String get sectionVision => 'Шахматное зрение';
+
+  @override
+  String get sectionVisionDesc =>
+      'Привычки осмотра доски, которые почти никто не тренирует';
+
+  @override
+  String get sectionNotation => 'Нотация';
+
+  @override
+  String get sectionNotationDesc => 'Читай и находи поля и ходы не задумываясь';
+
+  @override
+  String sectionAllDrills(int count) {
+    return 'Все упражнения ($count)';
+  }
+
+  @override
+  String get navHome => 'Главная';
+
+  @override
+  String drillBest(String value) {
+    return 'Рекорд $value';
+  }
+
+  @override
+  String get groupScan => 'Осмотри доску';
+
+  @override
+  String get groupGeometry => 'Геометрия';
+
+  @override
+  String get groupFinish => 'Решающий удар';
+
+  @override
+  String get groupBoard => 'Доска';
+
+  @override
+  String get groupPieces => 'Фигуры';
+
+  @override
+  String get drillFilesRanks => 'Вертикали и горизонтали';
+
+  @override
+  String get drillReadMoves => 'Чтение ходов';
+
+  @override
+  String get drillPieceLetters => 'Буквы фигур';
+
+  @override
+  String get drillPieceValues => 'Ценность фигур';
+
+  @override
+  String get drillDescFindChecks => 'Все шахи в реальной позиции';
+
+  @override
+  String get drillDescFindCaptures => 'Найди все взятия на доске';
+
+  @override
+  String get drillDescHanging => 'Замечай все незащищённые фигуры';
+
+  @override
+  String get drillDescForks => 'Поля для двойного удара';
+
+  @override
+  String get drillDescKnightSight => 'Все поля, куда может прыгнуть конь';
+
+  @override
+  String get drillDescKnightFlight => 'До цели за минимум ходов';
+
+  @override
+  String get drillDescPawnAttack => 'Проберись сквозь стену пешек';
+
+  @override
+  String get drillDescMate => '400 позиций, мат в один ход';
+
+  @override
+  String get drillDescSquares => 'Быстро найди поле';
+
+  @override
+  String get drillDescFilesRanks => 'Называй все вертикали и горизонтали';
+
+  @override
+  String get drillDescReadMoves => 'Прочитай ход, затем сделай его';
+
+  @override
+  String get drillDescLetters => 'K, Q, R, B, N с первого взгляда';
+
+  @override
+  String get drillDescValues => 'Какая сторона в выигрыше?';
+
+  @override
+  String get setupYourPiece => 'Твоя фигура';
+
+  @override
+  String get setupForkTarget => 'Вилка: король и…';
+
+  @override
+  String get setupMode => 'Режим';
+
+  @override
+  String get setupBoardSide => 'Сторона доски';
+
+  @override
+  String get setupLines => 'Линии';
+
+  @override
+  String get setupYourBest => 'Твой рекорд';
+
+  @override
+  String get setupNoBest => 'Рекорда пока нет';
+
+  @override
+  String get setupKnightPracticeOnly => 'Без таймера. Не торопись.';
+
+  @override
+  String warmupStep(int current, int total) {
+    return 'Разминка · $current из $total';
+  }
+
+  @override
+  String warmupNext(String drill) {
+    return 'Далее: $drill';
+  }
+
+  @override
+  String get warmupFinish => 'Завершить разминку';
+
+  @override
+  String get warmupEnd => 'Выйти из разминки';
+
+  @override
+  String get warmupDoneTitle => 'Разминка завершена';
+
+  @override
+  String get warmupDoneBody =>
+      'Пять упражнений выполнено. Завтра в то же время?';
+
+  @override
+  String get resultsMissed => 'Пропущено';
+
+  @override
+  String get endDrill => 'Выйти из упражнения';
+
+  @override
+  String get promptTitleChecks => 'Найди все шахи';
+
+  @override
+  String get promptTitleCaptures => 'Найди все взятия';
+
+  @override
+  String get promptTitleHanging => 'Найди все висячие фигуры';
+
+  @override
+  String get promptTitleForks => 'Найди все вилки';
+
+  @override
+  String get promptTitleKnightSight => 'Все прыжки коня';
+
+  @override
+  String get promptTitleKnightFlight => 'Доберись до кольца';
+
+  @override
+  String get promptTitlePawnAttack => 'Забери все пешки';
+
+  @override
+  String get promptTitleMate => 'Мат в один ход';
 }

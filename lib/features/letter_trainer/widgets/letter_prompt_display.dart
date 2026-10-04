@@ -111,10 +111,7 @@ class LetterPromptDisplay extends StatelessWidget {
     // Letter prompt: the big SAN letter, or a dash for the pawn trick.
     return Text(
       question.target.hasLetter ? question.target.letter : '–',
-      style: Theme.of(context).textTheme.displayMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary,
-          ),
+      style: AppText.mono.copyWith(fontSize: 72, height: 1.1),
     );
   }
 }

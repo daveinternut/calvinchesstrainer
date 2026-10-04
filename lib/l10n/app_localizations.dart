@@ -126,47 +126,11 @@ abstract class AppLocalizations {
   /// **'About'**
   String get about;
 
-  /// No description provided for @calvinChessTrainer.
-  ///
-  /// In en, this message translates to:
-  /// **'Calvin Chess\nTrainer'**
-  String get calvinChessTrainer;
-
-  /// No description provided for @masterTheFundamentals.
-  ///
-  /// In en, this message translates to:
-  /// **'Master the fundamentals!'**
-  String get masterTheFundamentals;
-
-  /// No description provided for @chessNotation.
-  ///
-  /// In en, this message translates to:
-  /// **'Chess Notation'**
-  String get chessNotation;
-
   /// No description provided for @learnTheBoard.
   ///
   /// In en, this message translates to:
   /// **'Learn the board!'**
   String get learnTheBoard;
-
-  /// No description provided for @chessVision.
-  ///
-  /// In en, this message translates to:
-  /// **'Chess Vision'**
-  String get chessVision;
-
-  /// No description provided for @seeTheBoard.
-  ///
-  /// In en, this message translates to:
-  /// **'See the board!'**
-  String get seeTheBoard;
-
-  /// No description provided for @startHere.
-  ///
-  /// In en, this message translates to:
-  /// **'START HERE'**
-  String get startHere;
 
   /// No description provided for @comingSoon.
   ///
@@ -180,12 +144,6 @@ abstract class AppLocalizations {
   /// **'Start'**
   String get start;
 
-  /// No description provided for @menu.
-  ///
-  /// In en, this message translates to:
-  /// **'Menu'**
-  String get menu;
-
   /// No description provided for @playAgain.
   ///
   /// In en, this message translates to:
@@ -197,18 +155,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New Record!'**
   String get newRecord;
-
-  /// No description provided for @whatToPractice.
-  ///
-  /// In en, this message translates to:
-  /// **'What to practice?'**
-  String get whatToPractice;
-
-  /// No description provided for @chooseAMode.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose a mode'**
-  String get chooseAMode;
 
   /// No description provided for @files.
   ///
@@ -275,24 +221,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'30 seconds — how many can you get?'**
   String get speedRoundDesc;
-
-  /// No description provided for @hardMode.
-  ///
-  /// In en, this message translates to:
-  /// **'HARD MODE'**
-  String get hardMode;
-
-  /// No description provided for @hardModeBlack.
-  ///
-  /// In en, this message translates to:
-  /// **'User controls black!'**
-  String get hardModeBlack;
-
-  /// No description provided for @hardModeFlipped.
-  ///
-  /// In en, this message translates to:
-  /// **'Board flipped — black\'s perspective!'**
-  String get hardModeFlipped;
 
   /// No description provided for @timesUp.
   ///
@@ -408,12 +336,6 @@ abstract class AppLocalizations {
   /// **'Hurry!'**
   String get hurry;
 
-  /// No description provided for @drillType.
-  ///
-  /// In en, this message translates to:
-  /// **'Drill type'**
-  String get drillType;
-
   /// No description provided for @forksAndSkewers.
   ///
   /// In en, this message translates to:
@@ -437,18 +359,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Knight Flight'**
   String get knightFlight;
-
-  /// No description provided for @chooseYourPiece.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose your piece'**
-  String get chooseYourPiece;
-
-  /// No description provided for @targetPiece.
-  ///
-  /// In en, this message translates to:
-  /// **'Target piece'**
-  String get targetPiece;
 
   /// No description provided for @queen.
   ///
@@ -485,12 +395,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'60 seconds — solve as many as you can!'**
   String get speedRound60Desc;
-
-  /// No description provided for @concentricDrill.
-  ///
-  /// In en, this message translates to:
-  /// **'Concentric Drill'**
-  String get concentricDrill;
 
   /// No description provided for @concentricDrillDesc.
   ///
@@ -588,12 +492,6 @@ abstract class AppLocalizations {
   /// **'Found'**
   String get found;
 
-  /// No description provided for @foundOfTotal.
-  ///
-  /// In en, this message translates to:
-  /// **'{found} of {total}'**
-  String foundOfTotal(int found, int total);
-
   /// No description provided for @drillComplete.
   ///
   /// In en, this message translates to:
@@ -629,30 +527,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} solved'**
   String solvedCount(int count);
-
-  /// No description provided for @titleForksAndSkewers.
-  ///
-  /// In en, this message translates to:
-  /// **'{piece} — {mode}'**
-  String titleForksAndSkewers(String piece, String mode);
-
-  /// No description provided for @titlePawnAttack.
-  ///
-  /// In en, this message translates to:
-  /// **'Pawn Attack — {piece} {mode}'**
-  String titlePawnAttack(String piece, String mode);
-
-  /// No description provided for @titleMovesGame.
-  ///
-  /// In en, this message translates to:
-  /// **'Moves - {mode}'**
-  String titleMovesGame(String mode);
-
-  /// No description provided for @titleFileRankGame.
-  ///
-  /// In en, this message translates to:
-  /// **'{subject} - {mode}'**
-  String titleFileRankGame(String subject, String mode);
 
   /// No description provided for @makeTheMove.
   ///
@@ -846,12 +720,6 @@ abstract class AppLocalizations {
   /// **'rank'**
   String get promptRank;
 
-  /// No description provided for @openingFundamentals.
-  ///
-  /// In en, this message translates to:
-  /// **'Opening\nExplorer'**
-  String get openingFundamentals;
-
   /// No description provided for @playTheOpening.
   ///
   /// In en, this message translates to:
@@ -1020,18 +888,6 @@ abstract class AppLocalizations {
   /// **'Know your pieces!'**
   String get knowYourPieces;
 
-  /// No description provided for @whichSideWins.
-  ///
-  /// In en, this message translates to:
-  /// **'Which Side Wins?'**
-  String get whichSideWins;
-
-  /// No description provided for @whichSideWinsDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Compare groups of pieces — tap the side worth more!'**
-  String get whichSideWinsDesc;
-
   /// No description provided for @tapTheSideWorthMore.
   ///
   /// In en, this message translates to:
@@ -1061,12 +917,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pawn'**
   String get pawn;
-
-  /// No description provided for @hardModeBlackPieces.
-  ///
-  /// In en, this message translates to:
-  /// **'Black pieces shown!'**
-  String get hardModeBlackPieces;
 
   /// No description provided for @tapPieceToLearnLetter.
   ///
@@ -1361,6 +1211,378 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Draw!'**
   String get draw;
+
+  /// No description provided for @homeWarmupKicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily warm-up · 5 min'**
+  String get homeWarmupKicker;
+
+  /// No description provided for @homeWarmupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Train what puzzles skip'**
+  String get homeWarmupTitle;
+
+  /// No description provided for @homeWarmupBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Five quick drills: checks, loose pieces, forks, squares from Black\'s side and a mate in one.'**
+  String get homeWarmupBody;
+
+  /// No description provided for @homeWarmupStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start warm-up'**
+  String get homeWarmupStart;
+
+  /// No description provided for @homeContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get homeContinue;
+
+  /// No description provided for @homeStartHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Start here'**
+  String get homeStartHere;
+
+  /// No description provided for @homeResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume {drill}'**
+  String homeResume(String drill);
+
+  /// No description provided for @homeOpenings.
+  ///
+  /// In en, this message translates to:
+  /// **'Openings'**
+  String get homeOpenings;
+
+  /// No description provided for @homeOpeningExplorerDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Play through openings with Stockfish hints'**
+  String get homeOpeningExplorerDesc;
+
+  /// No description provided for @sectionVision.
+  ///
+  /// In en, this message translates to:
+  /// **'Vision'**
+  String get sectionVision;
+
+  /// No description provided for @sectionVisionDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The board-scanning habits most players never drill'**
+  String get sectionVisionDesc;
+
+  /// No description provided for @sectionNotation.
+  ///
+  /// In en, this message translates to:
+  /// **'Notation'**
+  String get sectionNotation;
+
+  /// No description provided for @sectionNotationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Read and find squares and moves without thinking'**
+  String get sectionNotationDesc;
+
+  /// No description provided for @sectionAllDrills.
+  ///
+  /// In en, this message translates to:
+  /// **'All {count} drills'**
+  String sectionAllDrills(int count);
+
+  /// No description provided for @navHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get navHome;
+
+  /// No description provided for @drillBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Best {value}'**
+  String drillBest(String value);
+
+  /// No description provided for @groupScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the board'**
+  String get groupScan;
+
+  /// No description provided for @groupGeometry.
+  ///
+  /// In en, this message translates to:
+  /// **'Geometry'**
+  String get groupGeometry;
+
+  /// No description provided for @groupFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get groupFinish;
+
+  /// No description provided for @groupBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'The board'**
+  String get groupBoard;
+
+  /// No description provided for @groupPieces.
+  ///
+  /// In en, this message translates to:
+  /// **'Pieces'**
+  String get groupPieces;
+
+  /// No description provided for @drillFilesRanks.
+  ///
+  /// In en, this message translates to:
+  /// **'Files & Ranks'**
+  String get drillFilesRanks;
+
+  /// No description provided for @drillReadMoves.
+  ///
+  /// In en, this message translates to:
+  /// **'Read Moves'**
+  String get drillReadMoves;
+
+  /// No description provided for @drillPieceLetters.
+  ///
+  /// In en, this message translates to:
+  /// **'Piece Letters'**
+  String get drillPieceLetters;
+
+  /// No description provided for @drillPieceValues.
+  ///
+  /// In en, this message translates to:
+  /// **'Piece Values'**
+  String get drillPieceValues;
+
+  /// No description provided for @drillDescFindChecks.
+  ///
+  /// In en, this message translates to:
+  /// **'Every check in a real position'**
+  String get drillDescFindChecks;
+
+  /// No description provided for @drillDescFindCaptures.
+  ///
+  /// In en, this message translates to:
+  /// **'Find every capture on the board'**
+  String get drillDescFindCaptures;
+
+  /// No description provided for @drillDescHanging.
+  ///
+  /// In en, this message translates to:
+  /// **'Spot every undefended piece'**
+  String get drillDescHanging;
+
+  /// No description provided for @drillDescForks.
+  ///
+  /// In en, this message translates to:
+  /// **'Squares that hit two targets'**
+  String get drillDescForks;
+
+  /// No description provided for @drillDescKnightSight.
+  ///
+  /// In en, this message translates to:
+  /// **'Every square a knight reaches'**
+  String get drillDescKnightSight;
+
+  /// No description provided for @drillDescKnightFlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewest moves to the target'**
+  String get drillDescKnightFlight;
+
+  /// No description provided for @drillDescPawnAttack.
+  ///
+  /// In en, this message translates to:
+  /// **'Slip past a wall of pawns'**
+  String get drillDescPawnAttack;
+
+  /// No description provided for @drillDescMate.
+  ///
+  /// In en, this message translates to:
+  /// **'400 positions, one move to mate'**
+  String get drillDescMate;
+
+  /// No description provided for @drillDescSquares.
+  ///
+  /// In en, this message translates to:
+  /// **'Find the square, fast'**
+  String get drillDescSquares;
+
+  /// No description provided for @drillDescFilesRanks.
+  ///
+  /// In en, this message translates to:
+  /// **'Name every file and rank'**
+  String get drillDescFilesRanks;
+
+  /// No description provided for @drillDescReadMoves.
+  ///
+  /// In en, this message translates to:
+  /// **'Read a move, then play it'**
+  String get drillDescReadMoves;
+
+  /// No description provided for @drillDescLetters.
+  ///
+  /// In en, this message translates to:
+  /// **'K, Q, R, B, N at a glance'**
+  String get drillDescLetters;
+
+  /// No description provided for @drillDescValues.
+  ///
+  /// In en, this message translates to:
+  /// **'Which side comes out ahead?'**
+  String get drillDescValues;
+
+  /// No description provided for @setupYourPiece.
+  ///
+  /// In en, this message translates to:
+  /// **'Your piece'**
+  String get setupYourPiece;
+
+  /// No description provided for @setupForkTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Fork the king and a…'**
+  String get setupForkTarget;
+
+  /// No description provided for @setupMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get setupMode;
+
+  /// No description provided for @setupBoardSide.
+  ///
+  /// In en, this message translates to:
+  /// **'Board side'**
+  String get setupBoardSide;
+
+  /// No description provided for @setupLines.
+  ///
+  /// In en, this message translates to:
+  /// **'Lines'**
+  String get setupLines;
+
+  /// No description provided for @setupYourBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Your best'**
+  String get setupYourBest;
+
+  /// No description provided for @setupNoBest.
+  ///
+  /// In en, this message translates to:
+  /// **'No best yet'**
+  String get setupNoBest;
+
+  /// No description provided for @setupKnightPracticeOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'No timer. Take your time.'**
+  String get setupKnightPracticeOnly;
+
+  /// No description provided for @warmupStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm-up · {current} of {total}'**
+  String warmupStep(int current, int total);
+
+  /// No description provided for @warmupNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {drill}'**
+  String warmupNext(String drill);
+
+  /// No description provided for @warmupFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish warm-up'**
+  String get warmupFinish;
+
+  /// No description provided for @warmupEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End warm-up'**
+  String get warmupEnd;
+
+  /// No description provided for @warmupDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm-up complete'**
+  String get warmupDoneTitle;
+
+  /// No description provided for @warmupDoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Five drills done. Same time tomorrow?'**
+  String get warmupDoneBody;
+
+  /// No description provided for @resultsMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed'**
+  String get resultsMissed;
+
+  /// No description provided for @endDrill.
+  ///
+  /// In en, this message translates to:
+  /// **'End drill'**
+  String get endDrill;
+
+  /// No description provided for @promptTitleChecks.
+  ///
+  /// In en, this message translates to:
+  /// **'Find every check'**
+  String get promptTitleChecks;
+
+  /// No description provided for @promptTitleCaptures.
+  ///
+  /// In en, this message translates to:
+  /// **'Find every capture'**
+  String get promptTitleCaptures;
+
+  /// No description provided for @promptTitleHanging.
+  ///
+  /// In en, this message translates to:
+  /// **'Find every loose piece'**
+  String get promptTitleHanging;
+
+  /// No description provided for @promptTitleForks.
+  ///
+  /// In en, this message translates to:
+  /// **'Find every fork'**
+  String get promptTitleForks;
+
+  /// No description provided for @promptTitleKnightSight.
+  ///
+  /// In en, this message translates to:
+  /// **'Every knight jump'**
+  String get promptTitleKnightSight;
+
+  /// No description provided for @promptTitleKnightFlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach the ring'**
+  String get promptTitleKnightFlight;
+
+  /// No description provided for @promptTitlePawnAttack.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture every pawn'**
+  String get promptTitlePawnAttack;
+
+  /// No description provided for @promptTitleMate.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkmate in one'**
+  String get promptTitleMate;
 }
 
 class _AppLocalizationsDelegate

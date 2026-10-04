@@ -51,6 +51,9 @@ class FileRankGameState {
   /// Set at game over when the round beat the saved personal best.
   final bool isNewRecord;
 
+  /// The prompts answered wrong this round ("b6", "c"), shown on results.
+  final List<String> missed;
+
   const FileRankGameState({
     required this.subject,
     required this.mode,
@@ -68,6 +71,7 @@ class FileRankGameState {
     this.isGameOver = false,
     this.isWaitingForNext = false,
     this.isNewRecord = false,
+    this.missed = const [],
   });
 
   FileRankGameState copyWith({
@@ -87,6 +91,7 @@ class FileRankGameState {
     bool? isGameOver,
     bool? isWaitingForNext,
     bool? isNewRecord,
+    List<String>? missed,
   }) {
     return FileRankGameState(
       subject: subject ?? this.subject,
@@ -113,6 +118,7 @@ class FileRankGameState {
       isGameOver: isGameOver ?? this.isGameOver,
       isWaitingForNext: isWaitingForNext ?? this.isWaitingForNext,
       isNewRecord: isNewRecord ?? this.isNewRecord,
+      missed: missed ?? this.missed,
     );
   }
 

@@ -79,8 +79,8 @@ class _AnswerTile extends StatelessWidget {
       background = AppColors.incorrectRed.withValues(alpha: 0.9);
       borderColor = AppColors.incorrectRed;
     } else {
-      background = Colors.white;
-      borderColor = Colors.grey.shade300;
+      background = AppColors.surface;
+      borderColor = AppColors.line;
     }
     final highlighted = isCorrectTile || isWrongTapped;
 
@@ -94,7 +94,7 @@ class _AnswerTile extends StatelessWidget {
           border: Border.all(color: borderColor, width: highlighted ? 2 : 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
+              color: const Color(0x0F0E1B16),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -125,10 +125,7 @@ class _AnswerTile extends StatelessWidget {
     if (option.hasLetter) {
       return Text(
         option.letter,
-        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: textColor,
-            ),
+        style: AppText.mono.copyWith(fontSize: 34, color: textColor),
       );
     }
 

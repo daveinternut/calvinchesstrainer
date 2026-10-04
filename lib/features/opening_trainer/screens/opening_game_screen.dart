@@ -6,11 +6,15 @@ import 'package:dartchess/dartchess.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/services/opening_book_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/board_theme.dart';
+import '../../../core/ui/board_frame.dart';
+import '../../../core/ui/buttons.dart';
+import '../../../core/ui/components.dart';
 import '../../../core/widgets/trainer_layout.dart';
+import '../../drills/warmup_actions.dart' show closeDrill;
 import '../models/opening_game_state.dart';
 import '../models/uci_move.dart';
 import '../providers/opening_game_provider.dart';
@@ -175,42 +179,50 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.openingExplorer),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.menu_book_rounded),
-            tooltip: l10n.startFromOpening,
-            onPressed: _showOpeningPicker,
-          ),
-          IconButton(
-            icon: const Icon(Icons.swap_vert_rounded),
-            tooltip: l10n.flipBoard,
-            onPressed: () => setState(() {
-              _orientation = _orientation == Side.white
-                  ? Side.black
-                  : Side.white;
-            }),
-          ),
-          IconButton(
-            icon: Icon(_showScores ? Icons.tag : Icons.tag_outlined),
-            tooltip: _showScores ? l10n.hideScores : l10n.showScores,
-            onPressed: () => setState(() => _showScores = !_showScores),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             final landscape = TrainerLayout.isLandscape(constraints);
             return TrainerLayout(
+              topBar: PlayTopBar(
+                title: l10n.openingExplorer,
+                onClose: () => closeDrill(context),
+                closeTooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleIconButton(
+                      icon: Icons.menu_book_rounded,
+                      tooltip: l10n.startFromOpening,
+                      onPressed: _showOpeningPicker,
+                    ),
+                    const SizedBox(width: 6),
+                    CircleIconButton(
+                      icon: Icons.swap_vert_rounded,
+                      tooltip: l10n.flipBoard,
+                      onPressed: () => setState(() {
+                        _orientation = _orientation == Side.white
+                            ? Side.black
+                            : Side.white;
+                      }),
+                    ),
+                    const SizedBox(width: 6),
+                    CircleIconButton(
+                      icon: _showScores ? Icons.tag : Icons.tag_outlined,
+                      tooltip: _showScores ? l10n.hideScores : l10n.showScores,
+                      onPressed: () =>
+                          setState(() => _showScores = !_showScores),
+                    ),
+                  ],
+                ),
+              ),
               header: _buildHeader(gameState, l10n),
-              board: (context, size) => _buildBoard(gameState, size),
+              board: (context, size) => BoardFrame(
+                size: size,
+                orientation: _orientation,
+                builder: (context, boardSize) =>
+                    _buildBoard(gameState, boardSize),
+              ),
               footer: _buildFooter(gameState, landscape: landscape),
             );
           },
@@ -231,10 +243,11 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: const TextStyle(
+              fontFamily: AppFonts.ui,
               fontSize: _kOpeningNameFontSize,
               height: _kOpeningNameLineHeight,
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: AppColors.ink2,
             ),
           ),
         ),
@@ -264,14 +277,14 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.only(left: 12, right: 4),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
-        border: Border.all(color: Colors.orange.shade200),
-        borderRadius: BorderRadius.circular(10),
+        color: AppColors.amberSoft,
+        border: Border.all(color: AppColors.amber),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
-          Icon(Icons.warning_amber_rounded,
-              color: Colors.orange.shade800, size: 22),
+          const Icon(Icons.warning_amber_rounded,
+              color: AppColors.amberInk, size: 22),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -372,14 +385,11 @@ class _OpeningGameScreenState extends ConsumerState<OpeningGameScreen> {
       orientation: orientation,
       fen: gameState.currentFen,
       lastMove: gameState.lastMove,
-      settings: ChessboardSettings(
-        enableCoordinates: true,
-        colorScheme: ChessboardColorScheme.green,
-        pieceAssets: PieceSet.cburnett.assets,
+      settings: AppBoard.settings(
         animationDuration: const Duration(milliseconds: 250),
         showValidMoves: isInteractive && pieceAnalysis == null,
-        showLastMove: true,
         autoQueenPromotion: true,
+      ).copyWith(
         dragFeedbackScale: 1.2,
         dragFeedbackOffset: const Offset(0.0, -0.4),
       ),

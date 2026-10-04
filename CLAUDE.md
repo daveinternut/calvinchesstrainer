@@ -4,9 +4,9 @@ The always-loaded control panel for this repo. Read this in full; it's built to 
 
 ## What this is
 
-**Calvin Chess Trainer** — a Flutter chess-training app for kids. Three trainers on the home screen: **Chess Vision** (forks/skewers, knight sight/flight, pawn attack, plus four scanning drills on curated real positions: find checks, find captures, hanging pieces, mate-in-1 — the hero card), **Chess Notation** (file/rank/square, letters, move-from-notation, piece value), and **Opening Explorer** (play through openings with Stockfish hints and an eval bar). Plus a Tactics placeholder that nothing links to.
+**Calvin Chess Trainer** — a Flutter app for drilling **board vision and notation**. Home shows a **daily warm-up** (five timed drills), **Continue** (the last drill), the **Opening Explorer** (play through openings with Stockfish hints and an eval bar), and every drill in two sections: **Vision** (find checks, find captures, hanging pieces, forks & skewers, knight sight, knight flight, pawn attack, mate in 1 — the scanning drills use curated real positions) and **Notation** (squares, files & ranks, read moves, piece letters, piece values). A drill opens a setup panel that remembers your last setup. Plus a Tactics placeholder that nothing links to.
 
-Stack: Flutter/Dart · **Riverpod** (`Notifier`; game providers `autoDispose`) · **GoRouter** · **chessground + dartchess** (lichess, GPL-3.0) · **stockfish** (FFI native, WASM on web) · Firebase Analytics · shared_preferences (saved personal bests) · just_audio + audio_session / flutter_tts · gen-l10n (10 locales, English fallback).
+Stack: Flutter/Dart · **Riverpod** (`Notifier`; game providers `autoDispose`) · **GoRouter** · **chessground + dartchess** (lichess, GPL-3.0) · **stockfish** (FFI native, WASM on web) · Firebase Analytics · shared_preferences (personal bests, drill setups, Continue) · just_audio + audio_session / flutter_tts · gen-l10n (10 locales, English fallback) · bundled fonts: Bricolage Grotesque (UI) + Geist Mono (notation).
 
 ## Documentation (where to go for depth)
 
@@ -21,14 +21,14 @@ Stack: Flutter/Dart · **Riverpod** (`Notifier`; game providers `autoDispose`) �
 
 ## Mental model
 
-Feature-first. **Each trainer = one immutable `*_state.dart` + one Riverpod `Notifier` (`*_provider.dart`) that owns all game logic + a thin `*_screen.dart`.** The board is a *pure function of provider state* (the state exposes highlight getters — `allHighlights`, `feedbackShapes`, `boardFen`). Game providers are **`autoDispose`**: a round — its timers, engine work and pending audio — ends when its screen closes. Anything that must outlive a screen lives in an app-lifetime provider instead (personal bests: `personalBestsProvider`). Board screens lay out through **`TrainerLayout`** (portrait column; board-left/panel-right in landscape). Cross-cutting code (audio, analytics, engine, puzzles, opening book, bests, board helpers) lives in `lib/core/`. Follow this shape for new work. (Full data-flow: Index → System map.)
+Feature-first. **Each trainer = one immutable `*_state.dart` + one Riverpod `Notifier` (`*_provider.dart`) that owns all game logic + a thin `*_screen.dart`.** The board is a *pure function of provider state* (the state exposes highlight getters — `allHighlights`, `feedbackShapes`, `boardFen`). Game providers are **`autoDispose`**: a round — its timers, engine work and pending audio — ends when its screen closes. Anything that must outlive a screen lives in an app-lifetime provider instead (personal bests: `personalBestsProvider`). Board screens lay out through **`TrainerLayout`** (portrait column; board-left/panel-right in landscape, `PlayTopBar` on top) with the board in a **`BoardFrame`** (coordinates outside). Cross-cutting code (audio, analytics, engine, puzzles, opening book, bests, board helpers) lives in `lib/core/`; the **design system** is `core/theme/` (tokens, type, board look) + `core/ui/` (components). Drills are described once in the **drill catalog** (`features/drills/drill_catalog.dart`) — home, sections, Continue and the warm-up all read it. Follow this shape for new work. (Full data-flow: Index → System map.)
 
 ## Repo map
 
 ```
 lib/
-  main.dart              boot: (debug) stockfish cleanup → Firebase init in the background → load saved bests → portrait lock (holds on iPhone only) → runApp(ProviderScope)
-  app.dart               MaterialApp.router · GoRouter (12 routes, each named; unknown paths → home) · ScreenViewObserver (analytics)
+  main.dart              boot: (debug) stockfish cleanup → Firebase init in the background → load saved bests → runApp(ProviderScope) (no orientation lock in Dart — see Gotchas)
+  app.dart               MaterialApp.router · GoRouter (13 routes, each named; unknown paths → home) · ScreenViewObserver (analytics)
   firebase_options.dart  generated — DO NOT edit
   core/
     audio/audio_service.dart       voice clips + SFX + cheers + haptics + TTS (owns ALL haptics; ambient
@@ -47,15 +47,22 @@ lib/
       analytics_service.dart       12 typed Firebase drill events + ScreenViewObserver (no-op until Firebase is up)
       feedback_service.dart        HTTP user-feedback form (NOT audio, despite the name)
     board_utils.dart               file/rank/square index → chessground highlight map
-    theme/  constants/  widgets/   AppTheme.light (no dark), constants, SquareNameOverlay, TrainerLayout
+    theme/app_theme.dart           AppColors (tokens), AppFonts, AppText (mono = notation, number = scores), AppTheme.light (no dark)
+    theme/board_theme.dart         AppBoard.settings() — the one board look (sage, cburnett, coordinates off)
+    ui/                            design-system components: buttons, SegmentedPicker, PlayTopBar, StatTile, NotationChip,
+                                   BoardFrame (coordinates outside), DrillGlyph, LogoMark
+    constants.dart  widgets/       ChessConstants, SquareNameOverlay, TrainerLayout
   features/<trainer>/    models/ · providers/ · screens/ · widgets/   (+ services/ for vision & pieces)
-    chess_vision/        8 drills; 4 pure engines         → /chess-vision          (home-screen hero)
-    file_rank_trainer/   files/ranks/squares + the chips  → /file-rank-trainer     (hosts the shared widget kit)
-    letter_trainer/      piece letters (K Q R B N)        → /letter-trainer/game   (entered via the Letters chip)
-    move_trainer/        move from notation (puzzles)     → /move-trainer/game     (entered via the Moves chip)
-    pieces/              "which side wins?"               → /the-pieces/which-side-wins (via the Piece Value chip)
+    drills/              the drill catalog, drill setups + Continue (drillPrefsProvider), the warm-up
+                         (warmupProvider, roundActions), DrillSectionScreen (Vision/Notation), setup panel, tiles
+    home/                warm-up card, Continue, Opening Explorer, Vision + Notation tiles
+    chess_vision/        8 drills; 4 pure engines         → /chess-vision/game     (section: /chess-vision)
+    file_rank_trainer/   squares, files & ranks           → /file-rank-trainer/game (section: /file-rank-trainer; hosts the shared widget kit)
+    letter_trainer/      piece letters (K Q R B N)        → /letter-trainer/game
+    move_trainer/        read moves (puzzles)             → /move-trainer/game
+    pieces/              piece values ("which side wins?") → /the-pieces/which-side-wins
     opening_trainer/     Opening Explorer (Stockfish)     → /opening-trainer       (partly wired — see Gotchas)
-    home/  about/  tactics_trainer/(placeholder)
+    about/  tactics_trainer/(placeholder)
   l10n/                  10 locales via gen-l10n; edit app_*.arb (template app_en.arb) then `flutter gen-l10n`
 ```
 
@@ -63,7 +70,12 @@ lib/
 
 | To… | Open |
 |---|---|
-| Add a new trainer | copy a `features/<x>/` folder; follow the Notifier pattern; register a route + `name` in `app.dart`; add a card in `home/screens/home_screen.dart` |
+| Add or change a drill (name, glyph, modes, options, route, best) | `features/drills/drill_catalog.dart` (+ `DrillId` in `drills/models/drill.dart`, strings in every `.arb`). Featured on home via `HomeScreen._visionTiles` / `_notationTiles` |
+| Add a new trainer | copy a `features/<x>/` folder; follow the Notifier pattern (public static `bestKeyFor`); screen = `TrainerLayout` + `PlayTopBar` + `BoardFrame` + `roundActions`; register a route + `name` in `app.dart` (parse `warmup=1`); describe its drill in the catalog |
+| Change the look (colours, type, components, board) | `core/theme/app_theme.dart`, `core/theme/board_theme.dart`, `core/ui/` |
+| Home layout / the warm-up card | `features/home/screens/home_screen.dart` |
+| Drill setup UI (options, modes, Start) | `features/drills/widgets/drill_setup_panel.dart`; list/sheet layout in `drills/screens/drill_section_screen.dart` |
+| The daily warm-up (its steps, the hand-off) | `features/drills/providers/warmup_provider.dart`, `drills/warmup_actions.dart` |
 | Change game logic / scoring / streaks / timers | that trainer's `providers/*_provider.dart` |
 | Change board rendering / feedback colors | that trainer's `screens/*_screen.dart` + the highlight getters in its `models/*_state.dart` |
 | Change a feedback delay or speed-round length | the trainer's `*_provider.dart` (hardcoded; values listed in Index → Quick reference) |
@@ -73,12 +85,12 @@ lib/
 | Touch the engine / eval bar / hint arrows | `core/services/stockfish_engine_io.dart` (native impl) + `features/opening_trainer/providers/opening_game_provider.dart`. Change the *contract* in `stockfish_engine_api.dart` and mirror it in both impls |
 | Gate a feature that needs the engine | check `kEngineAvailable` (from `core/services/stockfish_service.dart`) — never `kIsWeb`. See the home card + the `/opening-trainer` redirect |
 | Build / deploy the web app | `scripts/build_web.sh` → `build/web`, then `firebase deploy --only hosting`. Read the header comment first: the build is a workaround, not a plain `flutter build web` |
-| Ship an iOS build (TestFlight / App Store) | `scripts/build_ipa.sh` (`--check` first). Key in `~/.appstoreconnect/private_keys/`, IDs in `scripts/build_ipa.env` (gitignored). It picks the next build number from App Store Connect and writes it back to `pubspec.yaml`. Android: `scripts/deploy_play.sh` |
+| Ship an iOS build (TestFlight / App Store) | `scripts/build_ipa.sh` (`--check` first). Key in `~/.appstoreconnect/private_keys/`, IDs in `scripts/build_ipa.env` (gitignored). It picks the next build number from App Store Connect and writes it back to `pubspec.yaml`. Android: `scripts/deploy_play.sh` (`--track alpha` = closed test); Play Console walkthrough + listing text in `resources/store/android/PUBLISHING.md` |
 | Puzzle loading / regenerate puzzle set | `core/services/puzzle_service.dart`, `assets/puzzles/`, `scripts/curate_puzzles.py` |
 | Opening names / book moves | `core/services/opening_book_service.dart`, `assets/data/eco_openings.json` |
 | Audio clips or haptics | `core/audio/audio_service.dart` (`playMilestone` is driven by `MilestoneBanner`) |
 | Personal bests / saved progress | `core/services/personal_bests_service.dart` — `submit(key, score, lowerIsBetter:)` at game over; keys namespaced per trainer (`vision.`, `fileRank.`, `letter.`, `move.`, `pieces.`) |
-| Lay a screen out for iPad landscape | `core/widgets/trainer_layout.dart` (header/board/footer; check 820×1180 and 1180×820) |
+| Lay a screen out for tablet landscape | `core/widgets/trainer_layout.dart` (header/board/footer; check 820×1180 and 1180×820, plus a short window like 568×320) |
 | Add or translate UI text | `lib/l10n/app_*.arb` → `flutter gen-l10n` |
 | Add/change a route or navigation | `lib/app.dart` |
 | Analytics events | `core/services/analytics_service.dart` (called from the providers) |
@@ -87,6 +99,8 @@ lib/
 ## Conventions (do these)
 
 - **Notifier pattern** as above — keep screens thin; logic in the notifier.
+- **Design system:** colours from `AppColors` tokens (brand = actions/found, amber = target, vermilion = miss), text from `AppText`. **`AppText.mono` (Geist Mono) is for chess notation only** (squares, moves, piece letters); scores, streaks and timers use `AppText.number`. Boards: `AppBoard.settings(...)` inside `BoardFrame` (`showCoordinates: false` when the drill tests coordinates). Compose `core/ui/` components rather than styling Material widgets ad hoc.
+- **Game screens:** `PlayTopBar` (close → `closeDrill`, subtitle `warmupSubtitle(...) ??` the mode) and results through `roundActions(...)`, so every screen works as a warm-up step. Take a `warmup` bool from the route.
 - **Lifecycle:** game providers are `NotifierProvider.autoDispose`; cancel timers in `ref.onDispose`; after **every** `await` in a notifier, `if (!ref.mounted) return;` before touching `state`/`ref` (Riverpod 3 throws on a disposed Ref). Read services a continuation needs into fields in `build()`.
 - **Bests:** at game over call `personalBestsProvider.notifier.submit(...)` and store its result in state (`isNewRecord`); results cards read the state flag, never a getter computed after the best was saved.
 - **`copyWith` nullable idiom:** nullable fields take a `T? Function()?` thunk — pass `() => null` to *clear*, omit to *keep*. (Used in every `*_state.dart`.)
@@ -101,7 +115,7 @@ lib/
 - **Opening trainer is partly wired:** `/opening-trainer` hard-codes practice/easy/white; `OpeningMenuScreen` + the `LivesDisplay`/`MedalProgress`/`PrincipleCard` widgets are **built but never mounted**; there is no `/opening-trainer/game` route. Challenge mode, lives, and medals are unreachable.
 - **`feedback_service.dart` is HTTP feedback, not audio/haptics** — name collides with `audio_service.dart`. Haptics live in `AudioService`, which also **swallows playback errors** and builds asset paths from strings (renames fail silently).
 - **The audio session is `ambient`**, configured by `AudioService` before the first sound: the app mixes with other apps' audio (a parent's music keeps playing) and obeys the silent switch. Unconfigured, just_audio would fall back to a non-mixing "music" session that stops other audio on the first beep.
-- **iPad ignores the portrait lock.** Multitasking is on (all four iPad orientations, no `UIRequiresFullScreen` — which iPadOS 26 deprecates, and iPadOS 26 also refuses programmatic orientation changes). Every screen must work in landscape and in resizable windows: board screens use `TrainerLayout`, menus are width-capped and scroll. iPhone stays portrait (Info.plist + `setPreferredOrientations`).
+- **Tablets rotate; phones stay portrait.** iPad: all four orientations in Info.plist, no `UIRequiresFullScreen` (deprecated in iPadOS 26), so multitasking is on and iPadOS ignores any programmatic lock. iPhone: portrait only, from Info.plist. Android: `MainActivity.kt` asks for portrait when the smallest width is under 600 dp and leaves tablets free (it re-checks on configuration changes, so a foldable can switch). **Don't add `SystemChrome.setPreferredOrientations`** — on Android it would override `MainActivity` and lock tablets too. Every screen must work in landscape and in resizable windows (Stage Manager, split screen, the web app on a phone held sideways): board screens use `TrainerLayout`, which also goes side by side in windows shorter than 360 pt; menus are width-capped and scroll.
 - **Web ships WebAssembly only — `flutter build web` cannot build this app.** It always also compiles a dart2js fallback, and dart2js has no 64-bit ints, so dartchess's bitboards (`SquareSet(0xffffffffffffffff)`) fail to compile. dart2wasm has real int64 and is exact. Use `scripts/build_web.sh`. Consequence: the app needs a **WasmGC browser** (Chrome/Edge 119+, Firefox 120+, **Safari 18.2+ / iOS 18.2+**) — older iPads get a "no compatible build" error, not a graceful fallback.
 - **Two engines, one contract.** Native runs real Stockfish over `dart:ffi`; web runs **Stockfish 19 Lite WASM in a Web Worker** (`web/stockfish/`, loaded lazily on first `initialize()` so the home screen never fetches its 1.7 MB). Both implement `StockfishService`. The UCI protocol handling is **deliberately duplicated** between `stockfish_engine_io.dart` and `stockfish_engine_web.dart` rather than shared, to keep the shipping native engine untouchable — **fix protocol bugs in both** (same convention as `scan_engine.dart` ↔ `curate_scanning_positions.py`).
 - **One engine per Opening Explorer visit.** It starts on demand and the screen hands it back with `disposeWhenIdle()` when it closes — never dispose between moves. Restarts are expensive *and leak*: the `stockfish` package's native glue opens two pipes per start and never closes them (4 file descriptors each; iOS starts apps at a soft limit of 256), which is why `AppDelegate.swift` raises the soft limit to 4096. `isBusy` covers a start in flight; `stopSearch()` drops queued ops (`SearchCancelledException`); a timed-out search is drained to its `bestmove` before the next op; a failed start is sticky until Retry.
@@ -109,10 +123,13 @@ lib/
 - **Never let Firebase gate startup.** `main()` starts `Firebase.initializeApp` **in the background** (8s timeout, errors caught) and calls `runApp()` without waiting; `markFirebaseReady()` flips `analyticsAvailable` when it lands. On web the Firebase SDK is a runtime `import()` from gstatic; an ad blocker, privacy extension or DNS filter makes that import reject as an *unhandled JS promise*, so `initializeApp()` never completes **and never throws** — awaiting it before `runApp()` once stranded visitors on the splash screen, and the 8s-timeout fix still cost every blocked visitor 8 seconds. `AnalyticsService` resolves `FirebaseAnalytics.instance` lazily and only after `analyticsAvailable`; events (and `ScreenViewObserver` screen views) are dropped until then, and `logEvent`'s async failures are caught. Reproduce with DevTools request blocking on `*googletagmanager.com*` + `*firebase-analytics*`.
 - **Flutter's web output is NOT content-hashed**, so `build_web.sh` stamps the entrypoints itself: it rewrites `mainWasmPath` / `jsSupportRuntimePath` in `flutter_bootstrap.js` to `main.dart.wasm?v=<hash>`. Without that, a browser cannot tell one deploy from the next. **Cache headers alone cannot fix this** — changing `Cache-Control` does *not* evict what a browser already stored, so anyone served a long `max-age` stays pinned to that build until it expires (this happened: an early `immutable, max-age=31536000` left real visitors stuck on a pre-engine build, and a hard refresh did not clear it). `firebase.json` now serves everything `no-cache` except `web/stockfish/**`, whose version is in the filename. **Firebase applies the *last* matching `headers` rule**, so the catch-all `**` comes first and specific overrides after it.
 - **The web engine is single-threaded on purpose.** The multi-threaded WASM build needs `SharedArrayBuffer`, which would force COOP/COEP on the host and pull CanvasKit off the gstatic CDN. Single-threaded still hits depth 15 in 500 ms — past the hardest setting (skill 18 / 500 ms).
-- **Card art is sized for display, not for print — keep it that way.** The three card PNGs were 2500–2700 px wide (4 MB each) and are now **1200 px** (`app_icon.png` is **1024×1024**, the size iOS App Store icon generation needs, so `flutter_launcher_icons` still works). They render at ~330 pt. Dropping a fresh export straight from Illustrator re-bloats every platform. Full-res masters: `resources/art/` (outside `assets/`, so it ships nowhere) and git history.
+- **No illustrations ship.** The v1 home-card art and its BradBunR font are archived in `resources/art/v1-home-cards/` (not bundled). Drill icons are `DrillGlyph`s, drawn from board states. `app_icon.png` (**1024×1024**, what iOS App Store icon generation needs) stays in `assets/images/` for `flutter_launcher_icons`.
 - **`build_web.sh` prunes chessground assets** that Flutter can't tree-shake: 40 piece sets + 25 board textures → just the sets `lib/` actually references. That is ~1880 files and 29 MB. The keep-list is **derived from `PieceSet.*` in `lib/`**, so a new set is kept automatically; board textures are only dropped while `green` (solid-colour) is the sole scheme. Live first load is **~5.5 MB**.
 - **The `calvin-web` launch config also writes `build/web`** — it is `flutter run -d web-server --wasm`, so it leaves a *debug* build (12 MB wasm + source map, no cache-busting stamp, unpruned assets) in the deploy directory. Always re-run `./scripts/build_web.sh` right before `firebase deploy`.
-- **Inter is bundled, not downloaded** (`assets/google_fonts/` — Regular/Medium/SemiBold, plus `OFL.txt` registered with `LicenseRegistry`), and `main()` sets `GoogleFonts.config.allowRuntimeFetching = false`. google_fonts finds the files by name (`Inter-SemiBold.ttf`), so a newly used Inter weight needs its TTF added there or it throws.
+- **Fonts are bundled through pubspec `fonts:`** — `Bricolage` (Bricolage Grotesque static instances, weights 400–800) and `GeistMono` (400–600); their OFL texts in `assets/licenses/` are registered in `main()`. A weight outside those falls back to the nearest. google_fonts was removed; nothing is downloaded. Neither font has Cyrillic/CJK — those locales use the platform font.
+- **Each drill remembers its own setup** (`drillPrefsProvider`, `drill_prefs_v1`); Start and Continue record it, warm-up steps don't. The section routes kept their old paths and names (`/chess-vision` = `chess_vision_menu`, `/file-rank-trainer` = `file_rank_menu`) so deep links and analytics screen names still work; `?drill=` picks the drill.
+- **Warm-up steps replace each other** (`pushReplacement` in `roundActions`), so Back from any step goes home. A game screen opened with `warmup=1` but no active warm-up (e.g. after a restart) just plays normally.
+- **Avoid `IntrinsicHeight` around Material buttons** — their intrinsic height is underestimated, which overflowed the iPad-landscape home. The home's landscape row is top-aligned instead.
 - **English is the fallback locale** (`preferred-supported-locales: [en]` in `l10n.yaml`). Flutter falls back to the *first* supported locale for an unsupported device language, and gen-l10n otherwise sorts German first.
 - **No dark theme;** OS font-scaling is disabled (`TextScaler.noScaling`).
 - **iOS/Android bundle IDs currently mismatch** (Index → Project info; Explanations → iOS Signing).

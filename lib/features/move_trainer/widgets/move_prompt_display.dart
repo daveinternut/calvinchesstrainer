@@ -17,32 +17,25 @@ class MovePromptDisplay extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final puzzle = gameState.currentPuzzle;
     if (puzzle == null || gameState.isLoading) {
-      return const SizedBox(height: 64);
+      return const SizedBox(height: 120);
     }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          l10n.makeTheMove,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-        ),
-        const SizedBox(height: 4),
+        Text(l10n.makeTheMove, style: AppText.label.copyWith(fontSize: 15)),
         Text(
           puzzle.san,
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
+          style: AppText.mono.copyWith(
+            fontSize: 72,
+            height: 1.1,
+            letterSpacing: -2.5,
+          ),
         ),
-        const SizedBox(height: 2),
         Text(
           friendlyDescription(puzzle, l10n),
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary.withValues(alpha: 0.8),
-              ),
+          textAlign: TextAlign.center,
+          style: AppText.body.copyWith(fontSize: 15),
         ),
       ],
     );

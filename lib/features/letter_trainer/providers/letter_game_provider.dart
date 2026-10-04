@@ -22,8 +22,11 @@ class LetterGameNotifier extends Notifier<LetterGameState> {
   AudioService get _audio => ref.read(audioServiceProvider);
   AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
 
-  String get _bestKey =>
-      'letter.letters_${state.mode.name}_${state.isHardMode}';
+  /// Personal-best key, e.g. `letter.letters_speed_false`.
+  static String bestKeyFor(LetterTrainerMode mode, bool isHardMode) =>
+      'letter.letters_${mode.name}_$isHardMode';
+
+  String get _bestKey => bestKeyFor(state.mode, state.isHardMode);
 
   @override
   LetterGameState build() {

@@ -1,13 +1,14 @@
 # Calvin Chess Trainer
 
-A chess learning app that teaches fundamentals through interactive drills and timed challenges. Built by [Internut Education](https://internut.education).
+A chess training app for the skills puzzles take for granted: board vision and notation, through short timed drills. Built by [Internut Education](https://internut.education).
 
-## Training Modes
+## What's in it
 
-- **Chess Vision** — Eight drills: forks & skewers, knight sight, knight flight and pawn-attack navigation, plus find checks, find captures, hanging pieces and mate in 1 on curated real-game positions
-- **Chess Notation** — Audio calls out a file, rank, or square; tap it on the board. Plus piece letters, a move drill (given notation like "Qb6", make the move) and piece value ("which side wins?")
-- **Opening Explorer** — Play through openings with book moves, Stockfish hint arrows, a live evaluation bar and variations
-- Personal bests are saved on the device; every trainer lays out for iPad portrait and landscape
+- **Daily warm-up** — five quick timed drills (about five minutes): checks, loose pieces, forks, squares from Black's side, and a mate in one
+- **Vision** — eight drills: find checks, find captures and hanging pieces on curated real-game positions, forks & skewers, knight sight, knight flight, pawn attack, and mate in 1
+- **Notation** — squares and files & ranks (with spoken coordinates), read a move in notation and play it, piece letters, and piece values ("which side wins?")
+- **Opening Explorer** — play through openings with book moves, Stockfish hint arrows, a live evaluation bar and variations
+- Each drill remembers its setup, home's Continue card resumes the last one, and personal bests are saved on the device. Tablets (iPad and Android) rotate, and every screen lays out both ways; phones stay in portrait.
 - _Tactics Trainer — placeholder, not yet built_
 
 ## Tech Stack
@@ -78,7 +79,7 @@ flutter run
 
 It picks the build number for you (one above the highest build App Store Connect has seen, or pubspec's if that is higher), refuses a version Apple has already approved, and writes the number it used back to `pubspec.yaml` — commit that. Then: App Store Connect → the app → **TestFlight** (processing takes 5–15 min) → **App Store** tab → the version → pick the build → What's New → **Add for Review** → **Submit**. Other flags: `--no-upload`, `--skip-tests`, `--build-name 1.5.0`, `--wait`, `--dry-run`.
 
-**Android — Google Play:** `./scripts/deploy_play.sh` (setup in its header; it uses the same `+N` from `pubspec.yaml`).
+**Android — Google Play:** `./scripts/deploy_play.sh --track alpha|production` (setup in its header; it uses the same `+N` from `pubspec.yaml`). The first release, the closed test new personal accounts must run (12+ testers for 14 days), the Play Console answers and the listing text are in [`resources/store/android/PUBLISHING.md`](resources/store/android/PUBLISHING.md).
 
 **Web — Firebase Hosting:**
 

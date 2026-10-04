@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:chessground/chessground.dart';
 import 'package:dartchess/dartchess.dart'
     show Board, NormalMove, Piece, Side, Square, makeLegalMoves;
@@ -9,8 +8,15 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
 import '../../../core/audio/audio_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/board_theme.dart';
+import '../../../core/ui/board_frame.dart';
+import '../../../core/ui/buttons.dart';
+import '../../../core/ui/components.dart';
 import '../../../core/widgets/square_name_overlay.dart';
 import '../../../core/widgets/trainer_layout.dart';
+import '../../drills/drill_catalog.dart';
+import '../../drills/models/drill.dart';
+import '../../drills/warmup_actions.dart';
 import '../../file_rank_trainer/widgets/milestone_banner.dart';
 import '../../file_rank_trainer/widgets/streak_counter.dart';
 import '../../file_rank_trainer/widgets/timer_bar.dart';
@@ -27,12 +33,16 @@ class ChessVisionGameScreen extends ConsumerStatefulWidget {
   final TargetPiece target;
   final VisionMode mode;
 
+  /// A step of the daily warm-up (the results then move on to the next).
+  final bool warmup;
+
   const ChessVisionGameScreen({
     super.key,
     required this.drill,
     required this.piece,
     this.target = TargetPiece.rook,
     required this.mode,
+    this.warmup = false,
   });
 
   @override
@@ -84,37 +94,25 @@ class _ChessVisionGameScreenState
     final mode = _modeOf(gameState);
     final pending = !_started || gameState.isLoading;
     final streak = pending ? 0 : gameState.streak;
+    final orientation = pending ? Side.white : gameState.boardOrientation;
 
     return Scaffold(
-      appBar: AppBar(
-        title: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(_title(l10n, mode)),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(
-              child: Text(
-                pending ? '' : _scoreText(gameState, l10n, mode),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Stack(
           children: [
             TrainerLayout(
+              topBar: PlayTopBar(
+                title: DrillCatalog.forVision(widget.drill).title(l10n),
+                subtitle: warmupSubtitle(ref, l10n, widget.warmup) ??
+                    _subtitle(l10n, mode),
+                onClose: () => closeDrill(context),
+                closeTooltip: l10n.endDrill,
+                trailing: Text(pending ? '' : _scoreText(gameState, l10n, mode)),
+              ),
               header: [
                 const SizedBox(height: 8),
+                _buildPromptBlock(gameState, l10n, pending),
+                const SizedBox(height: 12),
                 _buildProgressArea(gameState, l10n, mode, pending),
                 const SizedBox(height: 8),
                 StreakCounter(
@@ -123,8 +121,12 @@ class _ChessVisionGameScreenState
                 ),
                 const SizedBox(height: 8),
               ],
-              board: (context, size) =>
-                  _buildBoard(gameState, size, l10n, pending),
+              board: (context, size) => BoardFrame(
+                size: size,
+                orientation: orientation,
+                builder: (context, boardSize) =>
+                    _buildBoard(gameState, boardSize, l10n, pending),
+              ),
               footer: [
                 ..._buildFooter(gameState, l10n, mode, pending),
                 const SizedBox(height: 16),
@@ -135,14 +137,58 @@ class _ChessVisionGameScreenState
             MilestoneBanner(streak: streak),
             if (!pending && gameState.isGameOver)
               Positioned.fill(
-                child: ColoredBox(
-                  color: Colors.black54,
-                  child: _buildResultsOverlay(gameState, l10n, mode),
-                ),
+                child: _buildResultsOverlay(gameState, l10n, mode),
               ),
           ],
         ),
       ),
+    );
+  }
+
+  /// The top bar's second line: the piece and mode the game runs with.
+  String _subtitle(AppLocalizations l10n, VisionMode mode) {
+    final drill = DrillCatalog.forVision(widget.drill);
+    final drillMode = switch (mode) {
+      VisionMode.practice => DrillMode.practice,
+      VisionMode.speed => DrillMode.speed,
+      VisionMode.concentric => DrillMode.concentric,
+    };
+    return [
+      if (drill.usesPiece) widget.piece.localizedLabel(l10n),
+      if (drill.usesTarget) widget.target.localizedLabel(l10n),
+      drill.modeLabel(drillMode, l10n),
+    ].join(' · ');
+  }
+
+  /// The question being asked: a big headline, the full instruction under
+  /// it, and (on real positions) whose move it is.
+  Widget _buildPromptBlock(
+      ChessVisionState gameState, AppLocalizations l10n, bool pending) {
+    final title = switch (widget.drill) {
+      VisionDrillType.forksAndSkewers => l10n.promptTitleForks,
+      VisionDrillType.knightSight => l10n.promptTitleKnightSight,
+      VisionDrillType.knightFlight => l10n.promptTitleKnightFlight,
+      VisionDrillType.pawnAttack => l10n.promptTitlePawnAttack,
+      VisionDrillType.findChecks => l10n.promptTitleChecks,
+      VisionDrillType.findCaptures => l10n.promptTitleCaptures,
+      VisionDrillType.hangingPieces => l10n.promptTitleHanging,
+      VisionDrillType.mateInOne => l10n.promptTitleMate,
+    };
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (widget.drill.isScanDrill) ...[
+          _buildSideToPlayBadge(gameState, l10n, pending),
+          const SizedBox(height: 10),
+        ],
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: AppText.display.copyWith(fontSize: 30),
+        ),
+        const SizedBox(height: 4),
+        _buildDrillPrompt(l10n),
+      ],
     );
   }
 
@@ -152,23 +198,7 @@ class _ChessVisionGameScreenState
       VisionMode mode, bool pending) {
     final drill = widget.drill;
     return [
-      if (drill == VisionDrillType.forksAndSkewers &&
-          mode != VisionMode.concentric) ...[
-        const SizedBox(height: 12),
-        _buildNoneButton(gameState, l10n, pending),
-      ],
-      if (drill.isTapScanDrill && !gameState.loadFailed) ...[
-        const SizedBox(height: 12),
-        _buildScanSkipButton(gameState, l10n, pending),
-      ],
-      if (drill == VisionDrillType.pawnAttack) ...[
-        const SizedBox(height: 12),
-        _buildStartOverButton(gameState, l10n, pending),
-      ],
-      if (_showFlightRetryButtons(gameState, pending)) ...[
-        const SizedBox(height: 12),
-        _buildFlightRetryButtons(l10n),
-      ],
+      // Clocks first, then the actions, which sit lowest (thumb reach).
       if (mode == VisionMode.speed &&
           drill != VisionDrillType.pawnAttack &&
           !gameState.loadFailed) ...[
@@ -189,6 +219,23 @@ class _ChessVisionGameScreenState
         const SizedBox(height: 12),
         _buildPawnAttackStopwatch(gameState, l10n, pending),
       ],
+      if (drill == VisionDrillType.forksAndSkewers &&
+          mode != VisionMode.concentric) ...[
+        const SizedBox(height: 12),
+        _buildNoneButton(gameState, l10n, pending),
+      ],
+      if (drill.isTapScanDrill && !gameState.loadFailed) ...[
+        const SizedBox(height: 12),
+        _buildScanSkipButton(gameState, l10n, pending),
+      ],
+      if (drill == VisionDrillType.pawnAttack) ...[
+        const SizedBox(height: 12),
+        _buildStartOverButton(gameState, l10n, pending),
+      ],
+      if (_showFlightRetryButtons(gameState, pending)) ...[
+        const SizedBox(height: 12),
+        _buildFlightRetryButtons(l10n),
+      ],
     ];
   }
 
@@ -203,32 +250,20 @@ class _ChessVisionGameScreenState
     return Row(
       children: [
         Expanded(
-          child: OutlinedButton.icon(
+          child: AppSecondaryButton(
             onPressed: () =>
                 ref.read(chessVisionProvider.notifier).retryFlight(),
-            icon: const Icon(Icons.replay_rounded, size: 20),
-            label: Text(l10n.retry),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
+            icon: Icons.replay_rounded,
+            label: l10n.retry,
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: FilledButton.icon(
+          child: AppPrimaryButton(
             onPressed: () =>
                 ref.read(chessVisionProvider.notifier).skipFlight(),
-            icon: const Icon(Icons.skip_next_rounded, size: 20),
-            label: Text(l10n.skip),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
+            icon: Icons.skip_next_rounded,
+            label: l10n.skip,
           ),
         ),
       ],
@@ -242,28 +277,11 @@ class _ChessVisionGameScreenState
     required String label,
     required VoidCallback? onPressed,
   }) {
-    final enabled = onPressed != null;
-    return SizedBox(
-      height: 48,
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 20),
-        label: Text(label),
-        style: OutlinedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          side: BorderSide(
-            color: enabled ? AppColors.textSecondary : Colors.grey.shade300,
-          ),
-          foregroundColor: AppColors.textPrimary,
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+    return AppSecondaryButton(
+      label: label,
+      icon: icon,
+      onPressed: onPressed,
+      expand: true,
     );
   }
 
@@ -317,22 +335,14 @@ class _ChessVisionGameScreenState
       );
     }
     return SizedBox(
-      height: 48,
       width: double.infinity,
       child: FilledButton.icon(
         onPressed: onPressed,
         icon: const Icon(Icons.restart_alt_rounded, size: 20),
         label: Text(l10n.startOver),
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.goalAmber,
-          foregroundColor: AppColors.textPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          backgroundColor: AppColors.amber,
+          foregroundColor: AppColors.ink,
         ),
       ),
     );
@@ -342,87 +352,59 @@ class _ChessVisionGameScreenState
 
   Widget _buildProgressArea(ChessVisionState gameState, AppLocalizations l10n,
       VisionMode mode, bool pending) {
-    final prompt = _buildDrillPrompt(l10n);
+    List<String> labels() => pending
+        ? const []
+        : [for (final sq in gameState.foundSquares) gameState.foundLabel(sq)];
     switch (widget.drill) {
       case VisionDrillType.forksAndSkewers:
       case VisionDrillType.knightSight:
-        return Column(
-          children: [
-            prompt,
-            const SizedBox(height: 4),
-            FoundProgressIndicator(
-              totalCorrect: pending ? 0 : gameState.totalCorrect,
-              totalFound: pending ? 0 : gameState.totalFound,
-              showNoneHint: widget.drill == VisionDrillType.forksAndSkewers &&
-                  mode != VisionMode.concentric &&
-                  !pending &&
-                  !gameState.isRoundComplete &&
-                  !gameState.showingRevealedAnswer,
-              l10n: l10n,
-            ),
-          ],
+        return FoundProgressIndicator(
+          totalCorrect: pending ? 0 : gameState.totalCorrect,
+          totalFound: pending ? 0 : gameState.totalFound,
+          foundLabels: labels(),
+          showNoneHint: widget.drill == VisionDrillType.forksAndSkewers &&
+              mode != VisionMode.concentric &&
+              !pending &&
+              !gameState.isRoundComplete &&
+              !gameState.showingRevealedAnswer,
+          l10n: l10n,
         );
       case VisionDrillType.knightFlight:
-        return Column(
-          children: [
-            prompt,
-            const SizedBox(height: 4),
-            _buildFlightProgress(gameState, l10n, pending),
-          ],
-        );
+        return _buildFlightProgress(gameState, l10n, pending);
       case VisionDrillType.pawnAttack:
-        return Column(
-          children: [
-            prompt,
-            const SizedBox(height: 4),
-            _buildPawnAttackProgress(gameState, l10n, mode, pending),
-          ],
-        );
+        return _buildPawnAttackProgress(gameState, l10n, mode, pending);
       case VisionDrillType.findChecks:
       case VisionDrillType.findCaptures:
       case VisionDrillType.hangingPieces:
         // The three tap drills render visually identical real positions —
-        // only this prompt tells the kid which question is being asked.
-        return Column(
-          children: [
-            _buildSideToPlayBadge(gameState, l10n, pending),
-            const SizedBox(height: 4),
-            prompt,
-            const SizedBox(height: 4),
-            if (!pending && gameState.isRoundComplete)
-              SizedBox(
-                height: 36,
-                child: Center(
-                  child: Text(
-                    l10n.allClear,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.correctGreen,
-                    ),
-                  ),
+        // only the prompt tells the player which question is being asked.
+        if (!pending && gameState.isRoundComplete) {
+          return SizedBox(
+            height: 44,
+            child: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded, color: AppColors.brand),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.allClear,
+                  style: AppText.cardTitle.copyWith(color: AppColors.brand),
                 ),
-              )
-            else
-              FoundProgressIndicator(
-                totalCorrect: pending ? 0 : gameState.totalCorrect,
-                totalFound: pending ? 0 : gameState.totalFound,
-                l10n: l10n,
-              ),
-          ],
+              ],
+            ),
+          );
+        }
+        return FoundProgressIndicator(
+          totalCorrect: pending ? 0 : gameState.totalCorrect,
+          totalFound: pending ? 0 : gameState.totalFound,
+          foundLabels: labels(),
+          l10n: l10n,
         );
       case VisionDrillType.mateInOne:
-        return Column(
-          children: [
-            _buildSideToPlayBadge(gameState, l10n, pending),
-            const SizedBox(height: 4),
-            prompt,
-          ],
-        );
+        return const SizedBox.shrink();
     }
   }
 
-  /// One instruction line per drill, styled the same for all eight.
+  /// The full instruction, under the headline.
   Widget _buildDrillPrompt(AppLocalizations l10n) {
     final prompt = switch (widget.drill) {
       VisionDrillType.forksAndSkewers => l10n.visionPromptForks,
@@ -437,17 +419,13 @@ class _ChessVisionGameScreenState
     return Text(
       prompt,
       textAlign: TextAlign.center,
-      style: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textSecondary,
-      ),
+      style: AppText.body.copyWith(fontSize: 14.5),
     );
   }
 
-  /// "White to play" / "Black to play" pill — real positions come with
-  /// either side to move (and the board flips to match), so the mover must
-  /// be unmistakable the moment the position loads.
+  /// "White to play" / "Black to play" — real positions come with either
+  /// side to move (and the board flips to match), so the mover must be
+  /// unmistakable the moment the position loads.
   Widget _buildSideToPlayBadge(
       ChessVisionState gameState, AppLocalizations l10n, bool pending) {
     // Fixed height so the layout doesn't jump when the position arrives.
@@ -455,37 +433,42 @@ class _ChessVisionGameScreenState
       return const SizedBox(height: 26);
     }
     final isWhite = gameState.scanSideToMove == Side.white;
-    return Container(
-      height: 26,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: isWhite ? Colors.white : Colors.grey.shade900,
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: Colors.grey.shade400),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: isWhite ? Colors.white : Colors.black,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey.shade600),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            isWhite ? l10n.whiteToPlay : l10n.blackToPlay,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: isWhite ? AppColors.textPrimary : Colors.white,
+    return SideToMovePill(
+      side: gameState.scanSideToMove,
+      label: isWhite ? l10n.whiteToPlay : l10n.blackToPlay,
+    );
+  }
+
+  /// A row of small stat tiles (Knight Flight and Pawn Attack progress).
+  Widget _statRow(List<(String, bool)> stats) {
+    return Row(
+      children: [
+        for (var i = 0; i < stats.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.line),
+              ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  stats[i].$1,
+                  style: AppText.body.copyWith(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: stats[i].$2 ? AppColors.verm : AppColors.ink,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
-      ),
+      ],
     );
   }
 
@@ -493,86 +476,21 @@ class _ChessVisionGameScreenState
       ChessVisionState gameState, AppLocalizations l10n, bool pending) {
     final min = pending ? 0 : gameState.minimumMoves ?? 0;
     final current = pending ? 0 : gameState.flightPath.length;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            l10n.minimumMoves(min),
-            style: TextStyle(
-              fontSize: 15,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(width: 24),
-          Text(
-            l10n.yourMoves(current),
-            style: TextStyle(
-              fontSize: 15,
-              color: current > min
-                  ? AppColors.incorrectRed
-                  : AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
+    return _statRow([
+      (l10n.minimumMoves(min), false),
+      (l10n.yourMoves(current), current > min),
+    ]);
   }
 
   Widget _buildPawnAttackProgress(ChessVisionState gameState,
       AppLocalizations l10n, VisionMode mode, bool pending) {
     final remaining = pending ? 0 : gameState.remainingPawns.length;
-    final difficulty = gameState.pawnAttackDifficulty;
-    final isTimed = mode == VisionMode.speed;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            l10n.pawnsRemaining(remaining),
-            style: TextStyle(
-              fontSize: 15,
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          if (isTimed) ...[
-            const SizedBox(width: 24),
-            Text(
-              l10n.levelOfEight(difficulty),
-              style: TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-          const SizedBox(width: 24),
-          Text(
-            l10n.movesCount(pending ? 0 : gameState.pawnAttackMoves),
-            style: TextStyle(
-              fontSize: 15,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
+    return _statRow([
+      (l10n.pawnsRemaining(remaining), false),
+      if (mode == VisionMode.speed)
+        (l10n.levelOfEight(gameState.pawnAttackDifficulty), false),
+      (l10n.movesCount(pending ? 0 : gameState.pawnAttackMoves), false),
+    ]);
   }
 
   // --- Board ---
@@ -590,11 +508,7 @@ class _ChessVisionGameScreenState
         size: boardSize,
         orientation: Side.white,
         fen: Board.empty.fen,
-        settings: ChessboardSettings(
-          enableCoordinates: true,
-          colorScheme: ChessboardColorScheme.green,
-          pieceAssets: pieceAssets,
-        ),
+        settings: AppBoard.settings(),
       );
     }
 
@@ -661,13 +575,7 @@ class _ChessVisionGameScreenState
         size: boardSize,
         orientation: Side.white,
         fen: gameState.boardFen,
-        settings: ChessboardSettings(
-          enableCoordinates: true,
-          colorScheme: ChessboardColorScheme.green,
-          pieceAssets: pieceAssets,
-          animationDuration: const Duration(milliseconds: 200),
-          showValidMoves: showDots,
-        ),
+        settings: AppBoard.settings(showValidMoves: showDots),
         squareHighlights: gameState.allHighlights,
         shapes: _buildShapes(gameState, pieceAssets),
         game: GameData(
@@ -689,12 +597,7 @@ class _ChessVisionGameScreenState
       size: boardSize,
       orientation: gameState.boardOrientation,
       fen: gameState.boardFen,
-      settings: ChessboardSettings(
-        enableCoordinates: true,
-        colorScheme: ChessboardColorScheme.green,
-        pieceAssets: pieceAssets,
-        animationDuration: const Duration(milliseconds: 200),
-      ),
+      settings: AppBoard.settings(),
       squareHighlights: gameState.allHighlights,
       shapes: _buildShapes(gameState, pieceAssets),
       onTouchedSquare: onTap,
@@ -721,26 +624,22 @@ class _ChessVisionGameScreenState
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                const Icon(
                   Icons.error_outline_rounded,
                   size: 48,
-                  color: AppColors.textSecondary,
+                  color: AppColors.ink3,
                 ),
                 const SizedBox(height: 12),
                 Text(
                   l10n.loadFailed,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: AppText.cardTitle,
                 ),
                 const SizedBox(height: 16),
-                FilledButton.icon(
+                AppPrimaryButton(
                   onPressed: _restartGame,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: Text(l10n.retry),
+                  icon: Icons.refresh_rounded,
+                  label: l10n.retry,
                 ),
               ],
             ),
@@ -775,13 +674,9 @@ class _ChessVisionGameScreenState
       orientation: orientation,
       fen: fen,
       lastMove: gameState.mateFeedback == null ? puzzle.setupMove : null,
-      settings: ChessboardSettings(
-        enableCoordinates: true,
-        colorScheme: ChessboardColorScheme.green,
-        pieceAssets: pieceAssets,
+      settings: AppBoard.settings(
         animationDuration: const Duration(milliseconds: 250),
         showValidMoves: isInteractive,
-        showLastMove: true,
         autoQueenPromotion: true,
       ),
       game: GameData(
@@ -1013,106 +908,83 @@ class _ChessVisionGameScreenState
     return ISet(shapes);
   }
 
-  // --- Pawn Attack stopwatch ---
+  // --- Stopwatch modes (timed Pawn Attack, concentric) ---
 
-  Widget _buildPawnAttackStopwatch(
-      ChessVisionState gameState, AppLocalizations l10n, bool pending) {
-    final elapsed = pending ? 0 : gameState.elapsedSeconds;
-    final minutes = elapsed ~/ 60;
-    final seconds = elapsed % 60;
-    final timeStr = '$minutes:${seconds.toString().padLeft(2, '0')}';
-    final difficulty = gameState.pawnAttackDifficulty;
-    // Levels cleared, so the bar fills completely when the last one falls.
-    final progress = pending
-        ? 0.0
-        : (gameState.configurationsCompleted / _pawnAttackLevels)
-            .clamp(0.0, 1.0);
+  static String _clock(int seconds) =>
+      '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
 
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              l10n.levelOfEight(difficulty),
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
+  /// A stopwatch card: elapsed time big, a caption, and a progress bar.
+  Widget _stopwatchCard({
+    required String caption,
+    required int elapsed,
+    required double progress,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                _clock(elapsed),
+                style: AppText.number.copyWith(fontSize: 36, height: 1.1),
               ),
-            ),
-            Text(
-              timeStr,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  caption,
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.caption,
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 6,
-            backgroundColor: Colors.grey.shade200,
-            valueColor:
-                const AlwaysStoppedAnimation<Color>(Color(0xFFE65100)),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: AppColors.well,
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.brand),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  // --- Concentric progress ---
+  Widget _buildPawnAttackStopwatch(
+      ChessVisionState gameState, AppLocalizations l10n, bool pending) {
+    // Levels cleared, so the bar fills completely when the last one falls.
+    return _stopwatchCard(
+      caption: l10n.levelOfEight(gameState.pawnAttackDifficulty),
+      elapsed: pending ? 0 : gameState.elapsedSeconds,
+      progress: pending
+          ? 0.0
+          : (gameState.configurationsCompleted / _pawnAttackLevels)
+              .clamp(0.0, 1.0),
+    );
+  }
 
   Widget _buildConcentricProgress(
       ChessVisionState gameState, AppLocalizations l10n, bool pending) {
     final total = pending ? 0 : gameState.concentricTotal;
     final index = pending ? 0 : gameState.concentricIndex;
-    final progress = total > 0 ? index / total : 0.0;
-    final elapsed = pending ? 0 : gameState.elapsedSeconds;
-    final minutes = elapsed ~/ 60;
-    final seconds = elapsed % 60;
-    final timeStr = '$minutes:${seconds.toString().padLeft(2, '0')}';
-
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              l10n.positionOfTotal(index, total),
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Text(
-              timeStr,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 6,
-            backgroundColor: Colors.grey.shade200,
-            valueColor:
-                const AlwaysStoppedAnimation<Color>(Color(0xFF6A1B9A)),
-          ),
-        ),
-      ],
+    return _stopwatchCard(
+      caption: l10n.positionOfTotal(index, total),
+      elapsed: pending ? 0 : gameState.elapsedSeconds,
+      progress: total > 0 ? index / total : 0.0,
     );
   }
 
@@ -1120,25 +992,34 @@ class _ChessVisionGameScreenState
 
   Widget _buildResultsOverlay(
       ChessVisionState gameState, AppLocalizations l10n, VisionMode mode) {
-    if (mode == VisionMode.concentric) {
-      return _buildTimedResults(
-        gameState,
-        l10n,
-        title: l10n.drillComplete,
-        lastStat: _StatRow(
-            label: l10n.bestStreak, value: '${gameState.bestStreak}'),
-      );
-    }
+    final actions = roundActions(
+      context,
+      ref,
+      warmup: widget.warmup,
+      score: gameState.configurationsCompleted,
+      onPlayAgain: _restartGame,
+    );
 
-    if (widget.drill == VisionDrillType.pawnAttack &&
-        mode == VisionMode.speed) {
-      return _buildTimedResults(
-        gameState,
-        l10n,
-        title: l10n.allClear,
-        lastStat: _StatRow(
-            label: l10n.rounds,
-            value: '${gameState.configurationsCompleted}'),
+    // Stopwatch modes rank by time: the time is the score.
+    final stopwatchStat = mode == VisionMode.concentric
+        ? (l10n.bestStreak, '${gameState.bestStreak}')
+        : (widget.drill == VisionDrillType.pawnAttack &&
+                mode == VisionMode.speed)
+            ? (l10n.rounds, '${gameState.configurationsCompleted}')
+            : null;
+    if (stopwatchStat != null) {
+      return ResultsSheet(
+        heading: mode == VisionMode.concentric
+            ? l10n.drillComplete
+            : l10n.allClear,
+        score: _clock(gameState.elapsedSeconds),
+        scoreCaption: l10n.time,
+        isNewRecord: gameState.isNewRecord,
+        stats: [(l10n.errors, '${gameState.totalErrors}'), stopwatchStat],
+        primaryLabel: actions.primaryLabel,
+        onPrimary: actions.onPrimary,
+        secondaryLabel: actions.secondaryLabel,
+        onSecondary: actions.onSecondary,
       );
     }
 
@@ -1147,102 +1028,10 @@ class _ChessVisionGameScreenState
       totalAttempts: gameState.configurationsCompleted + gameState.totalErrors,
       bestStreak: gameState.bestStreak,
       isNewRecord: gameState.isNewRecord,
-      onPlayAgain: _restartGame,
-      onBack: () => context.pop(),
-    );
-  }
-
-  /// Results for the stopwatch modes (concentric, timed Pawn Attack): time,
-  /// errors and one mode-specific stat.
-  Widget _buildTimedResults(
-    ChessVisionState gameState,
-    AppLocalizations l10n, {
-    required String title,
-    required Widget lastStat,
-  }) {
-    final minutes = gameState.elapsedSeconds ~/ 60;
-    final seconds = gameState.elapsedSeconds % 60;
-    final timeStr = '$minutes:${seconds.toString().padLeft(2, '0')}';
-
-    return Center(
-      child: SingleChildScrollView(
-        child: Card(
-          margin: const EdgeInsets.all(32),
-          elevation: 8,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (gameState.isNewRecord) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.correctGreen,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      l10n.newRecord,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 24),
-                _StatRow(label: l10n.time, value: timeStr),
-                const SizedBox(height: 10),
-                _StatRow(label: l10n.errors, value: '${gameState.totalErrors}'),
-                const SizedBox(height: 10),
-                lastStat,
-                const SizedBox(height: 28),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => context.pop(),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(l10n.menu),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: FilledButton(
-                        onPressed: _restartGame,
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(l10n.playAgain),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      primaryLabel: actions.primaryLabel,
+      onPlayAgain: actions.onPrimary,
+      secondaryLabel: actions.secondaryLabel,
+      onBack: actions.onSecondary,
     );
   }
 
@@ -1257,37 +1046,7 @@ class _ChessVisionGameScreenState
         );
   }
 
-  // --- Title & score ---
-
-  String _title(AppLocalizations l10n, VisionMode mode) {
-    switch (widget.drill) {
-      case VisionDrillType.forksAndSkewers:
-        final pieceName = widget.piece.localizedLabel(l10n);
-        final modeName = switch (mode) {
-          VisionMode.practice => l10n.practice,
-          VisionMode.speed => l10n.speedRound,
-          VisionMode.concentric => l10n.concentric,
-        };
-        return l10n.titleForksAndSkewers(pieceName, modeName);
-      case VisionDrillType.knightSight:
-        return l10n.knightSight;
-      case VisionDrillType.knightFlight:
-        return l10n.knightFlight;
-      case VisionDrillType.pawnAttack:
-        final pieceName = widget.piece.localizedLabel(l10n);
-        final modeName =
-            mode == VisionMode.speed ? l10n.timed : l10n.practice;
-        return l10n.titlePawnAttack(pieceName, modeName);
-      case VisionDrillType.findChecks:
-        return l10n.scanDrillChecks;
-      case VisionDrillType.findCaptures:
-        return l10n.scanDrillCaptures;
-      case VisionDrillType.hangingPieces:
-        return l10n.scanDrillHanging;
-      case VisionDrillType.mateInOne:
-        return l10n.scanDrillMate;
-    }
-  }
+  // --- Score ---
 
   String _scoreText(
       ChessVisionState gameState, AppLocalizations l10n, VisionMode mode) {
@@ -1299,32 +1058,5 @@ class _ChessVisionGameScreenState
       return '${gameState.configurationsCompleted}/$_pawnAttackLevels';
     }
     return l10n.solvedCount(gameState.configurationsCompleted);
-  }
-}
-
-class _StatRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _StatRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
   }
 }

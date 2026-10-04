@@ -28,43 +28,40 @@ class PromptDisplay extends StatelessWidget {
       TrainerSubject.pieceValue => '',
     };
 
-    return Text(
-      subjectText,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: AppColors.textSecondary,
-          ),
-      textAlign: TextAlign.center,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Text(
+        subjectText,
+        style: AppText.title.copyWith(fontSize: 20),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 
+  /// "Tap square" over the prompt itself, huge and in mono: the one thing
+  /// the player has to read.
   Widget _buildForwardPrompt(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final prompt = gameState.currentPrompt;
-    if (prompt == null) return const SizedBox.shrink();
+    if (prompt == null) return const SizedBox(height: 108);
 
     final typeLabel = gameState.subject == TrainerSubject.squares
         ? l10n.tapSquare
         : (gameState.currentPromptIsFile ? l10n.tapFile : l10n.tapRank);
-    final displayValue = prompt;
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
+        Text(typeLabel, style: AppText.label.copyWith(fontSize: 15)),
         Text(
-          typeLabel,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          displayValue,
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
+          prompt,
+          style: AppText.mono.copyWith(
+            fontSize: 84,
+            height: 1.05,
+            letterSpacing: -3,
+          ),
         ),
       ],
     );
   }
-
 }

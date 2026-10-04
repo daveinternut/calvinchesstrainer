@@ -121,7 +121,7 @@ class _StreakCounterState extends State<StreakCounter>
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 72,
+      height: 70,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -134,8 +134,8 @@ class _StreakCounterState extends State<StreakCounter>
                   height: 80 + _glowAnimation.value * 40,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.correctGreen.withValues(
-                      alpha: 0.15 * (1 - _glowAnimation.value),
+                    color: AppColors.brand.withValues(
+                      alpha: 0.14 * (1 - _glowAnimation.value),
                     ),
                   ),
                 );
@@ -162,14 +162,10 @@ class _StreakCounterState extends State<StreakCounter>
                         : AppLocalizations.of(
                             context,
                           )!.bestLabel(widget.bestStreak),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: _showMilestone
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                      color: _showMilestone
-                          ? AppColors.correctGreen
-                          : AppColors.textSecondary.withValues(alpha: 0.7),
+                    style: AppText.caption.copyWith(
+                      fontWeight:
+                          _showMilestone ? FontWeight.w700 : FontWeight.w500,
+                      color: _showMilestone ? AppColors.brand : AppColors.ink3,
                     ),
                   ),
               ],
@@ -183,10 +179,10 @@ class _StreakCounterState extends State<StreakCounter>
   Widget _buildStreakText(bool isMilestone) {
     return Text(
       '${widget.streak}',
-      style: TextStyle(
-        fontSize: isMilestone ? 44 : 36,
-        fontWeight: FontWeight.bold,
-        color: isMilestone ? AppColors.correctGreen : AppColors.primary,
+      style: AppText.number.copyWith(
+        fontSize: isMilestone ? 42 : 36,
+        height: 1.1,
+        color: isMilestone ? AppColors.brand : AppColors.ink,
       ),
     );
   }
