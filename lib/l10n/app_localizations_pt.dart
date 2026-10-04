@@ -348,7 +348,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get aboutCreditsBody =>
-      '• Puzzles de xadrez do banco de dados Lichess (licença CC0)\n• Interface do tabuleiro por Lichess chessground\n• Lógica de xadrez por Lichess dartchess\n• Clipes de voz por ElevenLabs\n• Desenvolvido com Flutter e Dart';
+      '• Consultor de xadrez: Dattasai Kilari\n• Puzzles de xadrez do banco de dados Lichess (licença CC0)\n• Interface do tabuleiro por Lichess chessground\n• Lógica de xadrez por Lichess dartchess\n• Clipes de voz por ElevenLabs\n• Desenvolvido com Flutter e Dart';
 
   @override
   String get aboutInspired => 'Inspirado em Rapid Chess Improvement';

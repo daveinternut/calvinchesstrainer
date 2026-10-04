@@ -350,7 +350,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get aboutCreditsBody =>
-      '• Шахматные задачи из базы Lichess (лицензия CC0)\n• Интерфейс доски: Lichess chessground\n• Шахматная логика: Lichess dartchess\n• Голосовые клипы: ElevenLabs\n• Разработано на Flutter и Dart';
+      '• Шахматный консультант: Dattasai Kilari\n• Шахматные задачи из базы Lichess (лицензия CC0)\n• Интерфейс доски: Lichess chessground\n• Шахматная логика: Lichess dartchess\n• Голосовые клипы: ElevenLabs\n• Разработано на Flutter и Dart';
 
   @override
   String get aboutInspired => 'Вдохновлено книгой Rapid Chess Improvement';

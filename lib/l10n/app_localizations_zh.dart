@@ -347,7 +347,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get aboutCreditsBody =>
-      '• 国际象棋谜题来自Lichess数据库（CC0许可）\n• 棋盘界面由Lichess chessground提供\n• 棋逻辑由Lichess dartchess提供\n• 语音片段由ElevenLabs制作\n• 使用Flutter和Dart开发';
+      '• 国际象棋顾问：Dattasai Kilari\n• 国际象棋谜题来自Lichess数据库（CC0许可）\n• 棋盘界面由Lichess chessground提供\n• 棋逻辑由Lichess dartchess提供\n• 语音片段由ElevenLabs制作\n• 使用Flutter和Dart开发';
 
   @override
   String get aboutInspired => '灵感来自《Rapid Chess Improvement》';

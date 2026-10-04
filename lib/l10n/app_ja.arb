@@ -101,7 +101,7 @@
   "aboutTrainingModes": "トレーニングモード",
   "aboutTrainingModesBody": "• 探索 — 自分のペースで学ぶ\n• 練習 — 自分を試して連続正解を伸ばそう\n• スピードラウンド — 時間と勝負（30秒または60秒）して新記録を目指そう\n• ハードモード — 黒の側から盤を見る",
   "aboutCredits": "クレジットと謝辞",
-  "aboutCreditsBody": "• チェスパズル: Lichessデータベース（CC0ライセンス）\n• 盤面UI: Lichess chessground\n• チェスロジック: Lichess dartchess\n• 音声クリップ: ElevenLabs\n• FlutterとDartで開発",
+  "aboutCreditsBody": "• チェスアドバイザー: Dattasai Kilari\n• チェスパズル: Lichessデータベース（CC0ライセンス）\n• 盤面UI: Lichess chessground\n• チェスロジック: Lichess dartchess\n• 音声クリップ: ElevenLabs\n• FlutterとDartで開発",
   "aboutInspired": "Rapid Chess Improvementに触発されて",
   "aboutInspiredBody": "このアプリはMichael de la Mazaの著書Rapid Chess Improvement（Everyman Chess、2002）に多大な影響を受けています。「チェスビジョン」という概念 — 戦術的パターンや駒の関係を瞬時に認識する能力 — は、トレーニングに対する私の考え方を変えました。彼のアイデアに従い、自分の棋力を劇的に向上させることができ、彼のチェスビジョンのアプローチが新世代のプレイヤーにも盤面をより明確に見る助けになればと願い、Calvin Chess Trainerを作りました。ありがとう、Michael！",
   "aboutInternut": "Internut Educationについて",

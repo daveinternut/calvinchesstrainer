@@ -723,7 +723,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutCreditsBody.
   ///
   /// In en, this message translates to:
-  /// **'• Chess puzzles from the Lichess database (CC0 license)\n• Board UI powered by Lichess chessground\n• Chess logic by Lichess dartchess\n• Voice clips by ElevenLabs\n• Built with Flutter & Dart'**
+  /// **'• Chess advisor: Dattasai Kilari\n• Chess puzzles from the Lichess database (CC0 license)\n• Board UI powered by Lichess chessground\n• Chess logic by Lichess dartchess\n• Voice clips by ElevenLabs\n• Built with Flutter & Dart'**
   String get aboutCreditsBody;
 
   /// No description provided for @aboutInspired.

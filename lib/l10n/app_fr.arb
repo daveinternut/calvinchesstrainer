@@ -101,7 +101,7 @@
   "aboutTrainingModes": "Modes d'entraînement",
   "aboutTrainingModesBody": "• Explorer — apprends à ton rythme\n• Entraînement — teste-toi et construis des séries\n• Contre la Montre — bats le chrono (30 ou 60 secondes) et établis un nouveau record\n• Mode Difficile — joue du côté des noirs",
   "aboutCredits": "Crédits et Remerciements",
-  "aboutCreditsBody": "• Puzzles d'échecs de la base de données Lichess (licence CC0)\n• Interface de l'échiquier par Lichess chessground\n• Logique d'échecs par Lichess dartchess\n• Clips vocaux par ElevenLabs\n• Développé avec Flutter et Dart",
+  "aboutCreditsBody": "• Conseiller aux échecs : Dattasai Kilari\n• Puzzles d'échecs de la base de données Lichess (licence CC0)\n• Interface de l'échiquier par Lichess chessground\n• Logique d'échecs par Lichess dartchess\n• Clips vocaux par ElevenLabs\n• Développé avec Flutter et Dart",
   "aboutInspired": "Inspiré par Rapid Chess Improvement",
   "aboutInspiredBody": "Cette application doit beaucoup au livre de Michael de la Maza Rapid Chess Improvement (Everyman Chess, 2002). Son concept de « vision échiquéenne » — la capacité de reconnaître instantanément les motifs tactiques et les relations entre les pièces — a transformé ma façon de penser l'entraînement. Suivre ses idées m'a aidé à améliorer considérablement mon propre jeu, et j'ai créé Calvin Chess Trainer dans l'espoir que son approche de la vision échiquéenne aide une nouvelle génération de joueurs à mieux voir l'échiquier. Merci, Michael !",
   "aboutInternut": "À propos d'Internut Education",

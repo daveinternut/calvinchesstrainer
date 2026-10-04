@@ -347,7 +347,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get aboutCreditsBody =>
-      '• Lichess 데이터베이스의 체스 퍼즐 (CC0 라이선스)\n• Lichess chessground 보드 UI\n• Lichess dartchess 체스 로직\n• ElevenLabs 음성 클립\n• Flutter와 Dart로 개발';
+      '• 체스 자문: Dattasai Kilari\n• Lichess 데이터베이스의 체스 퍼즐 (CC0 라이선스)\n• Lichess chessground 보드 UI\n• Lichess dartchess 체스 로직\n• ElevenLabs 음성 클립\n• Flutter와 Dart로 개발';
 
   @override
   String get aboutInspired => 'Rapid Chess Improvement에서 영감을 받아';

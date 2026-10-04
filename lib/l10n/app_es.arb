@@ -101,7 +101,7 @@
   "aboutTrainingModes": "Modos de Entrenamiento",
   "aboutTrainingModesBody": "• Explorar — aprende a tu ritmo\n• Práctica — ponte a prueba y construye rachas\n• Ronda Rápida — corre contra el reloj (30 o 60 segundos) y bate tu récord\n• Modo Difícil — juega desde el lado de las negras",
   "aboutCredits": "Créditos y Agradecimientos",
-  "aboutCreditsBody": "• Puzzles de ajedrez de la base de datos de Lichess (licencia CC0)\n• Interfaz del tablero por Lichess chessground\n• Lógica de ajedrez por Lichess dartchess\n• Clips de voz por ElevenLabs\n• Creado con Flutter y Dart",
+  "aboutCreditsBody": "• Asesor de ajedrez: Dattasai Kilari\n• Puzzles de ajedrez de la base de datos de Lichess (licencia CC0)\n• Interfaz del tablero por Lichess chessground\n• Lógica de ajedrez por Lichess dartchess\n• Clips de voz por ElevenLabs\n• Creado con Flutter y Dart",
   "aboutInspired": "Inspirado en Rapid Chess Improvement",
   "aboutInspiredBody": "Esta app debe mucho al libro de Michael de la Maza Rapid Chess Improvement (Everyman Chess, 2002). Su concepto de \"visión ajedrecística\" — la capacidad de reconocer instantáneamente patrones tácticos y relaciones entre piezas — transformó mi forma de pensar sobre el entrenamiento. Seguir sus ideas me ayudó a mejorar mi propio juego drásticamente, y construí Calvin Chess Trainer con la esperanza de que su enfoque de la visión ajedrecística ayude a una nueva generación de jugadores a ver el tablero con más claridad. ¡Gracias, Michael!",
   "aboutInternut": "Acerca de Internut Education",

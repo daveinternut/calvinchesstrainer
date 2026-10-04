@@ -101,7 +101,7 @@
   "aboutTrainingModes": "训练模式",
   "aboutTrainingModesBody": "• 探索 — 按自己的节奏学习\n• 练习 — 自我测试，建立连胜\n• 限时挑战 — 和时间赛跑（30秒或60秒），创造新纪录\n• 困难模式 — 从黑方的一侧看棋盘",
   "aboutCredits": "致谢",
-  "aboutCreditsBody": "• 国际象棋谜题来自Lichess数据库（CC0许可）\n• 棋盘界面由Lichess chessground提供\n• 棋逻辑由Lichess dartchess提供\n• 语音片段由ElevenLabs制作\n• 使用Flutter和Dart开发",
+  "aboutCreditsBody": "• 国际象棋顾问：Dattasai Kilari\n• 国际象棋谜题来自Lichess数据库（CC0许可）\n• 棋盘界面由Lichess chessground提供\n• 棋逻辑由Lichess dartchess提供\n• 语音片段由ElevenLabs制作\n• 使用Flutter和Dart开发",
   "aboutInspired": "灵感来自《Rapid Chess Improvement》",
   "aboutInspiredBody": "这款应用深受Michael de la Maza的著作《Rapid Chess Improvement》（Everyman Chess，2002）的启发。他的「棋盘视觉」概念——即时识别战术模式和棋子关系的能力——改变了我对训练的思考方式。遵循他的理念极大地提高了我的棋艺，我创建Calvin Chess Trainer，希望他的棋盘视觉方法能帮助新一代棋手更清楚地看懂棋盘。谢谢你，Michael！",
   "aboutInternut": "关于Internut Education",

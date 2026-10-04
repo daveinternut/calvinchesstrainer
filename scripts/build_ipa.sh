@@ -43,6 +43,10 @@
 #
 set -euo pipefail
 
+# macOS's python3 refuses to start under some locale settings (e.g. LC_ALL=en_US
+# without an encoding); UTF-8 mode sidesteps the locale entirely.
+export PYTHONUTF8=1
+
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO"
 
@@ -166,7 +170,7 @@ asc_get() {  # $1 = path+query; sets ASC_BODY; returns 0 on HTTP 200
 
 APP_ID=""; LATEST_BUILD=""; CLOSED_VERSIONS=""; LIVE_VERSION=""
 if [ "$need_key" = 1 ] && [ "$DRY_RUN" = 0 ]; then
-  say "Asking App Store Connect about $BUNDLE_ID…"
+  say "Asking App Store Connect about ${BUNDLE_ID}…"
   JWT="$(asc_jwt)" || die "Could not sign a token with $KEY_FILE (is it a valid .p8?)."
 
   if ! asc_get "/v1/apps?filter[bundleId]=$BUNDLE_ID&fields[apps]=name,bundleId&limit=1"; then
@@ -211,13 +215,17 @@ closed_states = {"READY_FOR_SALE", "READY_FOR_DISTRIBUTION", "PENDING_DEVELOPER_
                  "ACCEPTED", "REPLACED_WITH_NEW_VERSION", "REMOVED_FROM_SALE",
                  "DEVELOPER_REMOVED_FROM_SALE"}
 live_states = {"READY_FOR_SALE", "READY_FOR_DISTRIBUTION"}
-live, closed = "-", []
+def vkey(s):
+    return tuple(int(p) if p.isdigit() else 0 for p in s.split("."))
+live, closed = None, []
 for v in json.load(sys.stdin).get("data", []):
     a = v["attributes"]
     states = {a.get("appStoreState"), a.get("appVersionState")}
     if states & closed_states: closed.append(a["versionString"])
-    if states & live_states: live = a["versionString"]
-print(live, ",".join(closed))')
+    # Every past release keeps a "ready for sale" state; the live one is the highest.
+    if states & live_states and (live is None or vkey(a["versionString"]) > vkey(live)):
+        live = a["versionString"]
+print(live or "-", ",".join(closed))')
     say "Live version: ${LIVE_VERSION/-/none yet}"
   else
     warn "Couldn't list App Store versions ($ASC_ERROR)."
@@ -308,11 +316,17 @@ if [ "$DRY_RUN" = 0 ] && { [ "$build_ok" = 0 ] || ! fresh "$(newest_ipa)"; }; th
 </dict>
 </plist>
 PLIST
-    xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath "$REPO/build/ios/ipa" \
+    EXPORT_LOG="$(dirname "$EXPORT_PLIST")/export.log"
+    if ! xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath "$REPO/build/ios/ipa" \
       -exportOptionsPlist "$EXPORT_PLIST" -allowProvisioningUpdates \
       -authenticationKeyPath "$KEY_FILE" -authenticationKeyID "$ASC_KEY_ID" \
-      -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-      || die "Signing failed. Open ios/Runner.xcworkspace in Xcode, sign in under Settings -> Accounts with an Apple ID on team $TEAM_ID, check Runner -> Signing & Capabilities (Automatically manage signing), then run this again."
+      -authenticationKeyIssuerID "$ASC_ISSUER_ID" 2>&1 | tee "$EXPORT_LOG"; then :; fi
+    if [ -z "$(newest_ipa)" ] || ! fresh "$(newest_ipa)"; then
+      if grep -q "Cloud signing permission error" "$EXPORT_LOG"; then
+        die "Signing failed: Xcode isn't signed in to an Apple ID, and this API key (App Manager) isn't allowed to use Apple's cloud-managed distribution certificates. Fix: Xcode -> Settings -> Accounts -> + -> Apple ID, sign in with the Apple ID on team $TEAM_ID (Account Holder/Admin), then run this again. (Alternatives: install a local Apple Distribution certificate, or use an Admin-role API key.)"
+      fi
+      die "Signing failed. Open ios/Runner.xcworkspace in Xcode, sign in under Settings -> Accounts with an Apple ID on team $TEAM_ID, check Runner -> Signing & Capabilities (Automatically manage signing), then run this again."
+    fi
   else
     die "flutter build ipa failed (see above)."
   fi

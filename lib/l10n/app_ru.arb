@@ -101,7 +101,7 @@
   "aboutTrainingModes": "Режимы тренировки",
   "aboutTrainingModesBody": "• Изучение — учись в своём темпе\n• Практика — проверяй себя и набирай серии\n• Блиц-раунд — соревнуйся с часами (30 или 60 секунд) и ставь новый рекорд\n• Сложный режим — играй со стороны чёрных",
   "aboutCredits": "Благодарности",
-  "aboutCreditsBody": "• Шахматные задачи из базы Lichess (лицензия CC0)\n• Интерфейс доски: Lichess chessground\n• Шахматная логика: Lichess dartchess\n• Голосовые клипы: ElevenLabs\n• Разработано на Flutter и Dart",
+  "aboutCreditsBody": "• Шахматный консультант: Dattasai Kilari\n• Шахматные задачи из базы Lichess (лицензия CC0)\n• Интерфейс доски: Lichess chessground\n• Шахматная логика: Lichess dartchess\n• Голосовые клипы: ElevenLabs\n• Разработано на Flutter и Dart",
   "aboutInspired": "Вдохновлено книгой Rapid Chess Improvement",
   "aboutInspiredBody": "Это приложение многим обязано книге Майкла де ла Маза Rapid Chess Improvement (Everyman Chess, 2002). Его концепция «шахматного зрения» — способности мгновенно распознавать тактические паттерны и связи между фигурами — изменила мой подход к тренировкам. Следуя его идеям, я кардинально улучшил свою игру, и создал Calvin Chess Trainer в надежде, что его подход к шахматному зрению поможет новому поколению игроков яснее видеть доску. Спасибо, Майкл!",
   "aboutInternut": "Об Internut Education",

@@ -101,7 +101,7 @@
   "aboutTrainingModes": "훈련 모드",
   "aboutTrainingModesBody": "• 탐색 — 자신의 속도로 배우기\n• 연습 — 스스로를 테스트하고 연속 기록 세우기\n• 스피드 라운드 — 시간과 겨뤄(30초 또는 60초) 새 기록에 도전하기\n• 하드 모드 — 흑의 쪽에서 보드 보기",
   "aboutCredits": "크레딧 및 감사의 말",
-  "aboutCreditsBody": "• Lichess 데이터베이스의 체스 퍼즐 (CC0 라이선스)\n• Lichess chessground 보드 UI\n• Lichess dartchess 체스 로직\n• ElevenLabs 음성 클립\n• Flutter와 Dart로 개발",
+  "aboutCreditsBody": "• 체스 자문: Dattasai Kilari\n• Lichess 데이터베이스의 체스 퍼즐 (CC0 라이선스)\n• Lichess chessground 보드 UI\n• Lichess dartchess 체스 로직\n• ElevenLabs 음성 클립\n• Flutter와 Dart로 개발",
   "aboutInspired": "Rapid Chess Improvement에서 영감을 받아",
   "aboutInspiredBody": "이 앱은 Michael de la Maza의 책 Rapid Chess Improvement (Everyman Chess, 2002)에 큰 영감을 받았습니다. 그의 \"체스 비전\" 개념 — 전술 패턴과 기물 관계를 즉각 인식하는 능력 — 은 훈련에 대한 저의 사고방식을 변화시켰습니다. 그의 아이디어를 따르면서 저의 실력이 크게 향상되었고, 그의 체스 비전 접근 방식이 새로운 세대의 선수들이 보드를 더 명확하게 볼 수 있도록 도움이 되길 바라며 Calvin Chess Trainer를 만들었습니다. 감사합니다, Michael!",
   "aboutInternut": "Internut Education 소개",

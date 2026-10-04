@@ -101,7 +101,7 @@
   "aboutTrainingModes": "Modalità di Allenamento",
   "aboutTrainingModesBody": "• Esplora — impara al tuo ritmo\n• Pratica — mettiti alla prova e costruisci serie\n• Sfida a Tempo — corri contro il tempo (30 o 60 secondi) e stabilisci un nuovo record\n• Modalità Difficile — gioca dal lato del nero",
   "aboutCredits": "Crediti e Ringraziamenti",
-  "aboutCreditsBody": "• Puzzle di scacchi dal database Lichess (licenza CC0)\n• Interfaccia della scacchiera di Lichess chessground\n• Logica scacchistica di Lichess dartchess\n• Clip vocali di ElevenLabs\n• Sviluppato con Flutter e Dart",
+  "aboutCreditsBody": "• Consulente scacchistico: Dattasai Kilari\n• Puzzle di scacchi dal database Lichess (licenza CC0)\n• Interfaccia della scacchiera di Lichess chessground\n• Logica scacchistica di Lichess dartchess\n• Clip vocali di ElevenLabs\n• Sviluppato con Flutter e Dart",
   "aboutInspired": "Ispirato a Rapid Chess Improvement",
   "aboutInspiredBody": "Questa app deve molto al libro di Michael de la Maza Rapid Chess Improvement (Everyman Chess, 2002). Il suo concetto di \"visione scacchistica\" — la capacità di riconoscere istantaneamente schemi tattici e relazioni tra pezzi — ha trasformato il mio modo di pensare all'allenamento. Seguire le sue idee mi ha aiutato a migliorare drasticamente il mio gioco, e ho creato Calvin Chess Trainer nella speranza che il suo approccio alla visione scacchistica aiuti una nuova generazione di giocatori a vedere la scacchiera più chiaramente. Grazie, Michael!",
   "aboutInternut": "Informazioni su Internut Education",

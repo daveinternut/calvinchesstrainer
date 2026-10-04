@@ -135,7 +135,7 @@
   "aboutTrainingModes": "Training Modes",
   "aboutTrainingModesBody": "• Explore — learn at your own pace\n• Practice — quiz yourself and build streaks\n• Speed Round — race the clock (30 or 60 seconds) and set a new record\n• Hard Mode — play from Black's side of the board",
   "aboutCredits": "Credits & Acknowledgments",
-  "aboutCreditsBody": "• Chess puzzles from the Lichess database (CC0 license)\n• Board UI powered by Lichess chessground\n• Chess logic by Lichess dartchess\n• Voice clips by ElevenLabs\n• Built with Flutter & Dart",
+  "aboutCreditsBody": "• Chess advisor: Dattasai Kilari\n• Chess puzzles from the Lichess database (CC0 license)\n• Board UI powered by Lichess chessground\n• Chess logic by Lichess dartchess\n• Voice clips by ElevenLabs\n• Built with Flutter & Dart",
   "aboutInspired": "Inspired by Rapid Chess Improvement",
   "aboutInspiredBody": "This app owes a great deal to Michael de la Maza's book Rapid Chess Improvement (Everyman Chess, 2002). His concept of \"chess vision\" — the ability to instantly recognize tactical patterns and piece relationships — transformed the way I thought about training. Following his ideas helped me improve my own game dramatically, and I built Calvin Chess Trainer in the hope that his approach to chess vision will help a new generation of players see the board more clearly. Thank you, Michael!",
   "aboutInternut": "About Internut Education",

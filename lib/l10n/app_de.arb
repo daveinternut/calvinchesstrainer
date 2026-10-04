@@ -101,7 +101,7 @@
   "aboutTrainingModes": "Trainingsmodi",
   "aboutTrainingModesBody": "• Erkunden — lerne in deinem Tempo\n• Übung — teste dich und baue Serien auf\n• Schnellrunde — spiel gegen die Uhr (30 oder 60 Sekunden) und stell einen neuen Rekord auf\n• Schwerer Modus — spiel von der Seite von Schwarz",
   "aboutCredits": "Credits und Danksagungen",
-  "aboutCreditsBody": "• Schachpuzzles aus der Lichess-Datenbank (CC0-Lizenz)\n• Brett-UI von Lichess chessground\n• Schachlogik von Lichess dartchess\n• Sprachclips von ElevenLabs\n• Entwickelt mit Flutter & Dart",
+  "aboutCreditsBody": "• Schachberater: Dattasai Kilari\n• Schachpuzzles aus der Lichess-Datenbank (CC0-Lizenz)\n• Brett-UI von Lichess chessground\n• Schachlogik von Lichess dartchess\n• Sprachclips von ElevenLabs\n• Entwickelt mit Flutter & Dart",
   "aboutInspired": "Inspiriert von Rapid Chess Improvement",
   "aboutInspiredBody": "Diese App verdankt viel dem Buch von Michael de la Maza Rapid Chess Improvement (Everyman Chess, 2002). Sein Konzept der \\\"Schachvision\\\" — die Fähigkeit, taktische Muster und Figurenbeziehungen sofort zu erkennen — hat meine Denkweise über das Training verändert. Seine Ideen haben mir geholfen, mein eigenes Spiel dramatisch zu verbessern, und ich habe Calvin Chess Trainer in der Hoffnung entwickelt, dass sein Ansatz zur Schachvision einer neuen Generation von Spielern hilft, das Brett klarer zu sehen. Danke, Michael!",
   "aboutInternut": "Über Internut Education",

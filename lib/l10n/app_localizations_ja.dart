@@ -347,7 +347,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get aboutCreditsBody =>
-      '• チェスパズル: Lichessデータベース（CC0ライセンス）\n• 盤面UI: Lichess chessground\n• チェスロジック: Lichess dartchess\n• 音声クリップ: ElevenLabs\n• FlutterとDartで開発';
+      '• チェスアドバイザー: Dattasai Kilari\n• チェスパズル: Lichessデータベース（CC0ライセンス）\n• 盤面UI: Lichess chessground\n• チェスロジック: Lichess dartchess\n• 音声クリップ: ElevenLabs\n• FlutterとDartで開発';
 
   @override
   String get aboutInspired => 'Rapid Chess Improvementに触発されて';

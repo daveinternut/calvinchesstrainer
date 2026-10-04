@@ -349,7 +349,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get aboutCreditsBody =>
-      '• Puzzles d\'échecs de la base de données Lichess (licence CC0)\n• Interface de l\'échiquier par Lichess chessground\n• Logique d\'échecs par Lichess dartchess\n• Clips vocaux par ElevenLabs\n• Développé avec Flutter et Dart';
+      '• Conseiller aux échecs : Dattasai Kilari\n• Puzzles d\'échecs de la base de données Lichess (licence CC0)\n• Interface de l\'échiquier par Lichess chessground\n• Logique d\'échecs par Lichess dartchess\n• Clips vocaux par ElevenLabs\n• Développé avec Flutter et Dart';
 
   @override
   String get aboutInspired => 'Inspiré par Rapid Chess Improvement';
