@@ -372,7 +372,8 @@ brew install firebase-cli
 ```
 
 **Python 3** — only for `scripts/curate_puzzles.py` (regenerates the Lichess
-puzzle set) and `scripts/make_feature_graphic.py`:
+puzzle set). The store artwork needs nothing extra: `flutter test
+tool/store_assets/store_assets_test.dart` renders it.
 
 ```bash
 brew install python

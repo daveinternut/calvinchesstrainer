@@ -7,10 +7,10 @@ Written 2026-10-04 for 1.5.0 (7). Android package: `education.internut.calvinche
 
 | | |
 |---|---|
-| Signed release bundle | ✅ `build/app/outputs/bundle/release/app-release.aab`: 1.5.0 (versionCode 7), 548 MB, signed with the upload key |
+| Signed release bundle | ✅ `build/app/outputs/bundle/release/app-release.aab`: 1.6.0 (versionCode 9), signed with the upload key |
 | Upload script | ✅ `scripts/deploy_play.sh`. Needs a service-account key (step 4) |
-| Icon + feature graphic | ✅ `icon-512.png`, `feature-graphic-1024x500.png` (this folder) |
-| Screenshots | ⚠️ `phone/` and `tablet/` still show the old 4-card home and only 4 vision drills. Regenerate them before the listing goes out ([README.md](README.md) explains how they were made) |
+| Icon + feature graphic | ✅ `icon-512.png`, `feature-graphic-1024x500.png` (this folder; the October 2026 icon) |
+| Screenshots | ✅ `phone/` (1080×1920) and `tablet/` (2560×1440), regenerated for the 1.6.0 redesign ([README.md](README.md)) |
 | Privacy policy | ✅ https://www.internut.education/privacy (the same one the App Store uses). Add a line about the feedback form (see Data safety) |
 | Play Console | ✅ The app already exists there, and 1.4 (versionCode 5) was released in July. Steps 0–1 are done, so you're at step 2. The listing's screenshots and text are probably still the 1.4 ones and need refreshing for 1.5.0 |
 
@@ -78,51 +78,16 @@ Add a sentence about the form so the policy and the Data safety form agree.
 
 ### Store listing (Grow users → Store presence → Main store listing)
 
+In the left menu: **Grow users → Store presence → Main store listing**. The text fields come first; the **Graphics** section is further down the same page.
+
 - **App name:** Calvin Chess Trainer
-- **Short description** (73 of 80 characters): `Fun chess drills for kids: board vision, notation, tactics, and openings.`
-- **Full description:** the text below
+- **Short description** and **Full description:** from [`../listing.md`](../listing.md)
 - **App icon:** `icon-512.png`
 - **Feature graphic:** `feature-graphic-1024x500.png`
-- **Phone screenshots:** `phone/`
-- **7-inch and 10-inch tablet screenshots:** `tablet/`. Use the same files in both slots.
-- ⚠️ Regenerate the screenshots first.
+- **Phone screenshots:** the six in `phone/`
+- **7-inch and 10-inch tablet screenshots:** the six in `tablet/`, the same files in both slots
 
-The full description is the App Store text brought up to date. The App Store copy still says "four unique drills" and "25+ board themes and 28 piece sets", and the app no longer matches either claim.
-
-```
-Master the chessboard from the ground up! Calvin Chess Trainer turns chess fundamentals into short, hands-on drills designed for young learners.
-
-CHESS VISION — eight drills that teach you to see the whole board
-• Forks & Skewers: find the square where one piece attacks two targets at once
-• Knight Sight: spot every square a knight can reach in one jump
-• Knight Flight: steer a knight to its target in the fewest moves
-• Pawn Attack: guide a piece safely through a field of enemy pawns
-• Find Checks, Find Captures and Hanging Pieces: scan real game positions for every check, every capture and every undefended piece
-• Mate in 1: 400 curated checkmate puzzles
-
-CHESS NOTATION — learn the language of chess
-• Files, ranks and squares: tap the board and hear each square spoken aloud
-• Piece letters: learn the letter for every piece, with a memory trick for each
-• Moves: read a move in chess notation and play it on the board, with 500 puzzles from real Lichess games
-• Piece Value: decide which side comes out ahead
-• Explore at your own pace, Practice to build confidence, or race the clock in a Speed Round
-
-OPENING FUNDAMENTALS
-• Play the first moves of a game against the Stockfish chess engine, with an evaluation bar and arrows that show the book moves
-
-BUILT FOR KIDS
-• Squares and piece names spoken aloud
-• A streak counter that celebrates every 5 in a row
-• Personal bests saved on your device
-• Hard Mode flips the board to Black's side for an extra challenge
-• Available in 10 languages
-
-No ads. No in-app purchases. No account needed. Just chess.
-
-Whether your child is just learning the names of the squares or sharpening their tactical vision, Calvin Chess Trainer makes every drill feel like a game.
-
-From Internut Education.
-```
+Click **Save**. Listing changes go out with the next **Publishing overview → Send changes for review**.
 
 ## 2. The closed test (the "beta round")
 

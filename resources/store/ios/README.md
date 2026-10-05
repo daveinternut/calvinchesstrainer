@@ -1,60 +1,31 @@
 # App Store (iOS) store assets — Calvin Chess Trainer
 
-Generated 2026-07-23 from a **release-mode simulator build** (no Flutter debug banner;
-the app already sets `debugShowCheckedModeBanner: false`). Captured at native resolution
-with `xcrun simctl io … screenshot`, so every file is pixel-exact.
+Rendered 2026-10-04 for 1.6.0 by [`tool/store_assets/store_assets_test.dart`](../../../tool/store_assets/store_assets_test.dart), which shows the app's real screens with seeded game state in a device-sized window and puts each under a caption on brand green. Regenerate everything (both stores, the icon) with:
+
+```bash
+flutter test tool/store_assets/store_assets_test.dart
+```
+
+Every file is pixel-exact and has **no alpha channel** (App Store Connect rejects screenshots that have one).
 
 ## What goes where in App Store Connect
 
-| Slot | Accepted sizes | Use these files | Status |
-|---|---|---|---|
-| **iPhone** (6.5"/6.7") | 1242×2688, 2688×1242, 1284×2778, 2778×1284 | all 4 in `iphone/` | ✅ 1284×2778 (6.7") |
-| **iPad** (12.9"/13") | 2064×2752, 2752×2064, 2048×2732, 2732×2048 | all 4 in `ipad/` | ✅ 2048×2732 (12.9") |
+| Slot | Accepted sizes | Files |
+|---|---|---|
+| **iPhone 6.5" Display** | 1242×2688, 1284×2778 (or landscape) | the six in `iphone/` (1284×2778) |
+| **iPad 13" Display** | 2064×2752, 2048×2732 (or landscape) | the six in `ipad/` (2752×2064, landscape) |
 
-A 6.7" iPhone set and a 12.9" iPad set are the two required uploads; App Store Connect
-down-fills smaller device classes from these. All shots are flattened to RGB with **no
-alpha channel** (Apple rejects screenshots that carry transparency).
+App Store Connect scales these down for the smaller device classes. The App Store icon comes from the build (`assets/images/app_icon.png` → `flutter_launcher_icons`), not from an upload. Listing text: [`../listing.md`](../listing.md).
 
-## Contents
+## The six screenshots (same order on both devices)
 
-### `iphone/` — 1284×2778 (iPhone 14 Plus, 6.7")
-1. `01-home.png` — home screen with the Chess Vision "START HERE" hero card
-2. `02-forks-and-skewers.png` — Chess Vision, Queen forks drill
-3. `03-name-the-square.png` — Chess Notation → Squares practice ("Tap square a1/a6")
-4. `04-opening-explorer.png` — play vs Stockfish: eval bar + book-move arrows + engine depth
+1. `01-home.png` — "Train what puzzles skip": the daily warm-up, Continue, the drill tiles with bests
+2. `02-find-checks.png` — "See every check": two of four checks found, named in notation
+3. `03-forks-and-skewers.png` — "Spot double attacks": a queen fork found
+4. `04-name-the-square.png` — "Know every square": a Speed Round, 7 in a row
+5. `05-read-moves.png` — "Read notation fluently": Bxf7# in a full middlegame
+6. `06-opening-explorer.png` — "Explore the openings": the Ruy Lopez with book-move arrows and the eval bar
 
-### `ipad/` — 2048×2732 (iPad Pro 12.9", 6th gen)
-1. `01-home.png` — home screen (hero layout, full card artwork)
-2. `02-forks-and-skewers.png` — Chess Vision, Queen forks drill
-3. `03-name-the-square.png` — Chess Notation → Squares practice
-4. `04-opening-explorer.png` — play vs Stockfish, eval bar + arrows
+The iPad set is landscape, iPad's main orientation, so the board and its panel sit side by side.
 
-## How these were produced
-
-Two purpose-built simulators were created at exact App Store resolutions (the pre-existing
-sims — iPhone 15/16, iPad Pro 11"/13" M4 — are all the *wrong* sizes and would be rejected):
-
-```
-AppStore_iPhone  = iPhone 14 Plus            -> 1284×2778
-AppStore_iPad    = iPad Pro (12.9-inch, 6th) -> 2048×2732
-```
-
-Clean status bars (9:41, full battery/signal) via `xcrun simctl status_bar … override`.
-Release simulator build: `flutter build ios --simulator`; installed with `simctl install`;
-navigated with the iOS-simulator control tool; captured with `simctl io … screenshot`.
-
-## ⚠️ IMPORTANT: the Android screenshots are now stale
-
-These iOS shots reflect the **current** app: a Chess Vision **hero** home (3 cards, "START
-HERE") and **8** Chess Vision drills (Forks & Skewers, Pawn Attack, Knight Sight, Knight
-Flight, Find Checks, Find Captures, Hanging Pieces, Mate in 1). "The Pieces" now lives inside
-Chess Notation as the **Piece Value** subject.
-
-The screenshots in `resources/store/android/` were captured earlier from **older code** — they
-show a 4-card home (with a separate "The Pieces" card) and only 4 Chess Vision drills. They no
-longer match the shipping app and **should be regenerated** before uploading to Google Play.
-
-## Still to do
-
-- Regenerate the Android screenshots to match the current hero-home / 8-drill layout.
-- Optional: re-capture drill screenshots mid-streak so score counters aren't all `0`.
+The Opening Explorer scene uses a stand-in engine that answers the shown position with plausible Stockfish lines (+0.3, 5. O-O). The real engine only runs on a device.

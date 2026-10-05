@@ -1,7 +1,7 @@
 name: calvinchesstrainer
 description: "A chess learning app that teaches fundamentals through interactive drills and timed challenges."
 publish_to: 'none'
-version: 1.6.0+8
+version: 1.6.0+9
 
 environment:
   sdk: ^3.9.2
@@ -93,9 +93,15 @@ flutter_native_splash:
     color: "#1B5E20"
     image: assets/images/internut_logo_white.png
 
+# Icon art comes from tool/store_assets/store_assets_test.dart (the LogoMark);
+# re-render it there, then run `dart run flutter_launcher_icons`.
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/images/app_icon.png"
   min_sdk_android: 21
   remove_alpha_ios: true
+  adaptive_icon_background: "resources/icon/app_icon_background.png"
+  adaptive_icon_foreground: "resources/icon/app_icon_foreground.png"
+  adaptive_icon_foreground_inset: 0 # the art already sits in the safe zone
+  adaptive_icon_monochrome: "resources/icon/app_icon_monochrome.png"

@@ -337,7 +337,7 @@ Every game route also takes **`warmup=1`**: the screen shows "Warm-up · N of 5"
 
 | Path | Contents |
 |---|---|
-| `assets/images/` | `app_icon.png` (1024², launcher icons), `internut_logo*.png` (splash). The v1 home-card art and its BradBunR font are archived in `resources/art/v1-home-cards/` (not bundled). |
+| `assets/images/` | `app_icon.png` (1024², launcher icons; rendered by `tool/store_assets/` from the LogoMark), `internut_logo*.png` (splash). The v1 home-card art and its BradBunR font are archived in `resources/art/v1-home-cards/` (not bundled). |
 | `assets/fonts/` | `BricolageGrotesque-{Regular,Medium,SemiBold,Bold,ExtraBold}.ttf` (static instances at optical size 14, from the Google Fonts API) + `GeistMono-{Regular,Medium,SemiBold}.ttf` — declared under `fonts:` in pubspec |
 | `assets/licenses/` | The fonts' SIL OFL texts, registered with `LicenseRegistry` in `main()` |
 | `assets/sounds/` | ElevenLabs voice clips: `file_*.mp3` (a–h), `rank_*.mp3` (1–8), `piece_*.mp3` (6), `move_takes/check/checkmate.mp3`, `new_record.mp3`, **`streak_5/10/15/20.mp3` (milestone cheers)**; SFX `correct.m4a`/`incorrect.m4a`. Raw recording masters live in `resources/audio/` (outside the bundle). |
@@ -345,11 +345,12 @@ Every game route also takes **`warmup=1`**: the screen shows "Warm-up · N of 5"
 | `assets/puzzles/scan_{checks,captures,hanging}.json`, `mate_in_one_puzzles.json` | Chess Vision scanning drills |
 | `assets/data/eco_openings.json` | ~3640 ECO openings (Lichess) → `OpeningBookService` |
 | `scripts/curate_puzzles.py`, `scripts/curate_scanning_positions.py` | Puzzle/position curation |
+| `tool/store_assets/store_assets_test.dart` | Store artwork from the app's own widgets: the app icon + Android adaptive layers (`resources/icon/`), App Store and Play screenshots with captions, the Play icon and feature graphic (`resources/store/`). Run with `flutter test tool/store_assets/store_assets_test.dart`; it lives outside `test/` so the suite skips it. Listing copy: `resources/store/listing.md` |
 | `scripts/build_web.sh` | The web build (see CLAUDE.md) |
 | `scripts/build_ipa.sh` (+ `build_ipa.env.example`) | One-command iOS release: App Store Connect pre-checks (read-only API: app record, highest uploaded build, approved versions) → analyze/test → `flutter build ipa` (falls back to an API-key export if Xcode isn't signed in) → `xcrun altool --upload-app` → writes the build number back to `pubspec.yaml` |
 | `scripts/deploy_play.sh` (+ `deploy_play.env.example`) | Android App Bundle → Google Play via fastlane supply (`--track internal` default, `alpha` = closed, `beta` = open, `production`). First release is manual — see `resources/store/android/PUBLISHING.md` |
 
-**Build tooling:** `flutter_native_splash` (white Internut logo on `#1B5E20`; config in `pubspec.yaml`), `flutter_launcher_icons` (from `app_icon.png`, `min_sdk_android: 21`, iOS alpha removed), `flutterfire configure` (regenerates `firebase_options.dart`).
+**Build tooling:** `flutter_native_splash` (white Internut logo on `#1B5E20`; config in `pubspec.yaml`), `flutter_launcher_icons` (from `app_icon.png` + adaptive layers in `resources/icon/` with no extra inset, `min_sdk_android: 21`, iOS alpha removed), `flutterfire configure` (regenerates `firebase_options.dart`).
 
 **Platform config worth knowing:** iOS `CFBundleDisplayName` is "Calvin Chess"; iPhone is portrait-only, iPad declares all four orientations (multitasking on); Android `MainActivity.kt` holds phones (smallest width < 600 dp) in portrait and lets tablets rotate; `AppDelegate.swift` raises the open-file soft limit to 4096 (see the engine gotcha in CLAUDE.md); Firebase's ad-ID, ad-personalization and IDFV collection are disabled in `Info.plist`, and the Android manifest strips `AD_ID` and the `ACCESS_ADSERVICES_*` permissions.
 
