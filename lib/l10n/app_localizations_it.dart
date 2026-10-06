@@ -90,6 +90,15 @@ class AppLocalizationsIt extends AppLocalizations {
   String get tapSquareToHear => 'Tocca una casa per sentirne il nome';
 
   @override
+  String get tapFileToSee => 'Tocca una colonna per vederne il nome';
+
+  @override
+  String get tapRankToSee => 'Tocca una traversa per vederne il nome';
+
+  @override
+  String get tapSquareToSee => 'Tocca una casa per vederne il nome';
+
+  @override
   String get tapFile => 'Tocca la colonna';
 
   @override
@@ -546,6 +555,12 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get hideScores => 'Nascondi i punteggi';
+
+  @override
+  String get turnSoundOff => 'Disattiva l\'audio';
+
+  @override
+  String get turnSoundOn => 'Attiva l\'audio';
 
   @override
   String get searchOpenings => 'Cerca aperture…';

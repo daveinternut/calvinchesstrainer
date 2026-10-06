@@ -236,8 +236,8 @@ class SectionHeader extends StatelessWidget {
 }
 
 /// The bar across the top of every play screen: a close button, the drill's
-/// name and a subtitle (the mode, or the warm-up step), and an optional
-/// trailing widget (the running score).
+/// name and a subtitle (the mode, or the warm-up step), an optional trailing
+/// widget (the running score), and an optional [action] button at the end.
 class PlayTopBar extends StatelessWidget {
   const PlayTopBar({
     super.key,
@@ -246,6 +246,7 @@ class PlayTopBar extends StatelessWidget {
     required this.closeTooltip,
     this.subtitle,
     this.trailing,
+    this.action,
   });
 
   final String title;
@@ -253,6 +254,10 @@ class PlayTopBar extends StatelessWidget {
   final VoidCallback onClose;
   final String closeTooltip;
   final Widget? trailing;
+
+  /// The button at the far end, opposite the close button. Drill screens put
+  /// the sound switch here (`SoundButton`).
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -295,6 +300,7 @@ class PlayTopBar extends StatelessWidget {
               child: trailing!,
             ),
           ],
+          if (action != null) ...[const SizedBox(width: 8), action!],
         ],
       ),
     );

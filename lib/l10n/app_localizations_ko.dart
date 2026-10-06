@@ -89,6 +89,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get tapSquareToHear => '칸을 탭하여 이름을 들으세요';
 
   @override
+  String get tapFileToSee => '파일을 탭하여 이름을 확인하세요';
+
+  @override
+  String get tapRankToSee => '랭크를 탭하여 이름을 확인하세요';
+
+  @override
+  String get tapSquareToSee => '칸을 탭하여 이름을 확인하세요';
+
+  @override
   String get tapFile => '파일 탭';
 
   @override
@@ -536,6 +545,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get hideScores => '점수 숨기기';
+
+  @override
+  String get turnSoundOff => '소리 끄기';
+
+  @override
+  String get turnSoundOn => '소리 켜기';
 
   @override
   String get searchOpenings => '오프닝 검색…';

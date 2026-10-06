@@ -89,6 +89,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tapSquareToHear => '点击任意格听其名称';
 
   @override
+  String get tapFileToSee => '点击任意列查看其名称';
+
+  @override
+  String get tapRankToSee => '点击任意行查看其名称';
+
+  @override
+  String get tapSquareToSee => '点击任意格查看其名称';
+
+  @override
   String get tapFile => '点击列';
 
   @override
@@ -535,6 +544,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get hideScores => '隐藏评分';
+
+  @override
+  String get turnSoundOff => '关闭声音';
+
+  @override
+  String get turnSoundOn => '开启声音';
 
   @override
   String get searchOpenings => '搜索开局…';

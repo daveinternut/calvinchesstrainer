@@ -90,6 +90,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get tapSquareToHear => 'Нажми на поле, чтобы услышать его название';
 
   @override
+  String get tapFileToSee => 'Нажми на вертикаль, чтобы увидеть её название';
+
+  @override
+  String get tapRankToSee => 'Нажми на горизонталь, чтобы увидеть её название';
+
+  @override
+  String get tapSquareToSee => 'Нажми на поле, чтобы увидеть его название';
+
+  @override
   String get tapFile => 'Нажми вертикаль';
 
   @override
@@ -545,6 +554,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get hideScores => 'Скрыть оценки';
+
+  @override
+  String get turnSoundOff => 'Выключить звук';
+
+  @override
+  String get turnSoundOn => 'Включить звук';
 
   @override
   String get searchOpenings => 'Поиск дебютов…';

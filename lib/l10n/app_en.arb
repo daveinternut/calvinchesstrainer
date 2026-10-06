@@ -33,6 +33,9 @@
   "tapFileToHear": "Tap any file to hear its name",
   "tapRankToHear": "Tap any rank to hear its name",
   "tapSquareToHear": "Tap any square to hear its name",
+  "tapFileToSee": "Tap any file to see its name",
+  "tapRankToSee": "Tap any rank to see its name",
+  "tapSquareToSee": "Tap any square to see its name",
   "tapFile": "Tap file",
   "tapRank": "Tap rank",
   "tapSquare": "Tap square",
@@ -217,6 +220,14 @@
   "hideScores": "Hide scores",
   "@hideScores": {
     "description": "Toolbar tooltip: hide move scores"
+  },
+  "turnSoundOff": "Turn sound off",
+  "@turnSoundOff": {
+    "description": "Speaker button tooltip (home and drill top bar) while sound is on"
+  },
+  "turnSoundOn": "Turn sound on",
+  "@turnSoundOn": {
+    "description": "Speaker button tooltip (home and drill top bar) while sound is off"
   },
   "searchOpenings": "Search openings…",
   "@searchOpenings": {

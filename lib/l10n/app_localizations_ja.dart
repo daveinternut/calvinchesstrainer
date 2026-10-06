@@ -89,6 +89,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tapSquareToHear => '任意のマスをタップして名前を聞こう';
 
   @override
+  String get tapFileToSee => '任意のファイルをタップして名前を見よう';
+
+  @override
+  String get tapRankToSee => '任意のランクをタップして名前を見よう';
+
+  @override
+  String get tapSquareToSee => '任意のマスをタップして名前を見よう';
+
+  @override
   String get tapFile => 'ファイルをタップ';
 
   @override
@@ -536,6 +545,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get hideScores => '評価値を隠す';
+
+  @override
+  String get turnSoundOff => 'サウンドをオフ';
+
+  @override
+  String get turnSoundOn => 'サウンドをオン';
 
   @override
   String get searchOpenings => 'オープニングを検索…';

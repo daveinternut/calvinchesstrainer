@@ -89,6 +89,15 @@ class AppLocalizationsPt extends AppLocalizations {
   String get tapSquareToHear => 'Toque em qualquer casa para ouvir seu nome';
 
   @override
+  String get tapFileToSee => 'Toque em qualquer coluna para ver seu nome';
+
+  @override
+  String get tapRankToSee => 'Toque em qualquer fileira para ver seu nome';
+
+  @override
+  String get tapSquareToSee => 'Toque em qualquer casa para ver seu nome';
+
+  @override
   String get tapFile => 'Toque na coluna';
 
   @override
@@ -547,6 +556,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get hideScores => 'Ocultar pontuações';
+
+  @override
+  String get turnSoundOff => 'Desativar o som';
+
+  @override
+  String get turnSoundOn => 'Ativar o som';
 
   @override
   String get searchOpenings => 'Buscar aberturas…';

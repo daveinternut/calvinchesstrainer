@@ -270,6 +270,24 @@ abstract class AppLocalizations {
   /// **'Tap any square to hear its name'**
   String get tapSquareToHear;
 
+  /// No description provided for @tapFileToSee.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap any file to see its name'**
+  String get tapFileToSee;
+
+  /// No description provided for @tapRankToSee.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap any rank to see its name'**
+  String get tapRankToSee;
+
+  /// No description provided for @tapSquareToSee.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap any square to see its name'**
+  String get tapSquareToSee;
+
   /// No description provided for @tapFile.
   ///
   /// In en, this message translates to:
@@ -1103,6 +1121,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hide scores'**
   String get hideScores;
+
+  /// Speaker button tooltip (home and drill top bar) while sound is on
+  ///
+  /// In en, this message translates to:
+  /// **'Turn sound off'**
+  String get turnSoundOff;
+
+  /// Speaker button tooltip (home and drill top bar) while sound is off
+  ///
+  /// In en, this message translates to:
+  /// **'Turn sound on'**
+  String get turnSoundOn;
 
   /// Opening picker search field hint
   ///

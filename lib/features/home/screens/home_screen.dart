@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/audio/sound_switch.dart';
 import '../../../core/services/stockfish_service.dart' show kEngineAvailable;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/ui/buttons.dart';
@@ -218,6 +219,8 @@ class _Header extends StatelessWidget {
             ),
           ),
         ),
+        const SoundButton(),
+        const SizedBox(width: 8),
         CircleIconButton(
           icon: Icons.info_outline_rounded,
           tooltip: l10n.about,

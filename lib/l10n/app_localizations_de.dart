@@ -89,6 +89,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tapSquareToHear => 'Tippe auf ein Feld, um seinen Namen zu hören';
 
   @override
+  String get tapFileToSee => 'Tippe auf eine Linie, um ihren Namen zu sehen';
+
+  @override
+  String get tapRankToSee => 'Tippe auf eine Reihe, um ihren Namen zu sehen';
+
+  @override
+  String get tapSquareToSee => 'Tippe auf ein Feld, um seinen Namen zu sehen';
+
+  @override
   String get tapFile => 'Tippe die Linie';
 
   @override
@@ -548,6 +557,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get hideScores => 'Bewertungen ausblenden';
+
+  @override
+  String get turnSoundOff => 'Ton ausschalten';
+
+  @override
+  String get turnSoundOn => 'Ton einschalten';
 
   @override
   String get searchOpenings => 'Eröffnungen suchen…';

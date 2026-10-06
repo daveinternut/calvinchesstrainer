@@ -89,6 +89,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tapSquareToHear => 'Tap any square to hear its name';
 
   @override
+  String get tapFileToSee => 'Tap any file to see its name';
+
+  @override
+  String get tapRankToSee => 'Tap any rank to see its name';
+
+  @override
+  String get tapSquareToSee => 'Tap any square to see its name';
+
+  @override
   String get tapFile => 'Tap file';
 
   @override
@@ -538,6 +547,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hideScores => 'Hide scores';
+
+  @override
+  String get turnSoundOff => 'Turn sound off';
+
+  @override
+  String get turnSoundOn => 'Turn sound on';
 
   @override
   String get searchOpenings => 'Search openings…';

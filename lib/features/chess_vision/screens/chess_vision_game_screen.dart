@@ -7,6 +7,7 @@ import 'package:dartchess/dartchess.dart'
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 
 import '../../../core/audio/audio_service.dart';
+import '../../../core/audio/sound_switch.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/board_theme.dart';
 import '../../../core/ui/board_frame.dart';
@@ -108,6 +109,7 @@ class _ChessVisionGameScreenState
                 onClose: () => closeDrill(context),
                 closeTooltip: l10n.endDrill,
                 trailing: Text(pending ? '' : _scoreText(gameState, l10n, mode)),
+                action: const SoundButton(),
               ),
               header: [
                 const SizedBox(height: 8),

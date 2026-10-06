@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/audio/audio_service.dart';
+import '../../../core/audio/sound_switch.dart';
 import '../../../core/ui/components.dart';
 import '../../drills/warmup_actions.dart';
 import '../../file_rank_trainer/widgets/milestone_banner.dart';
@@ -125,6 +126,7 @@ class _LetterGameScreenState extends ConsumerState<LetterGameScreen> {
         trailing: isExplore
             ? null
             : Text('${gameState.totalCorrect}/${gameState.totalAttempts}'),
+        action: const SoundButton(),
       ),
       const SizedBox(height: 12),
       LetterPromptDisplay(gameState: gameState),

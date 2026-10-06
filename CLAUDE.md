@@ -32,7 +32,10 @@ lib/
   firebase_options.dart  generated — DO NOT edit
   core/
     audio/audio_service.dart       voice clips + SFX + cheers + haptics + TTS (owns ALL haptics; ambient
-                                   session; a new announcement or stop() cancels the rest of the old one)
+                                   session; a new announcement or stop() cancels the rest of the old one;
+                                   `muted` follows the Sound switch)
+    audio/sound_switch.dart        the in-app Sound switch: soundOnProvider (saved on device) + SoundButton,
+                                   the speaker in home's header and every drill's PlayTopBar
     services/
       puzzle_service.dart          move-trainer puzzles (ParsedPuzzle)
       stockfish_service.dart       ENGINE ENTRY — import only this. Re-exports the API,
@@ -71,7 +74,7 @@ lib/
 | To… | Open |
 |---|---|
 | Add or change a drill (name, glyph, modes, options, route, best) | `features/drills/drill_catalog.dart` (+ `DrillId` in `drills/models/drill.dart`, strings in every `.arb`). Featured on home via `HomeScreen._visionTiles` / `_notationTiles` |
-| Add a new trainer | copy a `features/<x>/` folder; follow the Notifier pattern (public static `bestKeyFor`); screen = `TrainerLayout` + `PlayTopBar` + `BoardFrame` + `roundActions`; register a route + `name` in `app.dart` (parse `warmup=1`); describe its drill in the catalog |
+| Add a new trainer | copy a `features/<x>/` folder; follow the Notifier pattern (public static `bestKeyFor`); screen = `TrainerLayout` + `PlayTopBar` (with `action: const SoundButton()`) + `BoardFrame` + `roundActions`; register a route + `name` in `app.dart` (parse `warmup=1`); describe its drill in the catalog |
 | Change the look (colours, type, components, board) | `core/theme/app_theme.dart`, `core/theme/board_theme.dart`, `core/ui/` |
 | Home layout / the warm-up card | `features/home/screens/home_screen.dart` |
 | Drill setup UI (options, modes, Start) | `features/drills/widgets/drill_setup_panel.dart`; list/sheet layout in `drills/screens/drill_section_screen.dart` |
@@ -90,6 +93,7 @@ lib/
 | Puzzle loading / regenerate puzzle set | `core/services/puzzle_service.dart`, `assets/puzzles/`, `scripts/curate_puzzles.py` |
 | Opening names / book moves | `core/services/opening_book_service.dart`, `assets/data/eco_openings.json` |
 | Audio clips or haptics | `core/audio/audio_service.dart` (`playMilestone` is driven by `MilestoneBanner`) |
+| Sound on/off (the speaker button) | `core/audio/sound_switch.dart`; `AudioService.muted` skips every sound, haptics stay |
 | Personal bests / saved progress | `core/services/personal_bests_service.dart` — `submit(key, score, lowerIsBetter:)` at game over; keys namespaced per trainer (`vision.`, `fileRank.`, `letter.`, `move.`, `pieces.`) |
 | Lay a screen out for tablet landscape | `core/widgets/trainer_layout.dart` (header/board/footer; check 820×1180 and 1180×820, plus a short window like 568×320) |
 | Add or translate UI text | `lib/l10n/app_*.arb` → `flutter gen-l10n` |
@@ -101,7 +105,7 @@ lib/
 
 - **Notifier pattern** as above — keep screens thin; logic in the notifier.
 - **Design system:** colours from `AppColors` tokens (brand = actions/found, amber = target, vermilion = miss), text from `AppText`. **`AppText.mono` (Geist Mono) is for chess notation only** (squares, moves, piece letters); scores, streaks and timers use `AppText.number`. Boards: `AppBoard.settings(...)` inside `BoardFrame` (`showCoordinates: false` when the drill tests coordinates). Compose `core/ui/` components rather than styling Material widgets ad hoc.
-- **Game screens:** `PlayTopBar` (close → `closeDrill`, subtitle `warmupSubtitle(...) ??` the mode) and results through `roundActions(...)`, so every screen works as a warm-up step. Take a `warmup` bool from the route.
+- **Game screens:** `PlayTopBar` (close → `closeDrill`, subtitle `warmupSubtitle(...) ??` the mode, `action: const SoundButton()`) and results through `roundActions(...)`, so every screen works as a warm-up step. Take a `warmup` bool from the route.
 - **Lifecycle:** game providers are `NotifierProvider.autoDispose`; cancel timers in `ref.onDispose`; after **every** `await` in a notifier, `if (!ref.mounted) return;` before touching `state`/`ref` (Riverpod 3 throws on a disposed Ref). Read services a continuation needs into fields in `build()`.
 - **Bests:** at game over call `personalBestsProvider.notifier.submit(...)` and store its result in state (`isNewRecord`); results cards read the state flag, never a getter computed after the best was saved.
 - **`copyWith` nullable idiom:** nullable fields take a `T? Function()?` thunk — pass `() => null` to *clear*, omit to *keep*. (Used in every `*_state.dart`.)
@@ -112,10 +116,11 @@ lib/
 
 ## Gotchas (know before you trust the code)
 
-- **Personal bests are saved on the device** (`personalBestsProvider`, shared_preferences; loaded in `main()` with a timeout — without them bests last the session). Recorded at game over: speed-round scores, plus concentric and timed-pawn *times* (lower is better). Nothing else persists, and there is no cloud backend (Firebase Auth/Firestore were removed).
+- **Personal bests are saved on the device** (`personalBestsProvider`, shared_preferences; loaded in `main()` with a timeout — without them bests last the session). Recorded at game over: speed-round scores, plus concentric and timed-pawn *times* (lower is better). The only other saved state is each drill's setup + Continue (`drillPrefsProvider`) and the Sound switch (`soundOnProvider`); there is no cloud backend (Firebase Auth/Firestore were removed).
 - **Opening trainer is partly wired:** `/opening-trainer` hard-codes practice/easy/white; `OpeningMenuScreen` + the `LivesDisplay`/`MedalProgress`/`PrincipleCard` widgets are **built but never mounted**; there is no `/opening-trainer/game` route. Challenge mode, lives, and medals are unreachable.
 - **`feedback_service.dart` is HTTP feedback, not audio/haptics** — name collides with `audio_service.dart`. Haptics live in `AudioService`, which also **swallows playback errors** and builds asset paths from strings (renames fail silently).
 - **The audio session is `ambient`**, configured by `AudioService` before the first sound: the app mixes with other apps' audio (a parent's music keeps playing) and obeys the silent switch. Unconfigured, just_audio would fall back to a non-mixing "music" session that stops other audio on the first beep.
+- **Two things silence the app:** the phone's Silent mode (the ambient session above; Do Not Disturb/Focus does not) and the in-app **Sound switch** (`soundOnProvider`, saved as `sound_on_v1`). Sound off sets `AudioService.muted`: every clip, blip, cheer and TTS line returns before loading, and switching off stops what is playing. Haptics stay on (the system setting governs them). Nothing may be audio-only: every spoken prompt is also on screen, and Explore labels what you tap (Files & Ranks on the board's edge). The Opening Explorer's bar has no speaker (its tools fill it); home's covers it.
 - **Tablets rotate; phones stay portrait.** iPad: all four orientations in Info.plist, no `UIRequiresFullScreen` (deprecated in iPadOS 26), so multitasking is on and iPadOS ignores any programmatic lock. iPhone: portrait only, from Info.plist. Android: `MainActivity.kt` asks for portrait when the smallest width is under 600 dp and leaves tablets free (it re-checks on configuration changes, so a foldable can switch). **Don't add `SystemChrome.setPreferredOrientations`** — on Android it would override `MainActivity` and lock tablets too. Every screen must work in landscape and in resizable windows (Stage Manager, split screen, the web app on a phone held sideways): board screens use `TrainerLayout`, which also goes side by side in windows shorter than 360 pt; menus are width-capped and scroll.
 - **Web ships WebAssembly only — `flutter build web` cannot build this app.** It always also compiles a dart2js fallback, and dart2js has no 64-bit ints, so dartchess's bitboards (`SquareSet(0xffffffffffffffff)`) fail to compile. dart2wasm has real int64 and is exact. Use `scripts/build_web.sh`. Consequence: the app needs a **WasmGC browser** (Chrome/Edge 119+, Firefox 120+, **Safari 18.2+ / iOS 18.2+**) — older iPads get a "no compatible build" error, not a graceful fallback.
 - **Two engines, one contract.** Native runs real Stockfish over `dart:ffi`; web runs **Stockfish 19 Lite WASM in a Web Worker** (`web/stockfish/`, loaded lazily on first `initialize()` so the home screen never fetches its 1.7 MB). Both implement `StockfishService`. The UCI protocol handling is **deliberately duplicated** between `stockfish_engine_io.dart` and `stockfish_engine_web.dart` rather than shared, to keep the shipping native engine untouchable — **fix protocol bugs in both** (same convention as `scan_engine.dart` ↔ `curate_scanning_positions.py`).

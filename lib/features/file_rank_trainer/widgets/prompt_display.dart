@@ -1,28 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/audio/sound_switch.dart';
 import '../../../core/theme/app_theme.dart';
 import '../models/file_rank_game_state.dart';
 
-class PromptDisplay extends StatelessWidget {
+class PromptDisplay extends ConsumerWidget {
   final FileRankGameState gameState;
 
   const PromptDisplay({super.key, required this.gameState});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (gameState.mode == TrainerMode.explore) {
-      return _buildExploreHint(context);
+      return _buildExploreHint(context, soundOn: ref.watch(soundOnProvider));
     }
 
     return _buildForwardPrompt(context);
   }
 
-  Widget _buildExploreHint(BuildContext context) {
+  /// Explore names the tapped line or square aloud and on the board; with
+  /// the sound off, only on the board.
+  Widget _buildExploreHint(BuildContext context, {required bool soundOn}) {
     final l10n = AppLocalizations.of(context)!;
     final subjectText = switch (gameState.subject) {
-      TrainerSubject.files => l10n.tapFileToHear,
-      TrainerSubject.ranks => l10n.tapRankToHear,
-      TrainerSubject.squares => l10n.tapSquareToHear,
+      TrainerSubject.files => soundOn ? l10n.tapFileToHear : l10n.tapFileToSee,
+      TrainerSubject.ranks => soundOn ? l10n.tapRankToHear : l10n.tapRankToSee,
+      TrainerSubject.squares =>
+        soundOn ? l10n.tapSquareToHear : l10n.tapSquareToSee,
       TrainerSubject.moves => '',
       TrainerSubject.letters => '',
       TrainerSubject.pieceValue => '',

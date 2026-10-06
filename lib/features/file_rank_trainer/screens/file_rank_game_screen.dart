@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chessground/chessground.dart';
 import 'package:dartchess/dartchess.dart';
 import '../../../core/audio/audio_service.dart';
+import '../../../core/audio/sound_switch.dart';
 import '../../../core/constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/board_theme.dart';
@@ -84,6 +85,7 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
                 trailing: isExplore
                     ? null
                     : Text('${gameState.totalCorrect}/${gameState.totalAttempts}'),
+                action: const SoundButton(),
               ),
               header: [
                 const SizedBox(height: 4),
@@ -173,12 +175,13 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
   }
 
   List<SquareLabel> _buildSquareLabels(FileRankGameState gameState) {
-    if (gameState.subject != TrainerSubject.squares ||
-        gameState.lastFeedback == null) {
-      return const [];
+    final feedback = gameState.lastFeedback;
+    if (feedback == null) return const [];
+    if (gameState.subject != TrainerSubject.squares) {
+      return gameState.mode == TrainerMode.explore
+          ? [_exploreLineLabel(feedback)]
+          : const [];
     }
-
-    final feedback = gameState.lastFeedback!;
     if (feedback.tappedRankIndex == null) return const [];
 
     final labels = <SquareLabel>[];
@@ -209,6 +212,28 @@ class _FileRankGameScreenState extends ConsumerState<FileRankGameScreen> {
     }
 
     return labels;
+  }
+
+  /// Explore files or ranks: the tapped line's name on its edge square, where
+  /// the coordinates would be (bottom for a file, left for a rank), so it
+  /// reads with the sound off too.
+  SquareLabel _exploreLineLabel(AnswerFeedback feedback) {
+    final edge = widget.isHardMode ? 7 : 0; // the player's bottom rank / left file
+    final line = feedback.tappedIndex;
+    final color = AppColors.correctGreen.withValues(alpha: 0.9);
+    return feedback.isFile
+        ? SquareLabel(
+            file: line,
+            rank: edge,
+            name: ChessConstants.files[line],
+            color: color,
+          )
+        : SquareLabel(
+            file: edge,
+            rank: line,
+            name: ChessConstants.ranks[line],
+            color: color,
+          );
   }
 
   String _title(AppLocalizations l10n) => switch (widget.subject) {

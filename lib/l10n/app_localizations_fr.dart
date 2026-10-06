@@ -89,6 +89,15 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tapSquareToHear => 'Touche une case pour entendre son nom';
 
   @override
+  String get tapFileToSee => 'Touche une colonne pour voir son nom';
+
+  @override
+  String get tapRankToSee => 'Touche une rangée pour voir son nom';
+
+  @override
+  String get tapSquareToSee => 'Touche une case pour voir son nom';
+
+  @override
   String get tapFile => 'Touche la colonne';
 
   @override
@@ -548,6 +557,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get hideScores => 'Masquer les scores';
+
+  @override
+  String get turnSoundOff => 'Couper le son';
+
+  @override
+  String get turnSoundOn => 'Activer le son';
 
   @override
   String get searchOpenings => 'Rechercher une ouverture…';

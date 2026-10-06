@@ -1,5 +1,7 @@
 import 'package:calvinchesstrainer/core/audio/audio_service.dart';
+import 'package:calvinchesstrainer/core/audio/sound_switch.dart';
 import 'package:calvinchesstrainer/core/services/analytics_service.dart';
+import 'package:calvinchesstrainer/core/widgets/square_name_overlay.dart';
 import 'package:calvinchesstrainer/features/drills/models/drill.dart';
 import 'package:calvinchesstrainer/features/drills/providers/drill_prefs_provider.dart';
 import 'package:calvinchesstrainer/features/drills/providers/warmup_provider.dart';
@@ -8,6 +10,7 @@ import 'package:calvinchesstrainer/features/file_rank_trainer/models/file_rank_g
 import 'package:calvinchesstrainer/features/file_rank_trainer/screens/file_rank_game_screen.dart';
 import 'package:calvinchesstrainer/features/home/screens/home_screen.dart';
 import 'package:calvinchesstrainer/l10n/app_localizations.dart';
+import 'package:chessground/chessground.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -245,6 +248,82 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     }
+
+    testWidgets('the speaker button turns sound off, and back on',
+        (tester) async {
+      final (container, _) = await _pump(tester, const HomeScreen());
+      await _tap(tester, find.byTooltip('Turn sound off'));
+      expect(container.read(soundOnProvider), isFalse);
+      await _tap(tester, find.byTooltip('Turn sound on'));
+      expect(container.read(soundOnProvider), isTrue);
+    });
+  });
+
+  group('Sound off', () {
+    testWidgets('a drill turns sound off from its top bar', (tester) async {
+      final (container, _) = await _pump(
+        tester,
+        const FileRankGameScreen(
+          subject: TrainerSubject.squares,
+          mode: TrainerMode.practice,
+        ),
+      );
+      await _tap(tester, find.byTooltip('Turn sound off'));
+      expect(container.read(soundOnProvider), isFalse);
+    });
+
+    /// The label [name] the board shows over its square.
+    Finder boardLabel(String name) => find.descendant(
+          of: find.byType(SquareNameOverlay),
+          matching: find.text(name),
+        );
+
+    testWidgets('Files Explore names the tapped file on the bottom edge',
+        (tester) async {
+      final (container, _) = await _pump(
+        tester,
+        const FileRankGameScreen(
+          subject: TrainerSubject.files,
+          mode: TrainerMode.explore,
+        ),
+      );
+      expect(find.text('Tap any file to hear its name'), findsOneWidget);
+      container.read(soundOnProvider.notifier).toggle();
+      await tester.pump();
+      expect(find.text('Tap any file to see its name'), findsOneWidget);
+
+      final board = tester.getRect(find.byType(Chessboard));
+      final side = board.width / 8;
+      await tester.tapAt(board.topLeft + Offset(4.5 * side, 3.5 * side)); // e5
+      await tester.pump();
+      expect(boardLabel('e'), findsOneWidget);
+      expect(
+        tester.getCenter(boardLabel('e')),
+        offsetMoreOrLessEquals(board.topLeft + Offset(4.5 * side, 7.5 * side)),
+      ); // on e1
+      await tester.pump(const Duration(seconds: 1)); // lets the label clear
+    });
+
+    testWidgets("Ranks Explore from Black's side labels the left edge",
+        (tester) async {
+      await _pump(
+        tester,
+        const FileRankGameScreen(
+          subject: TrainerSubject.ranks,
+          mode: TrainerMode.explore,
+          isHardMode: true,
+        ),
+      );
+      final board = tester.getRect(find.byType(Chessboard));
+      final side = board.width / 8;
+      await tester.tapAt(board.topLeft + Offset(3.5 * side, 4.5 * side)); // e5
+      await tester.pump();
+      expect(
+        tester.getCenter(boardLabel('5')),
+        offsetMoreOrLessEquals(board.topLeft + Offset(0.5 * side, 4.5 * side)),
+      ); // on h5, the left edge from Black's side
+      await tester.pump(const Duration(seconds: 1));
+    });
   });
 
   group('Warm-up hand-off', () {

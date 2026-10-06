@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as dev;
 
 import 'package:audio_session/audio_session.dart';
@@ -7,8 +8,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
 
+import 'sound_switch.dart';
+
 final audioServiceProvider = Provider<AudioService>((ref) {
   final service = AudioService();
+  ref.listen(
+    soundOnProvider,
+    (_, on) => service.muted = !on,
+    fireImmediately: true,
+  );
   ref.onDispose(service.dispose);
   return service;
 });
@@ -26,6 +34,9 @@ final audioServiceProvider = Provider<AudioService>((ref) {
 /// Multi-clip announcements ("knight… takes… e… 4… check") re-check
 /// [_voiceSequence] after every await, so a stop or a newer announcement ends
 /// them instead of splicing two sentences together on the shared player.
+///
+/// [muted] (the in-app Sound switch) silences every layer. Haptics still
+/// fire: they aren't sound, and the system's haptics setting governs them.
 class AudioService {
   final FlutterTts _tts = FlutterTts();
   final AudioPlayer _voicePlayer = AudioPlayer();
@@ -34,9 +45,19 @@ class AudioService {
   final AudioPlayer _cheerPlayer = AudioPlayer();
 
   bool _ttsInitialized = false;
+  bool _muted = false;
   int _voiceSequence = 0;
   Future<void>? _sessionReady;
   final Map<AudioPlayer, String> _loadedAsset = {};
+
+  /// Set from [soundOnProvider]. While muted nothing plays, and muting cuts
+  /// off whatever is playing now.
+  bool get muted => _muted;
+  set muted(bool value) {
+    if (value == _muted) return;
+    _muted = value;
+    if (value) unawaited(stop());
+  }
 
   /// Configures the shared audio session once, before the first sound.
   ///
@@ -91,6 +112,7 @@ class AudioService {
   /// Plays [assets] back to back on the voice player as one announcement,
   /// cancelling any announcement still in flight.
   Future<void> _announce(List<String> assets) async {
+    if (_muted) return;
     final sequence = ++_voiceSequence;
     for (var i = 0; i < assets.length; i++) {
       if (sequence != _voiceSequence) return;
@@ -124,6 +146,7 @@ class AudioService {
   /// Plays [asset] on [player], loading it only when it isn't already the
   /// loaded source (then it just rewinds).
   Future<void> _playOn(AudioPlayer player, String asset) async {
+    if (_muted) return;
     await _ensureSession();
     try {
       if (_loadedAsset[player] != asset) {
@@ -133,6 +156,7 @@ class AudioService {
       } else {
         await player.seek(Duration.zero);
       }
+      if (_muted) return; // switched off while it loaded
       _start(player);
     } catch (e) {
       _loadedAsset.remove(player);
@@ -209,10 +233,13 @@ class AudioService {
   /// Fallback for dynamic text with no pre-recorded clip (e.g. castling).
   /// Counts as an announcement: it cancels any clip sequence in flight.
   Future<void> speak(String text) async {
-    ++_voiceSequence;
+    if (_muted) return;
+    final sequence = ++_voiceSequence;
     try {
       await _voicePlayer.stop();
       await _initTts();
+      // A stop (muting included) or a newer announcement while TTS set up.
+      if (sequence != _voiceSequence) return;
       await _tts.speak(text);
     } catch (e) {
       dev.log('AudioService: TTS failed for "$text": $e');
