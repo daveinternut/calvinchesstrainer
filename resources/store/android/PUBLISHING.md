@@ -7,12 +7,12 @@ Written 2026-10-04 for 1.5.0 (7). Android package: `education.internut.calvinche
 
 | | |
 |---|---|
-| Signed release bundle | ✅ `build/app/outputs/bundle/release/app-release.aab`: 1.6.0 (versionCode 9), signed with the upload key |
+| Signed release bundle | ✅ `build/app/outputs/bundle/release/app-release.aab`: 1.7.0 (versionCode 10), signed with the upload key. Release notes: [`../listing.md`](../listing.md) |
 | Upload script | ✅ `scripts/deploy_play.sh`. Needs a service-account key (step 4) |
 | Icon + feature graphic | ✅ `icon-512.png`, `feature-graphic-1024x500.png` (this folder; the October 2026 icon) |
 | Screenshots | ✅ `phone/` (1080×1920) and `tablet/` (2560×1440), regenerated for the 1.6.0 redesign ([README.md](README.md)) |
 | Privacy policy | ✅ https://www.internut.education/privacy (the same one the App Store uses). Add a line about the feedback form (see Data safety) |
-| Play Console | ✅ The app already exists there, and 1.4 (versionCode 5) was released in July. Steps 0–1 are done, so you're at step 2. The listing's screenshots and text are probably still the 1.4 ones and need refreshing for 1.5.0 |
+| Play Console | ✅ The app already exists there; 1.4 (versionCode 5) was released in July and 1.6.0 was approved in October 2026. Steps 0–1 are done, so you're at step 2: upload each new bundle to the same track |
 
 ## The path
 

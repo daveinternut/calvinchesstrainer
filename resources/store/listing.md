@@ -55,6 +55,26 @@ From Internut Education.
 
 - **Short description** (80 max): `Drill board vision and chess notation: the skills puzzles take for granted.`
 
+## What's new in 1.7.0
+
+```
+Practice in silence:
+• A speaker button on the home screen and in every drill turns all sounds off, and back on
+• Calvin remembers your choice
+• Files & Ranks Explore now shows each name on the board, so it works without sound
+```
+
+Play release notes (500 max):
+
+```
+<en-US>
+Practice in silence:
+• A speaker button on the home screen and in every drill turns all sounds off, and back on
+• Calvin remembers your choice
+• Files & Ranks Explore now shows each name on the board, so it works without sound
+</en-US>
+```
+
 ## What's new in 1.6.0
 
 ```

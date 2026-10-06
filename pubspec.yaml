@@ -1,7 +1,7 @@
 name: calvinchesstrainer
 description: "A chess learning app that teaches fundamentals through interactive drills and timed challenges."
 publish_to: 'none'
-version: 1.6.0+9
+version: 1.7.0+10
 
 environment:
   sdk: ^3.9.2
